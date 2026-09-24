@@ -403,30 +403,43 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 w-full h-auto justify-items-center gap-10 sm:gap-4 lg:gap-8 lg:px-[100px]">
-            {[1, 2, 3].map((n) => (
-              <div
-                key={n}
-                className="relative flex w-full max-w-[316px] h-auto flex-col"
-              >
-                <img
-                  src="/image 18.png"
-                  alt=""
-                  className="w-full h-auto sm:h-[199px] rounded-md"
-                />
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10 flex w-[85%] max-w-[221px] h-auto flex-col gap-3 rounded-md bg-[#F5F7FA] p-3 shadow-[0px_5.57px_11.14px_0px_#ABBED166]">
-                  <p className="h-auto w-full text-center text-xs sm:text-sm font-semibold leading-snug text-[#717171]">
-                    Creating Streamlined Safeguarding Processes with OneRen
-                  </p>
-                  <div className="flex w-full h-auto flex-row items-center justify-center gap-1.5">
-                    <span className="h-auto w-auto text-sm font-semibold leading-[19px] text-[#4CAF4F]">
-                      read more
-                    </span>
-                    <img src="/dr.png" alt="" className="h-[17px] w-4 text-[#4CAF4F]" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+  {[
+    {
+      img: "/image 18.png",
+      text: "Creating Streamlined Safeguarding Processes with OneRen",
+    },
+    {
+      img: "/image 18.png",
+      text: "What are your safeguarding responsibilities and how can you manage them?",
+    },
+    {
+      img: "/image 18.png",
+      text: "Revamping the Membership Model with Triathlon Australia",
+    },
+  ].map((card, index) => (
+    <div
+      key={index}
+      className="relative flex w-full max-w-[316px] h-auto flex-col"
+    >
+      <img
+        src={card.img}
+        alt=""
+        className="w-full h-auto sm:h-[199px] rounded-md"
+      />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10 flex w-[85%] max-w-[221px] h-auto flex-col gap-3 rounded-md bg-[#F5F7FA] p-3 shadow-[0px_5.57px_11.14px_0px_#ABBED166]">
+        <p className="h-auto w-full text-center text-xs sm:text-sm font-semibold leading-snug text-[#717171]">
+          {card.text}
+        </p>
+        <div className="flex w-full h-auto flex-row items-center justify-center gap-1.5">
+          <span className="h-auto w-auto text-sm font-semibold leading-[19px] text-[#4CAF4F]">
+            read more
+          </span>
+          <img src="/dr.png" alt="" className="h-[17px] w-4 text-[#4CAF4F]" />
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
         </div>
       </div>
 
