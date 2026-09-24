@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FaInstagram, FaFacebookF, FaTwitter, FaYoutube } from "react-icons/fa";
+import logo_icon from "../../public/icons.png"
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -484,7 +485,7 @@ export default function Home() {
             {/* LEFT SIDE — Logo + Copyright + Social Icons */}
             <div className="flex w-full lg:w-[244px] h-auto flex-col gap-6 lg:gap-10">
               <div className="flex items-center gap-2">
-                <img src="/Icon.jpg" alt="Logo" className="w-8 h-8 rounded" />
+                <img src={logo_icon.src} alt="Logo" className="w-8 h-8 rounded" />
                 <span className="text-white text-lg sm:text-xl font-semibold">Nexcent</span>
               </div>
 
