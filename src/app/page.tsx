@@ -451,8 +451,8 @@ export default function Home() {
           {card.text}
         </p>
         <div className="flex w-full h-auto flex-row items-center justify-center gap-1.5">
-          <span className="h-auto w-auto text-sm font-semibold leading-[19px] text-[#4CAF4F]">
-            read more
+          <span className="h-auto w-auto text-sm leading-[19px] text-[#4CAF4F]">
+            Read more
           </span>
           <img src="/dr.png" alt="" className="h-[17px] w-4 text-[#4CAF4F]" />
         </div>
