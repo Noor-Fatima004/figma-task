@@ -143,30 +143,45 @@ export default function Home() {
         </div>
       </div>
 
-      {/* CLIENTS */}
-      <div className="mx-auto my-6 sm:my-[30px] w-full max-w-[1140px] h-auto px-4 sm:px-8 md:px-12 lg:px-[100px]">
-        <div className="mx-auto flex w-full max-w-[773px] flex-col gap-2">
-          <h2 className="text-center text-lg sm:text-xl md:text-2xl font-semibold leading-snug text-[#4D4D4D]">
-            Our Clients
-          </h2>
-          <p className="text-center text-xs sm:text-sm font-normal leading-relaxed text-[#717171]">
-            We have been working with some Fortune 500+ clients
-          </p>
-        </div>
+     {/* CLIENTS */}
+<div className="mx-auto my-6 sm:my-[30px] w-full max-w-[1140px] h-auto px-4 sm:px-8 md:px-12 lg:px-[100px]">
+  <div className="mx-auto flex w-full max-w-[773px] flex-col gap-2">
+    <h2 className="text-center text-lg sm:text-xl md:text-2xl font-semibold leading-snug text-[#4D4D4D]">
+      Our Clients
+    </h2>
+    <p className="text-center text-xs sm:text-sm font-normal leading-relaxed text-[#717171]">
+      We have been working with some Fortune 500+ clients
+    </p>
+  </div>
 
-        {/* Row on mobile, evenly spaced columns from sm up */}
-        <div className="mt-6 flex flex-row flex-wrap items-center justify-center gap-6 sm:flex-nowrap sm:justify-between sm:gap-4">
-          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-            <div key={n} className="flex-shrink-0">
-              <img
-                src={`/Logo__${n}_-removebg-preview.png`}
-                alt=""
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-md"
-              />
-            </div>
-          ))}
+  {/* Mobile slider - below 375px (swipe left-right) */}
+  <div className="block min-[375px]:hidden mt-6 overflow-hidden">
+    <div className="flex overflow-x-auto scroll-smooth gap-8 pl-6 pr-4 pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+        <div key={n} className="flex-shrink-0">
+          <img
+            src={`/Logo__${n}_-removebg-preview.png`}
+            alt=""
+            className="w-7 h-7 rounded-md"
+          />
         </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Row on screens 375px and up */}
+  <div className="hidden min-[375px]:flex mt-6 flex-row flex-wrap items-center justify-center gap-6 sm:flex-nowrap sm:justify-between sm:gap-4">
+    {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+      <div key={n} className="flex-shrink-0">
+        <img
+          src={`/Logo__${n}_-removebg-preview.png`}
+          alt=""
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-md"
+        />
       </div>
+    ))}
+  </div>
+</div>
 
       {/* COMMUNITY / WHO IT'S FOR */}
       <div className="mx-auto flex w-full max-w-[1140px] mt-9 h-auto flex-col gap-6 sm:gap-8 px-4 sm:px-8 md:px-12 lg:px-0">
