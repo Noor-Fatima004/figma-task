@@ -120,7 +120,7 @@ export default function Home() {
       <div className="w-full bg-[#F5F7FA] mb-6 sm:mb-7">
         <div className="mx-auto flex w-full max-w-[1140px] min-h-fit lg:min-h-[450px] flex-col-reverse sm:flex-row items-center justify-around gap-8 sm:gap-10 lg:gap-[72px] px-4 sm:px-8 md:px-12 lg:px-[100px] py-8 sm:py-10 lg:py-[67px]">
           <div className="flex w-full sm:w-1/2 lg:w-[490px] flex-col items-center sm:items-start gap-4 sm:gap-5 lg:gap-[22px] text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl border md:text-4xl lg:text-[46px] font-semibold leading-[1.15] text-[#4D4D4D]">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-semibold leading-[1.15] text-[#4D4D4D]">
               Lessons and insights
             </h1>
             <span className="text-2xl sm:text-3xl md:text-4xllg:text-[46px] font-semibold leading-[1.15] text-[#4CAF4F]">
