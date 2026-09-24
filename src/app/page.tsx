@@ -107,6 +107,11 @@ export default function Home() {
                   Pricing
                 </a>
               </li>
+              <li>
+                <a href="#" className="text-sm font-medium text-[#4CAF4F] hover:text-green-700 transition duration-300 whitespace-nowrap no-underline">
+                  login
+                </a>
+              </li>
             </ul>
             <button className="inline-flex w-fit flex-row flex-nowrap items-center gap-1.5 whitespace-nowrap rounded bg-[#4CAF50] px-5 py-2 text-sm text-white transition duration-300 hover:bg-[#388E3C]">
               <span className="whitespace-nowrap">Register</span>
