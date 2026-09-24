@@ -441,7 +441,7 @@ export default function Home() {
         alt=""
         className="w-full h-auto sm:h-[199px] rounded-md"
       />
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10 flex w-[85%] max-w-[221px] h-auto flex-col gap-3 rounded-md bg-[#F5F7FA] p-3 shadow-[0px_5.57px_11.14px_0px_#ABBED166]">
+      <div className="absolute bottom-[-20px] left-1/2 -translate-x-1/2 z-10 flex w-[85%] max-w-[221px] h-auto flex-col gap-3 rounded-md bg-[#F5F7FA] p-3 shadow-[0px_5.57px_11.14px_0px_#ABBED166]">
         <p className="h-auto w-full text-center text-xs sm:text-sm font-semibold leading-snug text-[#717171]">
           {card.text}
         </p>
