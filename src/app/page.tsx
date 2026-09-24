@@ -348,12 +348,12 @@ export default function Home() {
 
       {/* CUSTOMERS / TESTIMONIAL — FULL WIDTH BACKGROUND */}
       <div className="w-full bg-[#F5F7FA] my-6 lg:my-[34px]">
-        <div className="mx-auto flex w-full max-w-[1140px] h-auto flex-col sm:flex-row justify-center items-center gap-8 lg:gap-[54px] py-8 lg:pt-[22px] lg:pb-[22px] px-4 sm:px-8 md:px-12 lg:px-[100px]">
+        <div className="mx-auto flex w-full max-w-[1140px] h-auto flex-col-reverse sm:flex-row justify-center items-center gap-8 lg:gap-[54px] py-8 lg:pt-[22px] lg:pb-[22px] px-4 sm:px-8 md:px-12 lg:px-[100px]">
           <div className="mx-auto sm:mx-0 flex-shrink-0">
             <img
               src="/image 9.png"
               alt=""
-              className="w-[160px] h-[160px] sm:w-[226px] sm:h-[227px] rounded-md shadow-[0px_5.57px_11.14px_0px_#ABBED166]"
+              className="w-[260px] h-[180px] sm:w-[226px] sm:h-[290px] rounded-md shadow-[0px_5.57px_11.14px_0px_#ABBED166]"
             />
           </div>
           <div className="flex w-full lg:w-[721px] h-auto flex-col items-center sm:items-start gap-4 lg:gap-[22px] px-4 sm:px-0">
