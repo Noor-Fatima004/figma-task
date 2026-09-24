@@ -120,10 +120,10 @@ export default function Home() {
       <div className="w-full bg-[#F5F7FA] mb-6 sm:mb-7">
         <div className="mx-auto flex w-full max-w-[1140px] min-h-fit lg:min-h-[450px] flex-col-reverse sm:flex-row items-center justify-around gap-8 sm:gap-10 lg:gap-[72px] px-4 sm:px-8 md:px-12 lg:px-[100px] py-8 sm:py-10 lg:py-[67px]">
           <div className="flex w-full sm:w-1/2 lg:w-[490px] flex-col items-center sm:items-start gap-4 sm:gap-5 lg:gap-[22px] text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-semibold leading-[1.15] text-[#4D4D4D]">
+            <h1 className="text-2xl sm:text-3xl border md:text-4xl lg:text-[46px] font-semibold leading-[1] text-[#4D4D4D]">
               Lessons and insights
             </h1>
-            <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold leading-[1.15] text-[#4CAF4F]">
+            <span className="text-2xl sm:text-3xl md:text-4xllg:text-[46px] font-semibold leading-[1] text-[#4CAF4F]">
               From 8 years
             </span>
             <p className="text-sm sm:text-base font-normal leading-relaxed text-[#717171] max-w-[420px]">
@@ -180,8 +180,8 @@ export default function Home() {
         </div>
 
         <div className="flex w-full h-auto flex-col sm:flex-row justify-between gap-6 lg:px-[100px]">
-          <div className="flex w-full sm:w-1/3 h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
-            <div className="flex w-full max-w-[186px] h-auto flex-col items-center gap-3">
+          <div className="w-[70%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
+            <div className="flex w-full  max-w-[186px] h-auto flex-col items-center gap-3">
               <div className="w-10 h-9 sm:w-11 sm:h-10">
                 <img src="/Icon.png" alt="" className="w-full h-full object-contain" />
               </div>
@@ -195,8 +195,8 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="flex w-full sm:w-1/3 h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
-            <div className="flex w-full max-w-[185px] h-auto flex-col items-center gap-3">
+          <div className="w-[70%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
+            <div className="flex w-full max-w-[185px] h-auto flex-col items-center gap-3 ">
               <div className="w-10 h-9 sm:w-11 sm:h-10">
                 <img src="/Icon.png" alt="" className="w-full h-full object-contain" />
               </div>
@@ -210,7 +210,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="flex w-full sm:w-1/3 h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
+          <div className="w-[70%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
             <div className="flex w-full max-w-[186px] h-auto flex-col items-center gap-3">
               <div className="w-10 h-9 sm:w-11 sm:h-10">
                 <img src="/Icon.png" alt="" className="w-full h-full object-contain" />
@@ -520,7 +520,7 @@ export default function Home() {
                   {["About us", "Blog", "Contact us", "Pricing", "Testimonials"].map((item) => (
                     <li
                       key={item}
-                      className="text-[#F5F7FA] text-xs sm:text- font-normal leading-[20px] cursor-pointer hover:text-white transition-colors"
+                      className="text-[#F5F7FA] text-xs sm:text-sm font-normal leading-[20px] cursor-pointer hover:text-white transition-colors"
                     >
                       {item}
                     </li>
