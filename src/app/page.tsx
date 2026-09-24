@@ -195,7 +195,7 @@ export default function Home() {
         </div>
 
         <div className="flex w-full h-auto flex-col sm:flex-row justify-between gap-6 lg:px-[100px]">
-          <div className="w-[80%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
+          <div className="w-[85%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
             <div className="flex w-full  max-w-[186px] h-auto flex-col items-center gap-3">
               <div className="w-10 h-9 sm:w-11 sm:h-10">
                 <img src="/Icon.png" alt="" className="w-full h-full object-contain" />
@@ -210,7 +210,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="w-[80%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
+          <div className="w-[85%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
             <div className="flex w-full max-w-[185px] h-auto flex-col items-center gap-3 ">
               <div className="w-10 h-9 sm:w-11 sm:h-10">
                 <img src="/Icon.png" alt="" className="w-full h-full object-contain" />
@@ -225,7 +225,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="w-[80%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
+          <div className="w-[85%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5">
             <div className="flex w-full max-w-[186px] h-auto flex-col items-center gap-3">
               <div className="w-10 h-9 sm:w-11 sm:h-10">
                 <img src="/Icon.png" alt="" className="w-full h-full object-contain" />
