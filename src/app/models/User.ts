@@ -16,6 +16,11 @@ const UserSchema = new mongoose.Schema(
       required: true,
       select: false,       // ⭐ password is hidden from normal queries
     },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",     // every signup is a normal user by default
+    },
   },
   { timestamps: true }
 );

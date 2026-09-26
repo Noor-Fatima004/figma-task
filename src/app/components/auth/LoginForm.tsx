@@ -48,7 +48,12 @@ export default function LoginForm() {
       return;
     }
 
-    router.replace("/");
+    // Role-based redirect: admin goes to the dashboard, everyone else goes home
+    if (result.user?.role === "admin") {
+      router.replace("/admin/dashboard");
+    } else {
+      router.replace("/");
+    }
   } catch (err) {
     setServerError(err instanceof Error ? err.message : "Something went wrong");
   } finally {

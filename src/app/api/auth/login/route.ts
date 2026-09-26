@@ -1,7 +1,8 @@
+// app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import  connectDB  from "@/lib/mongodb";
-import  User  from "@/app/models/User";
+import connectDB from "@/lib/mongodb";
+import User from "@/app/models/User";
 import { signToken } from "@/lib/jwt";
 
 export async function POST(req: NextRequest) {
@@ -24,10 +25,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const token = signToken({ userId: user._id.toString(), email: user.email });
+    const token = signToken({userId: user._id.toString(),email: user.email,role: user.role,});
 
-    const response = NextResponse.json(
-      { message: "Login successful", user: { id: user._id, name: user.name, email: user.email } },
+    const response = NextResponse.json({message: "Login successful",user: {id: user._id,name: user.name,email: user.email,role: user.role, },
+    },
       { status: 200 }
     );
 
