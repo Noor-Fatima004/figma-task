@@ -41,6 +41,16 @@ export default function Home() {
     setMenuOpen(false);
     router.push(path);
   };
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      setMenuOpen(false);
+      window.location.href = "/login"; // full reload clears any cached state
+    }
+  };
 
   return (
     <>
@@ -84,6 +94,7 @@ export default function Home() {
 
             <Link
               href="/login"
+             
               className="text-[10px] sm:text-xs lg:text-sm font-medium no-underline text-[#4CAF4F] hover:text-green-700 transition duration-300 whitespace-nowrap"
             >
               login
@@ -95,6 +106,12 @@ export default function Home() {
             >
               <span className="whitespace-nowrap">sign up</span>
               <img src="/dr.png" alt="" className="w-[12px] sm:w-[15px] h-[12px] sm:h-[15px] flex-shrink-0" />
+            </button>
+             <button
+              onClick={handleLogout}
+              className="text-[10px] sm:text-xs lg:text-sm font-medium text-red-500 hover:text-red-700 transition duration-300 whitespace-nowrap cursor-pointer border border-red-500 rounded px-2.5 py-1.5"
+            >
+              logout
             </button>
           </div>
 

@@ -28,18 +28,33 @@ export default function LoginForm() {
     mode: "onBlur",
   });
 
-  const onSubmit = async (data: LoginFormValues): Promise<void> => {
-    setServerError(null);
-    setIsLoading(true);
-    try {
-      console.log("Login data:", data);
-      router.replace("/");
-    } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setIsLoading(false);
+ const onSubmit = async (data: LoginFormValues): Promise<void> => {
+  setServerError(null);
+  setIsLoading(true);
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+      }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      setServerError(result.error || "Invalid email or password");
+      return;
     }
-  };
+
+    router.replace("/");
+  } catch (err) {
+    setServerError(err instanceof Error ? err.message : "Something went wrong");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const inputClass = (hasError: boolean): string =>
     `w-full px-3.5 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 rounded-lg sm:rounded-xl border bg-[#F9FAFB] text-sm sm:text-[15px] md:text-base text-[#263238] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 transition ${
