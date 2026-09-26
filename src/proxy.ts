@@ -11,13 +11,13 @@ function getUser(token?: string) {
   }
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   
 
   const token = req.cookies.get("token")?.value;
   const { pathname } = req.nextUrl;
   const user = getUser(token);
-  console.log("MIDDLEWARE:", { pathname, hasToken: !!token, user });
+  console.log("PROXY:", { pathname, hasToken: !!token, user });
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isHomePage = pathname === "/";
 
