@@ -41,6 +41,8 @@ export default function Home() {
     setMenuOpen(false);
     router.push(path);
   };
+
+  // 🚪 Temporary logout handler
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -94,7 +96,7 @@ export default function Home() {
 
             <Link
               href="/login"
-             
+              prefetch={false}
               className="text-[10px] sm:text-xs lg:text-sm font-medium no-underline text-[#4CAF4F] hover:text-green-700 transition duration-300 whitespace-nowrap"
             >
               login
@@ -107,7 +109,9 @@ export default function Home() {
               <span className="whitespace-nowrap">sign up</span>
               <img src="/dr.png" alt="" className="w-[12px] sm:w-[15px] h-[12px] sm:h-[15px] flex-shrink-0" />
             </button>
-             <button
+
+            {/* 🚪 Temporary logout button */}
+            <button
               onClick={handleLogout}
               className="text-[10px] sm:text-xs lg:text-sm font-medium text-red-500 hover:text-red-700 transition duration-300 whitespace-nowrap cursor-pointer border border-red-500 rounded px-2.5 py-1.5"
             >
@@ -204,6 +208,18 @@ export default function Home() {
             }`}
           >
             <span className="text-sm font-semibold">Login</span>
+            <FaArrowRight className="w-3 h-3" />
+          </button>
+
+          {/* 🚪 Temporary logout button (mobile) */}
+          <button
+            onClick={handleLogout}
+            style={{ transitionDelay: menuOpen ? "430ms" : "0ms" }}
+            className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-[#F5F7FA] transition-colors transform ${
+              menuOpen ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0"
+            }`}
+          >
+            <span className="text-sm font-semibold">Logout</span>
             <FaArrowRight className="w-3 h-3" />
           </button>
         </nav>
