@@ -1,4 +1,3 @@
-// lib/jwt.ts
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
@@ -9,8 +8,8 @@ export interface TokenPayload {
   role: "user" | "admin";
 }
 
-export function signToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+export function signToken(payload: TokenPayload, expiresIn: string = "7d"): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn } as jwt.SignOptions);
 }
 
 export function verifyToken(token: string): TokenPayload | null {

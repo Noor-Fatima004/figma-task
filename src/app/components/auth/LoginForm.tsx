@@ -38,6 +38,7 @@ export default function LoginForm() {
       body: JSON.stringify({
         email: data.email,
         password: data.password,
+        rememberMe: data.remember,
       }),
     });
 
@@ -157,7 +158,12 @@ export default function LoginForm() {
               {...register("remember")}
               className="w-4 h-4 rounded border-gray-300 text-[#4CAF4F] focus:ring-[#4CAF4F] cursor-pointer"
             />
-            <span>Remember me</span>
+            <span>
+              Remember me
+              <span className="block text-[10px] sm:text-xs text-[#717171]">
+                Unchecked sessions end when all browser windows close, not when one tab closes.
+              </span>
+            </span>
           </label>
           <a
             href="#"

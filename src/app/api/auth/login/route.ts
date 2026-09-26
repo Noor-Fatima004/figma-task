@@ -7,7 +7,7 @@ import { signToken } from "@/lib/jwt";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const { email, password, rememberMe } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
@@ -25,10 +25,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const token = signToken({userId: user._id.toString(),email: user.email,role: user.role,});
+    const token = signToken({
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+    });
 
-    const response = NextResponse.json({message: "Login successful",user: {id: user._id,name: user.name,email: user.email,role: user.role, },
-    },
+    const response = NextResponse.json(
+      {
+        message: "Login successful",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
       { status: 200 }
     );
 
@@ -36,8 +48,8 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
       path: "/",
+      ...(rememberMe === true ? { maxAge: 7 * 24 * 60 * 60 } : {}),
     });
 
     return response;
