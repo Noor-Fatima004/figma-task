@@ -7,13 +7,11 @@ function getUser(token?: string) {
   try {
     return verifyToken(token);
   } catch {
-    return null; // invalid/expired token shouldn't crash the middleware
+    return null;
   }
 }
 
 export function proxy(req: NextRequest) {
-  
-
   const token = req.cookies.get("token")?.value;
   const { pathname } = req.nextUrl;
   const user = getUser(token);
@@ -21,12 +19,10 @@ export function proxy(req: NextRequest) {
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isHomePage = pathname === "/";
 
-  // Already logged in? Don't let them see login/signup again.
   if (isAuthPage && user) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // Not logged in? Can't access the home page.
   if (isHomePage && !user) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
@@ -36,5 +32,5 @@ export function proxy(req: NextRequest) {
 
 export const config = {
   matcher: ["/", "/login", "/signup"],
-  runtime: "nodejs",
+
 };
