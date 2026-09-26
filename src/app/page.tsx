@@ -37,10 +37,14 @@ export default function Home() {
     };
   }, [menuOpen]);
 
-  const goTo = (path: string) => {
-    setMenuOpen(false);
+ const goTo = (path: string) => {
+  setMenuOpen(false);
+  if (path === "/login" || path === "/signup") {
+    window.location.href = path; // bypass client router cache — always hits middleware
+  } else {
     router.push(path);
-  };
+  }
+};
 
   // 🚪 Temporary logout handler
   const handleLogout = async () => {
