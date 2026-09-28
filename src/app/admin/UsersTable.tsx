@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { addUserSchema, editUserSchema } from "@/lib/validations/auth";
+
 interface UserRow {
   _id: string;
   name: string;
@@ -20,6 +22,10 @@ interface UserRow {
 
 const inputCls =
   "w-full border border-gray-400 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-[#285943] focus:border-[#285943] focus:ring-0";
+
+const inputErrCls =
+  "w-full border border-red-500 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-red-500 focus:border-red-500 focus:ring-0";
+
 export default function UsersTable({
   users,
   showActions = true,
@@ -31,8 +37,10 @@ export default function UsersTable({
   const [menu, setMenu] = useState<{ user: UserRow; top: number; right: number } | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
@@ -55,6 +63,7 @@ export default function UsersTable({
 
   function openModal(m: ModalState) {
     setError("");
+    setFieldErrors({});
     setMenu(null);
     if (m?.type === "add") setForm({ name: "", email: "", password: "" });
     if (m?.type === "edit") setForm({ name: m.user.name, email: m.user.email, password: "" });
@@ -73,6 +82,7 @@ export default function UsersTable({
     if (loading) return;
     setModal(null);
     setError("");
+    setFieldErrors({});
   }
 
  async function request(url: string, method: string, body?: object, successMsg?: string) {
@@ -106,11 +116,31 @@ export default function UsersTable({
 
   function handleSave(e: React.FormEvent) {
   e.preventDefault();
+    const schema = modal?.type === "edit" ? editUserSchema : addUserSchema;
+    const result = schema.safeParse(form);
+
+    if (!result.success) {
+      const errs: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errs[key]) errs[key] = issue.message; // pehla error hi dikhao
+      }
+      setFieldErrors(errs);
+      return;
+    }
+
+    setFieldErrors({});
+    const data = result.data;
   if (modal?.type === "add")
-    return request("/api/admin/users", "POST", form, "User added successfully");
+    return request("/api/admin/users", "POST", data, "User added successfully");
   if (modal?.type === "edit")
-    return request(`/api/admin/users/${modal.user._id}`, "PUT", form, "User updated successfully");
-}
+    return request(`/api/admin/users/${modal.user._id}`, "PUT", data, "User updated successfully");
+  }
+
+  function setField(key: "name" | "email" | "password", value: string) {
+    setForm((f) => ({ ...f, [key]: value }));
+    setFieldErrors((p) => ({ ...p, [key]: "" }));
+  }
 
   const colCount = showActions ? 5 : 4;
 
@@ -127,46 +157,46 @@ export default function UsersTable({
         </div>
       )}
 
-    <div className="bg-surface rounded-theme border border-theme shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs sm:text-sm min-w-[480px]">
-          <thead className="bg-background text-muted uppercase text-[10px] sm:text-xs">
-            <tr>
-              <th className="px-3 sm:px-5 py-2.5 sm:py-3">Name</th>
-              <th className="px-3 sm:px-5 py-2.5 sm:py-3">Email</th>
-              <th className="px-3 sm:px-5 py-2.5 sm:py-3">Role</th>
-              <th className="hidden sm:table-cell px-3 sm:px-5 py-2.5 sm:py-3">
-                Joined
-              </th>
-              {showActions && <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-right">Action</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
+      <div className="bg-surface rounded-theme border border-theme shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs sm:text-sm min-w-[480px]">
+            <thead className="bg-background text-muted uppercase text-[10px] sm:text-xs">
               <tr>
-                <td colSpan={colCount} className="px-3 sm:px-5 py-6 text-center text-muted">
-                  No users yet.
-                </td>
+                <th className="px-3 sm:px-5 py-2.5 sm:py-3">Name</th>
+                <th className="px-3 sm:px-5 py-2.5 sm:py-3">Email</th>
+                <th className="px-3 sm:px-5 py-2.5 sm:py-3">Role</th>
+                <th className="hidden sm:table-cell px-3 sm:px-5 py-2.5 sm:py-3">Joined</th>
+                {showActions && (
+                  <th className="px-3 sm:px-5 py-2.5 sm:py-3 text-right">Action</th>
+                )}
               </tr>
-            ) : (
-              users.map((u) => (
-                <tr key={u._id} className="border-t border-theme">
-                  <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-text whitespace-nowrap">
-                    {u.name}
+            </thead>
+            <tbody>
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={colCount} className="px-3 sm:px-5 py-6 text-center text-muted">
+                    No users yet.
                   </td>
-                  <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-text max-w-[160px] sm:max-w-none truncate">
-                    {u.email}
-                  </td>
-                  <td className="px-3 sm:px-5 py-2.5 sm:py-3">
-                    <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap bg-accent/10 text-[#184343]">
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="hidden sm:table-cell px-3 sm:px-5 py-2.5 sm:py-3 text-muted whitespace-nowrap">
-                    {new Date(u.createdAt).toLocaleDateString()}
-                  </td>
-                  {showActions && (
-                    <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-right">
+                </tr>
+              ) : (
+                users.map((u) => (
+                  <tr key={u._id} className="border-t border-theme">
+                    <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-text whitespace-nowrap">
+                      {u.name}
+                    </td>
+                    <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-text max-w-[160px] sm:max-w-none truncate">
+                      {u.email}
+                    </td>
+                    <td className="px-3 sm:px-5 py-2.5 sm:py-3">
+                      <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap bg-accent/10 text-[#184343]">
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="hidden sm:table-cell px-3 sm:px-5 py-2.5 sm:py-3 text-muted whitespace-nowrap">
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </td>
+                    {showActions && (
+                      <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-right">
                         <button
                           onClick={(e) => openMenu(e, u)}
                           aria-label="Actions"
@@ -181,12 +211,12 @@ export default function UsersTable({
                       </td>
                     )}
                   </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
 
       {menu && (
         <div
@@ -227,42 +257,51 @@ export default function UsersTable({
           >
             {/* ADD / EDIT */}
             {(modal.type === "add" || modal.type === "edit") && (
-              <form onSubmit={handleSave} className="space-y-4">
+              <form onSubmit={handleSave} noValidate className="space-y-4">
                 <h3 className="text-lg font-semibold text-text">
                   {modal.type === "add" ? "Add New User" : "Edit User"}
                 </h3>
+
                 <div>
                   <label className="block text-xs text-muted mb-1">Name</label>
                   <input
-                    className={inputCls}
+                    className={fieldErrors.name ? inputErrCls : inputCls}
                     value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    required
+                    onChange={(e) => setField("name", e.target.value)}
                   />
+                  {fieldErrors.name && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.name}</p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-xs text-muted mb-1">Email</label>
                   <input
                     type="email"
-                    className={inputCls}
+                    className={fieldErrors.email ? inputErrCls : inputCls}
                     value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    required
+                    onChange={(e) => setField("email", e.target.value)}
                   />
+                  {fieldErrors.email && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-xs text-muted mb-1">
                     Password {modal.type === "edit" && "(leave blank to keep current)"}
                   </label>
                   <input
                     type="password"
-                    className={inputCls}
+                    className={fieldErrors.password ? inputErrCls : inputCls}
                     value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    required={modal.type === "add"}
-                    minLength={modal.type === "add" ? 6 : undefined}
+                    onChange={(e) => setField("password", e.target.value)}
                   />
+                  {fieldErrors.password && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>
+                  )}
                 </div>
+
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <div className="flex justify-end gap-2 pt-2">
                   <button
@@ -320,8 +359,9 @@ export default function UsersTable({
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-text">Delete User</h3>
                 <p className="text-sm text-muted">
-                  Are you sure you want to delete <b className="text-text">{modal.user.name}</b> (
-                  {modal.user.email})? This action cannot be undone.
+                  Are you sure you want to delete{" "}
+                  <b className="text-text">{modal.user.name}</b> ({modal.user.email})? This
+                  action cannot be undone.
                 </p>
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <div className="flex justify-end gap-2 pt-2">
@@ -333,10 +373,15 @@ export default function UsersTable({
                   </button>
                   <button
                     onClick={() =>
-                      request(`/api/admin/users/${modal.user._id}`, "DELETE", undefined, "User deleted successfully")
+                      request(
+                        `/api/admin/users/${modal.user._id}`,
+                        "DELETE",
+                        undefined,
+                        "User deleted successfully"
+                      )
                     }
                     disabled={loading}
-                    className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white disabled:opacity-60"
+                    className="px-4 py-2 text-sm rounded-theme bg-red-600 text-white disabled:opacity-60"
                   >
                     {loading ? "Deleting..." : "Delete"}
                   </button>
