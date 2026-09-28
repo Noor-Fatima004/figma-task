@@ -138,10 +138,10 @@ export default function Home() {
 
               <div
                 role="menu"
-                className={`absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-1.5rem)] origin-top-right rounded-xl bg-white shadow-xl border border-gray-100 z-50 overflow-hidden transition-all duration-200 ${
-                  profileOpen
-                    ? "opacity-100 scale-100 pointer-events-auto"
-                    : "opacity-0 scale-95 pointer-events-none"
+                className={`fixed right-3 top-[68px] sm:absolute sm:right-0 sm:top-full sm:mt-2 w-72 max-w-[calc(100vw-1.5rem)] origin-top-right rounded-xl bg-white shadow-xl border border-gray-100 z-50 overflow-hidden transition-all duration-200 ${
+                profileOpen
+                  ? "opacity-100 scale-100 pointer-events-auto"
+                  : "opacity-0 scale-95 pointer-events-none"
                 }`}
               >
                 {/* User info */}
