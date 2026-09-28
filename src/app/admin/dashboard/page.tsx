@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import connectDB from "@/lib/mongodb";
 import User from "@/app/models/User";
+import { LIMIT_OPTIONS } from "@/lib/pagination";
 import UsersTable from "../UsersTable";
 import DashboardCharts from "../Dashboardcharts/page";
 
@@ -16,6 +17,10 @@ export const dynamic = "force-dynamic";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CHART_DAYS = 30;
+const DASHBOARD_DEFAULT_LIMIT = 5;
+
+type SP = Record<string, string | string[] | undefined>;
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 function StatCard({
   label,
@@ -74,13 +79,20 @@ function StatCard({
 export default async function AdminDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string | string[] }>;
+  searchParams: Promise<SP>;
 }) {
-  const searchValues = await searchParams;
-  const query = Array.isArray(searchValues.q)
-    ? searchValues.q[0]?.trim() ?? ""
-    : searchValues.q?.trim() ?? "";
+  const sp = await searchParams;
+
+  // search
+  const query = first(sp.q)?.trim() ?? "";
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // pagination params
+  const rawLimit = parseInt(first(sp.limit) ?? "", 10);
+  const limit = (LIMIT_OPTIONS as readonly number[]).includes(rawLimit)
+    ? rawLimit
+    : DASHBOARD_DEFAULT_LIMIT;
+  let page = Math.max(1, parseInt(first(sp.page) ?? "1", 10) || 1);
 
   // Chart window: last 30 days (UTC), including today
   const now = new Date();
@@ -91,27 +103,25 @@ export default async function AdminDashboardPage({
   );
   const since = new Date(startOfToday - (CHART_DAYS - 1) * DAY_MS);
 
+  const usersFilter = {
+    role: "user",
+    ...(escapedQuery
+      ? {
+          $or: [
+            { name: { $regex: escapedQuery, $options: "i" } },
+            { email: { $regex: escapedQuery, $options: "i" } },
+          ],
+        }
+      : {}),
+  };
+
   await connectDB();
 
-  const [totalUsers, totalAdmins, recentUsersRaw, signupRows] =
+  const [totalUsers, totalAdmins, filteredTotal, signupRows] =
     await Promise.all([
       User.countDocuments({ role: "user" }),
       User.countDocuments({ role: "admin" }),
-      User.find({
-        role: "user",
-        ...(escapedQuery
-          ? {
-              $or: [
-                { name: { $regex: escapedQuery, $options: "i" } },
-                { email: { $regex: escapedQuery, $options: "i" } },
-              ],
-            }
-          : {}),
-      })
-        .select("-password")
-        .sort({ createdAt: -1 })
-        .limit(escapedQuery ? 10 : 5)
-        .lean(),
+      User.countDocuments(usersFilter),
       User.aggregate<{ _id: string; count: number }>([
         { $match: { role: "user", createdAt: { $gte: since } } },
         {
@@ -124,6 +134,16 @@ export default async function AdminDashboardPage({
         },
       ]),
     ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTotal / limit));
+  page = Math.min(page, totalPages);
+
+  const recentUsersRaw = await User.find(usersFilter)
+    .select("-password")
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
 
   const recentUsers = recentUsersRaw.map((u) => ({
     _id: u._id.toString(),
@@ -224,7 +244,11 @@ export default async function AdminDashboardPage({
             {query ? `Results for "${query}"` : "Latest signups"}
           </p>
         </div>
-        <UsersTable users={recentUsers} showActions={false} />
+        <UsersTable
+          users={recentUsers}
+          showActions={false}
+          pagination={{ page, limit, total: filteredTotal, totalPages }}
+        />
       </div>
     </div>
   );

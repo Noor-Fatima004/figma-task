@@ -59,7 +59,7 @@ export default function UsersTable({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
+  
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
@@ -168,6 +168,7 @@ export default function UsersTable({
   }
 
   const colCount = showActions ? 5 : 4;
+  const startIndex = pagination ? (pagination.page - 1) * pagination.limit : 0;
 
   return (
     <>
@@ -209,6 +210,7 @@ export default function UsersTable({
           <table className="w-full text-left text-xs sm:text-sm min-w-[480px]">
             <thead className="bg-background text-muted uppercase text-[10px] sm:text-xs">
               <tr>
+                <th className="px-3 sm:px-5 py-2.5 sm:py-3 w-12">#</th>
                 <th className="px-3 sm:px-5 py-2.5 sm:py-3">Name</th>
                 <th className="px-3 sm:px-5 py-2.5 sm:py-3">Email</th>
                 <th className="px-3 sm:px-5 py-2.5 sm:py-3">Role</th>
@@ -226,8 +228,11 @@ export default function UsersTable({
                   </td>
                 </tr>
               ) : (
-                users.map((u) => (
+                users.map((u,i) => (
                   <tr key={u._id} className="border-t border-border">
+                    <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-muted whitespace-nowrap">
+                      {startIndex + i + 1}
+                    </td>
                     <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-text whitespace-nowrap">
                       {u.name}
                     </td>
@@ -286,7 +291,7 @@ export default function UsersTable({
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
-              className={pageBtnCls}
+              className={`${pageBtnCls} !bg-primary !text-white !border-[#4CAF4F] hover:!bg-primary disabled:!bg-gray-100 disabled:!text-gray-400 disabled:!border-gray-200`}
               disabled={pagination.page >= pagination.totalPages}
               onClick={() => updateParams({ page: String(pagination.page + 1) })}
             >
