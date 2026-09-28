@@ -1,13 +1,54 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { FaUser } from "react-icons/fa";
 import { signupSchema, type SignupFormValues } from "@/lib/validations/auth";
 import { toast } from "sonner";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB (original file)
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+// Image ko center-crop karke 256x256 JPEG me convert karta hai (chhota size, DB ke liye safe)
+const resizeImage = (file: File, size = 256): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2;
+      const sy = (img.height - min) / 2;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        reject(new Error("Image processing is not supported"));
+        return;
+      }
+
+      ctx.fillStyle = "#ffffff"; // transparent PNG ke liye white background
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Invalid image file"));
+    };
+
+    img.src = url;
+  });
 
 export default function SignupForm() {
   const router = useRouter();
@@ -15,6 +56,8 @@ export default function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [avatar, setAvatar] = useState<string | null>(null); // optional profile image
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -32,39 +75,68 @@ export default function SignupForm() {
     mode: "onBlur",
   });
 
- const onSubmit = async (data: SignupFormValues): Promise<void> => {
-  setServerError(null);
-  setIsLoading(true);
-  try {
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: data.name,
-        email: data.email,
-        password: data.password,
-      }),
-    });
+  const handleImageChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): Promise<void> => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const result = await res.json();
-
-    if (!res.ok) {
-      const msg = result.error || "Something went wrong";
-      setServerError(msg);
-      toast.error(msg);
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error("Only JPG, PNG or WEBP images are allowed");
+      e.target.value = "";
       return;
     }
 
-    toast.success("Account created successfully! Please login.");
-    router.replace("/login");
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Something went wrong";
-    setServerError(msg);
-    toast.error(msg);
-  } finally {
-    setIsLoading(false);
-  }
-};
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("Image must be smaller than 5MB");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      const resized = await resizeImage(file);
+      setAvatar(resized);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not read image");
+    } finally {
+      e.target.value = ""; // same file dobara select ho sake
+    }
+  };
+
+  const onSubmit = async (data: SignupFormValues): Promise<void> => {
+    setServerError(null);
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          image: avatar ?? undefined, // optional
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        const msg = result.error || "Something went wrong";
+        setServerError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      toast.success("Account created successfully! Please login.");
+      router.replace("/login");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setServerError(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const inputClass = (hasError: boolean): string =>
     `w-full px-3.5 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 rounded-lg sm:rounded-xl border bg-[#F9FAFB] text-sm sm:text-[15px] md:text-base text-[#263238] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 transition ${
@@ -103,6 +175,57 @@ export default function SignupForm() {
             {serverError}
           </div>
         )}
+
+        {/* Profile photo (optional) */}
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-[#F5F7FA] border border-gray-200 overflow-hidden flex items-center justify-center shrink-0">
+            {avatar ? (
+              <img
+                src={avatar}
+                alt="Profile preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <FaUser className="w-7 h-7 text-[#9CA3AF]" />
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm md:text-[15px] font-medium text-[#263238]">
+              Profile photo <span className="text-[#9CA3AF] font-normal">(optional)</span>
+            </p>
+            <p className="text-[11px] sm:text-xs text-[#717171] mt-0.5">
+              JPG, PNG or WEBP, up to 5MB
+            </p>
+
+            <div className="flex items-center gap-3 mt-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="text-xs sm:text-sm font-medium text-[#4CAF4F] hover:text-[#388E3C] transition-colors"
+              >
+                {avatar ? "Change photo" : "Upload photo"}
+              </button>
+              {avatar && (
+                <button
+                  type="button"
+                  onClick={() => setAvatar(null)}
+                  className="text-xs sm:text-sm font-medium text-red-500 hover:text-red-600 transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+          </div>
+        </div>
 
         {/* Name */}
         <div>

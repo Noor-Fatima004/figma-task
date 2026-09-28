@@ -21,14 +21,14 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   return (
     <aside
       className={`${open ? "flex" : "hidden"} lg:flex flex-col
-      fixed lg:static top-16 lg:top-0 bottom-0 left-0 z-40 bg-black shrink-0
+      fixed lg:static top-16 lg:top-0 bottom-0 left-0 z-40 bg-[#1e2b32] shrink-0
       w-16 md:w-64
       rounded-tr-2xl lg:rounded-none shadow-xl lg:shadow-none`}
     >
       {/* Logo — icon only below md, full wordmark at md+ */}
       <div className="h-16 flex items-center justify-center md:justify-start px-0 md:px-6 border-b border-white/10">
         <span className="hidden md:inline text-lg font-semibold text-white">
-          Nextcent <span className="text-green-600">Admin</span>
+          Nextcent <span className="text-[#4CAF4F]">Admin</span>
         </span>
         <span className="md:hidden text-lg font-bold text-[#4CAF4F]">N</span>
       </div>

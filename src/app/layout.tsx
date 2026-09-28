@@ -19,11 +19,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-jvyycdlz="true">
-      <body className={`${inter.variable} font-sans`} cz-shortcut-listen="true">
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans`} suppressHydrationWarning>
         {children}
-        <Toaster position="top-right" richColors closeButton />
-        </body>
+        <Toaster position="top-right" richColors />
+      </body>
     </html>
   );
 }

@@ -21,6 +21,7 @@ const UserSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",     // every signup is a normal user by default
     },
+    image: { type: String, default: "" },
   },
   { timestamps: true }
 );

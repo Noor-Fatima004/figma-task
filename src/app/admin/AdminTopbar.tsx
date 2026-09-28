@@ -43,14 +43,11 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
   }, []);
 
   useEffect(() => {
-    setQuery(searchParams.get("q") ?? "");
-  }, [searchParams]);
-  useEffect(() => {
     const t = setTimeout(() => {
       const current = searchParams.get("q") ?? "";
       const normalizedQuery = query.trim();
       if (!normalizedQuery && !current) return;
-      const targetPath = "/admin/dashboard";
+      const targetPath = "/admin/users";
       if (pathname === targetPath && current === normalizedQuery) return;
       const params = new URLSearchParams(searchParams.toString());
       if (normalizedQuery) params.set("q", normalizedQuery);
@@ -128,13 +125,13 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
         {open && (
           <div
             role="menu"
-            className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl border border-gray-100 shadow-xl z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-56 sm:w-72 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl border border-gray-100 shadow-xl z-50 overflow-hidden"
           >
-            <div className="flex items-center gap-3 p-4">
-              <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center text-white text-base font-bold shrink-0">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 px-4 py-6 sm:p-4 text-center sm:text-left">
+              <div className="w-14 h-14 sm:w-12 sm:h-12 rounded-full bg-green-600 flex items-center justify-center text-white text-lg sm:text-base font-bold shrink-0">
                 {initials}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 w-full">
                 <p className="text-sm font-semibold text-[#263238] truncate">{name}</p>
                 <p className="text-xs text-[#717171] truncate">{email}</p>
               </div>
@@ -145,7 +142,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
             <button
               role="menuitem"
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#263238] hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-4 sm:py-3 text-sm text-[#263238] hover:bg-gray-50 transition-colors"
             >
               <FaSignOutAlt className="w-4 h-4 text-[#717171]" />
               Sign out

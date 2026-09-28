@@ -25,7 +25,6 @@ export default async function AdminLayout({
       <AdminShell name={currentUser.name} email={currentUser.email}>
         {children}
       </AdminShell>
-      <Toaster position="top-right" richColors closeButton />
     </>
   );
 }
