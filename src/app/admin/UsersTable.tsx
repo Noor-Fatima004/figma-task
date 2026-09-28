@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { addUserSchema, editUserSchema } from "@/lib/validations/auth";
+import { LIMIT_OPTIONS } from "@/lib/pagination";
 
 interface UserRow {
   _id: string;
@@ -13,7 +14,14 @@ interface UserRow {
   updatedAt?: string | Date;
 }
 
-  type ModalState =
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+type ModalState =
   | { type: "add" }
   | { type: "edit"; user: UserRow }
   | { type: "view"; user: UserRow }
@@ -21,19 +29,30 @@ interface UserRow {
   | null;
 
 const inputCls =
-  "w-full border border-gray-400 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-[#285943] focus:border-[#285943] focus:ring-0";
+  "w-full border border-gray-100 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-border focus:border-border focus:ring-0";
 
 const inputErrCls =
   "w-full border border-red-500 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-red-500 focus:border-red-500 focus:ring-0";
 
+const selectCls =
+  "border border-gray-100 rounded-theme px-2.5 py-1.5 text-xs sm:text-sm text-text bg-surface outline-none transition-colors hover:border-border focus:border-border focus:ring-0 cursor-pointer";
+
+const pageBtnCls =
+  "px-3 py-1.5 text-xs sm:text-sm rounded-theme border border-border text-text bg-surface hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface transition-colors";
+
 export default function UsersTable({
   users,
   showActions = true,
+  pagination,
 }: {
   users: UserRow[];
   showActions?: boolean;
+  pagination?: PaginationInfo;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [menu, setMenu] = useState<{ user: UserRow; top: number; right: number } | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -85,37 +104,37 @@ export default function UsersTable({
     setFieldErrors({});
   }
 
- async function request(url: string, method: string, body?: object, successMsg?: string) {
-  setLoading(true);
-  setError("");
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      const msg = data.error || "Something went wrong";
-      setError(msg);
-      toast.error(msg);
+  async function request(url: string, method: string, body?: object, successMsg?: string) {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data.error || "Something went wrong";
+        setError(msg);
+        toast.error(msg);
+        return false;
+      }
+      setModal(null);
+      toast.success(successMsg || "Done successfully");
+      router.refresh();
+      return true;
+    } catch {
+      setError("Network error, please try again");
+      toast.error("Network error, please try again");
       return false;
+    } finally {
+      setLoading(false);
     }
-    setModal(null);
-    toast.success(successMsg || "Done successfully");
-    router.refresh();
-    return true;
-  } catch {
-    setError("Network error, please try again");
-    toast.error("Network error, please try again");
-    return false;
-  } finally {
-    setLoading(false);
   }
-}
 
   function handleSave(e: React.FormEvent) {
-  e.preventDefault();
+    e.preventDefault();
     const schema = modal?.type === "edit" ? editUserSchema : addUserSchema;
     const result = schema.safeParse(form);
 
@@ -131,10 +150,10 @@ export default function UsersTable({
 
     setFieldErrors({});
     const data = result.data;
-  if (modal?.type === "add")
-    return request("/api/admin/users", "POST", data, "User added successfully");
-  if (modal?.type === "edit")
-    return request(`/api/admin/users/${modal.user._id}`, "PUT", data, "User updated successfully");
+    if (modal?.type === "add")
+      return request("/api/admin/users", "POST", data, "User added successfully");
+    if (modal?.type === "edit")
+      return request(`/api/admin/users/${modal.user._id}`, "PUT", data, "User updated successfully");
   }
 
   function setField(key: "name" | "email" | "password", value: string) {
@@ -142,22 +161,50 @@ export default function UsersTable({
     setFieldErrors((p) => ({ ...p, [key]: "" }));
   }
 
+  function updateParams(changes: Record<string, string>) {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(changes).forEach(([k, v]) => params.set(k, v));
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   const colCount = showActions ? 5 : 4;
 
   return (
     <>
-      {showActions && (
-        <div className="flex justify-end mb-3">
-          <button
-            onClick={() => openModal({ type: "add" })}
-            className="bg-[#285943] text-white text-xs sm:text-sm px-4 py-2 rounded-theme hover:opacity-90"
-          >
-            + Add User
-          </button>
+      {(pagination || showActions) && (
+        <div className="flex items-center justify-between gap-3 mb-3">
+          {pagination ? (
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted">
+              <span>Show</span>
+              <select
+                className={selectCls}
+                value={pagination.limit}
+                onChange={(e) => updateParams({ limit: e.target.value, page: "1" })}
+              >
+                {LIMIT_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <span>rows</span>
+            </div>
+          ) : (
+            <span />
+          )}
+
+          {showActions && (
+            <button
+              onClick={() => openModal({ type: "add" })}
+              className="bg-[#285943] text-white text-xs sm:text-sm px-4 py-2 rounded-theme hover:opacity-90"
+            >
+              + Add User
+            </button>
+          )}
         </div>
       )}
 
-      <div className="bg-surface rounded-theme border border-theme shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-theme border border-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs sm:text-sm min-w-[480px]">
             <thead className="bg-background text-muted uppercase text-[10px] sm:text-xs">
@@ -180,7 +227,7 @@ export default function UsersTable({
                 </tr>
               ) : (
                 users.map((u) => (
-                  <tr key={u._id} className="border-t border-theme">
+                  <tr key={u._id} className="border-t border-border">
                     <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-text whitespace-nowrap">
                       {u.name}
                     </td>
@@ -218,11 +265,42 @@ export default function UsersTable({
         </div>
       </div>
 
+      {/* Pagination footer */}
+      {pagination && pagination.total > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-3">
+          <p className="text-xs sm:text-sm text-muted">
+            Showing {(pagination.page - 1) * pagination.limit + 1}–
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
+            {pagination.total}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              className={pageBtnCls}
+              disabled={pagination.page <= 1}
+              onClick={() => updateParams({ page: String(pagination.page - 1) })}
+            >
+              Prev
+            </button>
+            <span className="text-xs sm:text-sm text-text px-1">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <button
+              className={pageBtnCls}
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => updateParams({ page: String(pagination.page + 1) })}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       {menu && (
         <div
           onClick={(e) => e.stopPropagation()}
           style={{ position: "fixed", top: menu.top, right: menu.right }}
-          className="z-50 w-40 bg-surface rounded-theme shadow-lg border border-theme py-1 text-sm"
+          className="z-50 w-40 bg-surface rounded-theme shadow-lg border border-border py-1 text-sm"
         >
           <button
             onClick={() => openModal({ type: "view", user: menu.user })}

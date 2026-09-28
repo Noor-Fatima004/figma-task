@@ -69,7 +69,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
   };
 
   return (
-    <header className="h-16 bg-surface border-b border-theme flex items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-10">
+    <header className="h-16 bg-surface border-b border-border flex items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-10">
       {/* Left: hamburger + title */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <button
@@ -125,7 +125,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
         {open && (
           <div
             role="menu"
-            className="absolute right-0 mt-2 w-56 sm:w-72 max-w-[calc(100vw-1.5rem)] bg-surface rounded-theme border border-theme shadow-xl z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-56 sm:w-72 max-w-[calc(100vw-1.5rem)] bg-surface rounded-theme border border-border shadow-xl z-50 overflow-hidden"
           >
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 px-4 py-6 sm:p-4 text-center sm:text-left">
               <div className="w-14 h-14 sm:w-12 sm:h-12 rounded-full bg-[#285943] flex items-center justify-center text-white text-lg sm:text-base font-bold shrink-0">
@@ -137,7 +137,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
               </div>
             </div>
 
-            <div className="border-t border-theme" />
+            <div className="border-t border-border" />
 
             <button
               role="menuitem"

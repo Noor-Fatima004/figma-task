@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --theme-primary: #4CAF4F;
-  --theme-secondary: black;
+  --theme-primary: #285943;
+  --theme-secondary: #83a17d;
   --theme-background: #f5f8f3;
   --theme-surface: #ffffff;
   --theme-text: #263238;
   --theme-muted: #717171;
   --theme-border: #e5e7eb;
-  --theme-accent: #6C9A78;
+  --theme-accent: #6c9a78;
   --theme-font-family: var(--font-inter), sans-serif;
   --theme-radius: 8px;
 }
@@ -45,4 +45,15 @@ body {
   background: var(--theme-surface);
   color: var(--theme-text);
   font-family: var(--theme-font-family), sans-serif;
+}
+body {
+  -ms-overflow-style: none; /* IE / old Edge */
+  scrollbar-width: none;    /* Firefox */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;            /* Chrome, Safari, new Edge */
+  width: 0;
+  height: 0;
 }

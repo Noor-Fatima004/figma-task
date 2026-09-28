@@ -1,51 +1,79 @@
 import connectDB from "@/lib/mongodb";
 import User from "@/app/models/User";
+import { DEFAULT_LIMIT, LIMIT_OPTIONS } from "@/lib/pagination";
 import UsersTable from "../UsersTable";
 
 export const dynamic = "force-dynamic";
 
+type SP = Record<string, string | string[] | undefined>;
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string | string[] }>;
+  searchParams: Promise<SP>;
 }) {
-  const searchValues = await searchParams;
-  const query = Array.isArray(searchValues.q)
-    ? searchValues.q[0]?.trim() ?? ""
-    : searchValues.q?.trim() ?? "";
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sp = await searchParams;
 
-  await connectDB();
+  // search (optional)
+  const query = first(sp.q)?.trim() ?? "";
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  const usersRaw = await User.find({
+  // limit: sirf allowed values
+  const rawLimit = parseInt(first(sp.limit) ?? "", 10);
+  const limit = (LIMIT_OPTIONS as readonly number[]).includes(rawLimit)
+    ? rawLimit
+    : DEFAULT_LIMIT;
+
+  let page = Math.max(1, parseInt(first(sp.page) ?? "1", 10) || 1);
+
+  const filter = {
     role: "user",
-    ...(escapedQuery
+    ...(escaped
       ? {
           $or: [
-            { name: { $regex: escapedQuery, $options: "i" } },
-            { email: { $regex: escapedQuery, $options: "i" } },
+            { name: { $regex: escaped, $options: "i" } },
+            { email: { $regex: escaped, $options: "i" } },
           ],
         }
       : {}),
-  })
+  };
+
+  await connectDB();
+
+  const total = await User.countDocuments(filter);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  page = Math.min(page, totalPages); // last row delete ho jaye to bhi page valid rahe
+
+  const usersRaw = await User.find(filter)
     .select("-password")
     .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
     .lean();
 
-  const users = usersRaw.map((user) => ({
-    _id: user._id.toString(),
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    createdAt: user.createdAt,
+  const users = usersRaw.map((u) => ({
+    _id: u._id.toString(),
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    createdAt: u.createdAt,
+    updatedAt: u.updatedAt,
   }));
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-text mb-4 sm:mb-6">
-        All Users
-      </h2>
-      <UsersTable users={users} />
+    <div className="max-w-6xl mx-auto space-y-2">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-semibold text-text">Users</h1>
+        <p className="text-sm text-muted">
+          {query ? `Results for "${query}"` : "Manage all registered users."}
+        </p>
+      </div>
+
+      <UsersTable
+        users={users}
+        pagination={{ page, limit, total, totalPages }}
+      />
     </div>
   );
 }

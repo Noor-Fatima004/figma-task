@@ -29,8 +29,8 @@ export default function AdminShell({ name, email, children }: AdminShellProps) {
           </Suspense>
         </div>
 
-        {/* Sirf ye area scroll hoga (footer bhi content ke saath neeche aayega) */}
-        <div className="flex-1 overflow-y-auto flex flex-col">
+        {/* Scroll hoga, lekin scrollbar hidden rahega */}
+        <div className="flex-1 overflow-y-auto flex flex-col [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <main className="flex-1 p-4 sm:p-6 lg:p-10">{children}</main>
           <AdminFooter />
         </div>
