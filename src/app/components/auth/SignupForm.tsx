@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signupSchema, type SignupFormValues } from "@/lib/validations/auth";
+import { toast } from "sonner";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -48,13 +49,18 @@ export default function SignupForm() {
     const result = await res.json();
 
     if (!res.ok) {
-      setServerError(result.error || "Something went wrong");
+      const msg = result.error || "Something went wrong";
+      setServerError(msg);
+      toast.error(msg);
       return;
     }
 
+    toast.success("Account created successfully! Please login.");
     router.replace("/login");
   } catch (err) {
-    setServerError(err instanceof Error ? err.message : "Something went wrong");
+    const msg = err instanceof Error ? err.message : "Something went wrong";
+    setServerError(msg);
+    toast.error(msg);
   } finally {
     setIsLoading(false);
   }

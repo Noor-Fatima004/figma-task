@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
+import { toast } from "sonner";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -45,9 +46,13 @@ export default function LoginForm() {
     const result = await res.json();
 
     if (!res.ok) {
-      setServerError(result.error || "Invalid email or password");
+      const msg = result.error || "Invalid email or password";
+      setServerError(msg);
+      toast.error(msg);
       return;
     }
+
+    toast.success("Login successful");
 
     // Role-based redirect: admin goes to the dashboard, everyone else goes home
     if (result.user?.role === "admin") {
@@ -56,7 +61,9 @@ export default function LoginForm() {
       router.replace("/");
     }
   } catch (err) {
-    setServerError(err instanceof Error ? err.message : "Something went wrong");
+    const msg = err instanceof Error ? err.message : "Something went wrong";
+    setServerError(msg);
+    toast.error(msg);
   } finally {
     setIsLoading(false);
   }

@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,7 +20,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" data-jvyycdlz="true">
-      <body className={`${inter.variable} font-sans`} cz-shortcut-listen="true">{children}</body>
+      <body className={`${inter.variable} font-sans`} cz-shortcut-listen="true">
+        {children}
+        <Toaster position="top-right" richColors closeButton />
+        </body>
     </html>
   );
 }

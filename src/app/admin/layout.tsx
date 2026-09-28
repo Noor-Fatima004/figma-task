@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Toaster } from "sonner";
 import { getCurrentUser } from "@/lib/auth";
 import AdminShell from "./AdminShell";
 
@@ -20,8 +21,11 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminShell name={currentUser.name} email={currentUser.email}>
-      {children}
-    </AdminShell>
+    <>
+      <AdminShell name={currentUser.name} email={currentUser.email}>
+        {children}
+      </AdminShell>
+      <Toaster position="top-right" richColors closeButton />
+    </>
   );
 }

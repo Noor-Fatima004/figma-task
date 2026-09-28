@@ -4,13 +4,33 @@ import UsersTable from "../UsersTable";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string | string[] }>;
+}) {
+  const searchValues = await searchParams;
+  const query = Array.isArray(searchValues.q)
+    ? searchValues.q[0]?.trim() ?? ""
+    : searchValues.q?.trim() ?? "";
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   await connectDB();
 
   const [totalUsers, totalAdmins, recentUsersRaw] = await Promise.all([
     User.countDocuments({ role: "user" }),
     User.countDocuments({ role: "admin" }),
-    User.find({ role: "user" }) // admin explicitly excluded
+    User.find({
+      role: "user",
+      ...(escapedQuery
+        ? {
+            $or: [
+              { name: { $regex: escapedQuery, $options: "i" } },
+              { email: { $regex: escapedQuery, $options: "i" } },
+            ],
+          }
+        : {}),
+    })
       .select("-password")
       .sort({ createdAt: -1 })
       .limit(5)
@@ -50,7 +70,7 @@ export default async function AdminDashboardPage() {
         <h2 className="text-lg sm:text-xl font-semibold text-[#263238] mb-4">
           Recent Users
         </h2>
-        <UsersTable users={recentUsers} />
+        <UsersTable users={recentUsers} showActions={false} />
       </div>
     </div>
   );

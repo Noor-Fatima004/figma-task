@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaInstagram, FaFacebookF, FaTwitter, FaYoutube } from "react-icons/fa";
 import {
   FaBars,
@@ -11,14 +11,42 @@ import {
   FaBlog,
   FaTag,
   FaArrowRight,
+  FaRightFromBracket,
 } from "react-icons/fa6";
 import logo_icon from "../../public/icons.png";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { toast } from "sonner";
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
+    : "U";
+
+  // 👤 Logged-in user fetch
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUser(data?.user ?? null))
+      .catch(() => setUser(null));
+  }, []);
+
+  // 🖱️ Dropdown ke bahar click ho to band ho jaye
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   // 🔒 Lock body scroll + ESC to close
   useEffect(() => {
@@ -28,7 +56,10 @@ export default function Home() {
       document.body.style.overflow = "";
     }
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setProfileOpen(false);
+      }
     };
     window.addEventListener("keydown", onEsc);
     return () => {
@@ -37,24 +68,33 @@ export default function Home() {
     };
   }, [menuOpen]);
 
- const goTo = (path: string) => {
-  setMenuOpen(false);
-  if (path === "/login" || path === "/signup") {
-    window.location.href = path; // bypass client router cache — always hits middleware
-  } else {
-    router.push(path);
-  }
-};
+  const goTo = (path: string) => {
+    setMenuOpen(false);
+    if (path === "/login" || path === "/signup") {
+      window.location.href = path; // bypass client router cache — always hits middleware
+    } else {
+      router.push(path);
+    }
+  };
 
-  // 🚪 Temporary logout handler
+  // 🚪 Logout handler
   const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("Logout failed");
+      setMenuOpen(false);
+      setProfileOpen(false);
+      toast.success("Logged out successfully");
+      // toast dikhne ka time do, phir full reload
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 900);
     } catch (err) {
       console.error("Logout failed:", err);
-    } finally {
-      setMenuOpen(false);
-      window.location.href = "/login"; // full reload clears any cached state
+      toast.error("Logout failed, please try again");
+      setLoggingOut(false);
     }
   };
 
@@ -63,74 +103,87 @@ export default function Home() {
       {/* NAVBAR */}
       <div className="w-full bg-white">
         <nav className="mx-auto flex w-full items-center justify-between px-4 py-3 sm:px-6 md:px-8 lg:px-[5%] text-[#263238]">
+          {/* Logo */}
           <div className="flex flex-1 items-center gap-1.5 sm:gap-2">
             <img src="/Icon.jpg" alt="Logo" className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
             <span className="text-sm sm:text-base md:text-lg font-semibold whitespace-nowrap">Nextcent</span>
           </div>
 
-          {/* Row nav from sm upward */}
-          <div className="hidden flex-1 items-center justify-end gap-2 sm:flex sm:gap-3 lg:gap-6">
-            <ul className="flex list-none gap-2 sm:gap-3 lg:gap-9">
-              <li>
-                <a href="#" className="text-[10px] sm:text-xs lg:text-sm font-medium text-[#263238] no-underline hover:text-[#4CAF4F] transition-colors whitespace-nowrap">
-                  Home
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-[10px] sm:text-xs lg:text-sm font-medium text-[#263238] no-underline hover:text-[#4CAF4F] transition-colors whitespace-nowrap">
-                  Features
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-[10px] sm:text-xs lg:text-sm font-medium text-[#263238] no-underline hover:text-[#4CAF4F] transition-colors whitespace-nowrap">
-                  Community
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-[10px] sm:text-xs lg:text-sm font-medium text-[#263238] no-underline hover:text-[#4CAF4F] transition-colors whitespace-nowrap">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-[10px] sm:text-xs lg:text-sm font-medium text-[#263238] no-underline hover:text-[#4CAF4F] transition-colors whitespace-nowrap">
-                  Pricing
-                </a>
-              </li>
+          <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3 lg:gap-6">
+            {/* Links — sirf sm+ */}
+            <ul className="hidden sm:flex list-none gap-2 sm:gap-3 lg:gap-9">
+              {["Home", "Features", "Community", "Blog", "Pricing"].map((label) => (
+                <li key={label}>
+                  <a
+                    href="#"
+                    className="text-[10px] sm:text-xs lg:text-sm font-medium text-[#263238] no-underline hover:text-[#4CAF4F] transition-colors whitespace-nowrap"
+                  >
+                    {label}
+                  </a>
+                </li>
+              ))}
             </ul>
 
-            <Link
-              href="/login"
-              prefetch={false}
-              className="text-[10px] sm:text-xs lg:text-sm font-medium no-underline text-[#4CAF4F] hover:text-green-700 transition duration-300 whitespace-nowrap"
-            >
-              login
-            </Link>
+            {/* Account icon + dropdown — mobile aur desktop dono pe */}
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setProfileOpen((p) => !p)}
+                aria-label="Open profile menu"
+                aria-haspopup="menu"
+                aria-expanded={profileOpen}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-[#4CAF4F] text-white text-xs font-semibold ring-2 ring-transparent hover:ring-[#4CAF4F]/30 focus:outline-none focus:ring-[#4CAF4F]/40 active:scale-95 transition cursor-pointer"
+              >
+                {initials}
+              </button>
 
-            <button
-              onClick={() => goTo("/signup")}
-              className="inline-flex flex-row flex-nowrap items-center gap-1 sm:gap-1.5 whitespace-nowrap rounded bg-[#4CAF50] px-2.5 py-1.5 sm:px-3 md:px-4 lg:px-5 text-[10px] sm:text-xs lg:text-sm text-white transition duration-300 hover:bg-[#388E3C] cursor-pointer"
-            >
-              <span className="whitespace-nowrap">sign up</span>
-              <img src="/dr.png" alt="" className="w-[12px] sm:w-[15px] h-[12px] sm:h-[15px] flex-shrink-0" />
-            </button>
+              <div
+                role="menu"
+                className={`absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-1.5rem)] origin-top-right rounded-xl bg-white shadow-xl border border-gray-100 z-50 overflow-hidden transition-all duration-200 ${
+                  profileOpen
+                    ? "opacity-100 scale-100 pointer-events-auto"
+                    : "opacity-0 scale-95 pointer-events-none"
+                }`}
+              >
+                {/* User info */}
+                <div className="flex items-center gap-3 p-4">
+                  <span className="flex items-center justify-center w-12 h-12 rounded-full bg-[#4CAF4F] text-white text-base font-semibold shrink-0">
+                    {initials}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#263238] truncate">
+                      {user?.name ?? "Loading..."}
+                    </p>
+                    <p className="text-xs text-[#717171] truncate">{user?.email ?? ""}</p>
+                  </div>
+                </div>
 
-            {/* 🚪 Temporary logout button */}
+                <div className="border-t border-gray-100" />
+
+                {/* Sign out */}
+                <button
+                  role="menuitem"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#263238] hover:bg-gray-50 disabled:opacity-60 transition-colors cursor-pointer"
+                >
+                  <FaRightFromBracket className="w-4 h-4 text-[#717171]" />
+                  {loggingOut ? "Signing out..." : "Sign out"}
+                </button>
+              </div>
+            </div>
+
+            {/* Hamburger — sirf mobile */}
             <button
-              onClick={handleLogout}
-              className="text-[10px] sm:text-xs lg:text-sm font-medium text-red-500 hover:text-red-700 transition duration-300 whitespace-nowrap cursor-pointer border border-red-500 rounded px-2.5 py-1.5"
+              aria-label="Open menu"
+              onClick={() => {
+                setProfileOpen(false);
+                setMenuOpen(true);
+              }}
+              className="sm:hidden flex items-center justify-center w-10 h-10 rounded-lg text-[#263238] hover:bg-[#F5F7FA] active:scale-95 transition"
             >
-              logout
+              <FaBars className="w-5 h-5" />
             </button>
           </div>
-
-          {/* Mobile hamburger — modern button */}
-          <button
-            aria-label="Open menu"
-            onClick={() => setMenuOpen(true)}
-            className="sm:hidden flex items-center justify-center w-10 h-10 rounded-lg text-[#263238] hover:bg-[#F5F7FA] active:scale-95 transition"
-          >
-            <FaBars className="w-5 h-5" />
-          </button>
         </nav>
       </div>
 
@@ -162,6 +215,26 @@ export default function Home() {
           >
             <FaXmark className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Profile section */}
+        <div
+          className={`px-5 py-5 border-b border-gray-100 bg-gradient-to-br from-[#4CAF4F]/10 to-[#F5F7FA] transform transition-all duration-300 ${
+            menuOpen ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+          }`}
+          style={{ transitionDelay: menuOpen ? "80ms" : "0ms" }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#4CAF4F] text-white text-base font-semibold ring-4 ring-white shadow-md shadow-[#4CAF4F]/30 flex-shrink-0">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#263238] truncate">
+                {user?.name ?? "Loading..."}
+              </p>
+              <p className="text-xs text-[#717171] truncate">{user?.email ?? ""}</p>
+            </div>
+          </div>
         </div>
 
         {/* Nav items */}
@@ -199,48 +272,22 @@ export default function Home() {
               </li>
             ))}
           </ul>
-
-          {/* Divider */}
-          <div className="my-4 h-px bg-gray-100" />
-
-          {/* Login button */}
-          <button
-            onClick={() => goTo("/login")}
-            style={{ transitionDelay: menuOpen ? "400ms" : "0ms" }}
-            className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-[#4CAF4F] hover:bg-[#F5F7FA] transition-colors transform ${
-              menuOpen ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0"
-            }`}
-          >
-            <span className="text-sm font-semibold">Login</span>
-            <FaArrowRight className="w-3 h-3" />
-          </button>
-
-          {/* 🚪 Temporary logout button (mobile) */}
-          <button
-            onClick={handleLogout}
-            style={{ transitionDelay: menuOpen ? "430ms" : "0ms" }}
-            className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-[#F5F7FA] transition-colors transform ${
-              menuOpen ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0"
-            }`}
-          >
-            <span className="text-sm font-semibold">Logout</span>
-            <FaArrowRight className="w-3 h-3" />
-          </button>
         </nav>
 
-        {/* Footer — Sign up CTA */}
+        {/* Logout footer */}
         <div
           className={`px-5 py-5 border-t border-gray-100 transform transition-all duration-300 ${
             menuOpen ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
           }`}
-          style={{ transitionDelay: menuOpen ? "460ms" : "0ms" }}
+          style={{ transitionDelay: menuOpen ? "300ms" : "0ms" }}
         >
           <button
-            onClick={() => goTo("/signup")}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#4CAF4F] hover:bg-[#388E3C] active:scale-[0.98] text-white font-medium py-3 px-4 transition duration-300 shadow-md shadow-[#4CAF4F]/20"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 active:scale-[0.98] font-medium py-3 px-4 transition disabled:opacity-60"
           >
-            <span>Create account</span>
-            <FaArrowRight className="w-3.5 h-3.5" />
+            <FaRightFromBracket className="w-4 h-4" />
+            <span>{loggingOut ? "Logging out..." : "Logout"}</span>
           </button>
         </div>
       </aside>
@@ -314,48 +361,48 @@ export default function Home() {
         </div>
       </div>
 
-    {/* COMMUNITY / WHO IT'S FOR */}
-<div className="mx-auto flex w-full max-w-[1140px] mt-9 h-auto flex-col gap-6 sm:gap-8 px-4 sm:px-8 md:px-12 lg:px-0">
-  <div className="w-full h-auto">
-    <h2 className="mx-auto h-auto w-full max-w-[377px] text-center text-lg sm:text-xl md:text-2xl font-semibold leading-snug text-[#4D4D4D]">
-      Manage your entire community in a single system
-    </h2>
-    <p className="mt-2 h-auto w-full text-center text-xs sm:text-sm font-normal leading-relaxed text-[#263238]">
-      Who is Nextcent suitable for?
-    </p>
-  </div>
-
-  <div className="flex w-full h-auto flex-col sm:flex-row justify-between gap-6 lg:px-[100px]">
-    {[
-      { title: "Membership Organisations", img: "/Icon (3).png" },
-      { title: "National Associations",    img: "/Icon (2).png" },
-      { title: "Clubs And Groups",         img: "/Icon (1).png" },
-    ].map((item, i) => (
-      <div
-        key={i}
-        className="w-[85%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5"
-      >
-        <div className="flex w-full max-w-[186px] h-auto flex-col items-center gap-3">
-          {/* Image instead of icon */}
-          <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center">
-            <img
-              src={item.img}
-              alt={item.title}
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <h3 className="h-auto w-full text-center text-base sm:text-lg font-bold leading-snug text-[#4D4D4D]">
-            {item.title}
-          </h3>
+      {/* COMMUNITY / WHO IT'S FOR */}
+      <div className="mx-auto flex w-full max-w-[1140px] mt-9 h-auto flex-col gap-6 sm:gap-8 px-4 sm:px-8 md:px-12 lg:px-0">
+        <div className="w-full h-auto">
+          <h2 className="mx-auto h-auto w-full max-w-[377px] text-center text-lg sm:text-xl md:text-2xl font-semibold leading-snug text-[#4D4D4D]">
+            Manage your entire community in a single system
+          </h2>
+          <p className="mt-2 h-auto w-full text-center text-xs sm:text-sm font-normal leading-relaxed text-[#263238]">
+            Who is Nextcent suitable for?
+          </p>
         </div>
-        <p className="w-full h-auto text-center max-w-[290px] text-xs sm:text-sm font-normal leading-relaxed text-[#717171]">
-          Our membership management software provides full automation of
-          membership renewals and payments
-        </p>
+
+        <div className="flex w-full h-auto flex-col sm:flex-row justify-between gap-6 lg:px-[100px]">
+          {[
+            { title: "Membership Organisations", img: "/Icon (3).png" },
+            { title: "National Associations", img: "/Icon (2).png" },
+            { title: "Clubs And Groups", img: "/Icon (1).png" },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="w-[85%] mx-auto sm:mx-0 sm:w-1/3 lg:w-[299px] shadow-[0px_2px_4px_0px_#ABBED133] hover:shadow-[0px_4px_10px_0px_#ABBED180] transition-shadow duration-300 flex h-auto flex-col items-center gap-2 rounded-md bg-white py-5 px-5"
+            >
+              <div className="flex w-full max-w-[186px] h-auto flex-col items-center gap-3">
+                {/* Image instead of icon */}
+                <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center">
+                  <img
+                    src={item.img}
+                    alt={item.title}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <h3 className="h-auto w-full text-center text-base sm:text-lg font-bold leading-snug text-[#4D4D4D]">
+                  {item.title}
+                </h3>
+              </div>
+              <p className="w-full h-auto text-center max-w-[290px] text-xs sm:text-sm font-normal leading-relaxed text-[#717171]">
+                Our membership management software provides full automation of
+                membership renewals and payments
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
-    ))}
-  </div>
-</div>
 
       {/* BODY WRAPPER — PART 1 */}
       <div className="mx-auto mt-6 lg:mt-[26px] w-full max-w-[1140px] h-auto flex flex-col gap-8 px-4 sm:px-8 md:px-12 lg:px-0">
