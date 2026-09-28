@@ -1,8 +1,75 @@
+import type { IconType } from "react-icons";
+import {
+  FaArrowDown,
+  FaArrowUp,
+  FaCalendarAlt,
+  FaUserPlus,
+  FaUserShield,
+  FaUsers,
+} from "react-icons/fa";
 import connectDB from "@/lib/mongodb";
 import User from "@/app/models/User";
 import UsersTable from "../UsersTable";
+import DashboardCharts from "../Dashboardcharts/page";
 
 export const dynamic = "force-dynamic";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const CHART_DAYS = 30;
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  iconClass,
+  trend,
+  caption,
+}: {
+  label: string;
+  value: number;
+  icon: IconType;
+  iconClass: string;
+  trend?: number;
+  caption?: string;
+}) {
+  const up = (trend ?? 0) >= 0;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="flex items-start justify-between">
+        <div className="min-w-0">
+          <p className="text-xs sm:text-sm text-[#717171] font-medium">{label}</p>
+          <p className="text-2xl sm:text-3xl font-semibold text-[#263238] mt-1.5">
+            {value.toLocaleString()}
+          </p>
+        </div>
+        <span
+          className={`flex items-center justify-center w-11 h-11 rounded-xl shrink-0 ${iconClass}`}
+        >
+          <Icon className="w-5 h-5" />
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 mt-4 text-xs">
+        {trend !== undefined && (
+          <span
+            className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full ${
+              up ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
+            }`}
+          >
+            {up ? (
+              <FaArrowUp className="w-2.5 h-2.5" />
+            ) : (
+              <FaArrowDown className="w-2.5 h-2.5" />
+            )}
+            {Math.abs(trend)}%
+          </span>
+        )}
+        {caption && <span className="text-[#9CA3AF]">{caption}</span>}
+      </div>
+    </div>
+  );
+}
 
 export default async function AdminDashboardPage({
   searchParams,
@@ -15,27 +82,48 @@ export default async function AdminDashboardPage({
     : searchValues.q?.trim() ?? "";
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+  // Chart window: last 30 days (UTC), including today
+  const now = new Date();
+  const startOfToday = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate()
+  );
+  const since = new Date(startOfToday - (CHART_DAYS - 1) * DAY_MS);
+
   await connectDB();
 
-  const [totalUsers, totalAdmins, recentUsersRaw] = await Promise.all([
-    User.countDocuments({ role: "user" }),
-    User.countDocuments({ role: "admin" }),
-    User.find({
-      role: "user",
-      ...(escapedQuery
-        ? {
-            $or: [
-              { name: { $regex: escapedQuery, $options: "i" } },
-              { email: { $regex: escapedQuery, $options: "i" } },
-            ],
-          }
-        : {}),
-    })
-      .select("-password")
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .lean(),
-  ]);
+  const [totalUsers, totalAdmins, recentUsersRaw, signupRows] =
+    await Promise.all([
+      User.countDocuments({ role: "user" }),
+      User.countDocuments({ role: "admin" }),
+      User.find({
+        role: "user",
+        ...(escapedQuery
+          ? {
+              $or: [
+                { name: { $regex: escapedQuery, $options: "i" } },
+                { email: { $regex: escapedQuery, $options: "i" } },
+              ],
+            }
+          : {}),
+      })
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .limit(escapedQuery ? 10 : 5)
+        .lean(),
+      User.aggregate<{ _id: string; count: number }>([
+        { $match: { role: "user", createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
 
   const recentUsers = recentUsersRaw.map((u) => ({
     _id: u._id.toString(),
@@ -45,31 +133,97 @@ export default async function AdminDashboardPage({
     createdAt: u.createdAt,
   }));
 
+  // Fill days with no signups with 0 so the chart line is continuous
+  const countsByDay = new Map(signupRows.map((r) => [r._id, r.count]));
+  const signups = Array.from({ length: CHART_DAYS }, (_, i) => {
+    const d = new Date(startOfToday - (CHART_DAYS - 1 - i) * DAY_MS);
+    const key = d.toISOString().slice(0, 10);
+    return {
+      date: key,
+      label: d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      }),
+      count: countsByDay.get(key) ?? 0,
+    };
+  });
+
+  const sum = (arr: { count: number }[]) =>
+    arr.reduce((total, p) => total + p.count, 0);
+
+  const newThisWeek = sum(signups.slice(-7));
+  const prevWeek = sum(signups.slice(-14, -7));
+  const newLast30Days = sum(signups);
+  const weekTrend =
+    prevWeek === 0
+      ? newThisWeek > 0
+        ? 100
+        : 0
+      : Math.round(((newThisWeek - prevWeek) / prevWeek) * 100);
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <p className="text-xs text-[#717171] uppercase font-medium">
-            Total Users
-          </p>
-          <p className="text-2xl font-semibold text-[#263238] mt-1">
-            {totalUsers}
-          </p>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <p className="text-xs text-[#717171] uppercase font-medium">
-            Admins
-          </p>
-          <p className="text-2xl font-semibold text-[#263238] mt-1">
-            {totalAdmins}
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-semibold text-[#263238]">
+          Overview
+        </h1>
+        <p className="text-sm text-[#717171] mt-1">
+          Here&apos;s what&apos;s happening with your users.
+        </p>
       </div>
 
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+        <StatCard
+          label="Total users"
+          value={totalUsers}
+          icon={FaUsers}
+          iconClass="bg-green-50 text-[#4CAF4F]"
+          caption="All registered users"
+        />
+        <StatCard
+          label="Admins"
+          value={totalAdmins}
+          icon={FaUserShield}
+          iconClass="bg-slate-100 text-[#263238]"
+          caption="With admin access"
+        />
+        <StatCard
+          label="New this week"
+          value={newThisWeek}
+          icon={FaUserPlus}
+          iconClass="bg-blue-50 text-blue-500"
+          trend={weekTrend}
+          caption="vs previous 7 days"
+        />
+        <StatCard
+          label="Last 30 days"
+          value={newLast30Days}
+          icon={FaCalendarAlt}
+          iconClass="bg-amber-50 text-amber-500"
+          caption="New signups"
+        />
+      </div>
+
+      {/* Charts */}
+      <DashboardCharts
+        signups={signups}
+        totalUsers={totalUsers}
+        totalAdmins={totalAdmins}
+      />
+
+      {/* Recent users */}
       <div>
-        <h2 className="text-lg sm:text-xl font-semibold text-[#263238] mb-4">
-          Recent Users
-        </h2>
+        <div className="mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-[#263238]">
+            Recent users
+          </h2>
+          <p className="text-xs sm:text-sm text-[#717171] mt-0.5">
+            {query ? `Results for "${query}"` : "Latest signups"}
+          </p>
+        </div>
         <UsersTable users={recentUsers} showActions={false} />
       </div>
     </div>

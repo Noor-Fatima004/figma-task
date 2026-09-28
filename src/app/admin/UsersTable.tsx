@@ -19,8 +19,7 @@ interface UserRow {
   | null;
 
 const inputCls =
-  "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-[#263238] outline-none focus:border-gray-400";
-
+  "w-full border border-gray rounded-lg px-3 py-2 text-sm text-[#263238] outline-none transition-colors hover:border-green-700 focus:border-green-700 focus:ring-0";
 export default function UsersTable({
   users,
   showActions = true,
