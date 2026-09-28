@@ -15,19 +15,25 @@ export default function AdminShell({ name, email, children }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-[#F5F7FA]">
+    <div className="h-dvh overflow-hidden flex bg-[#F5F7FA]">
       <AdminSidebar open={sidebarOpen} />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <Suspense fallback={<header className="h-16 bg-white border-b border-gray-100" />}>
-          <AdminTopbar
-            name={name}
-            email={email}
-            onMenuClick={() => setSidebarOpen((v) => !v)}
-          />
-        </Suspense>
-        <main className="flex-1 p-4 sm:p-6 lg:p-10">{children}</main>
-        <AdminFooter />
+      <div className="flex-1 flex flex-col min-w-0 h-full">
+        <div className="shrink-0">
+          <Suspense fallback={<header className="h-16 bg-white border-b border-gray-100" />}>
+            <AdminTopbar
+              name={name}
+              email={email}
+              onMenuClick={() => setSidebarOpen((v) => !v)}
+            />
+          </Suspense>
+        </div>
+
+        {/* Sirf ye area scroll hoga (footer bhi content ke saath neeche aayega) */}
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          <main className="flex-1 p-4 sm:p-6 lg:p-10">{children}</main>
+          <AdminFooter />
+        </div>
       </div>
     </div>
   );

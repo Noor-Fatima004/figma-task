@@ -19,7 +19,7 @@ interface UserRow {
   | null;
 
 const inputCls =
-  "w-full border border-gray rounded-lg px-3 py-2 text-sm text-[#263238] outline-none transition-colors hover:border-green-700 focus:border-green-700 focus:ring-0";
+  "w-full border border-gray-400 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-[#285943] focus:border-[#285943] focus:ring-0";
 export default function UsersTable({
   users,
   showActions = true,
@@ -120,17 +120,17 @@ export default function UsersTable({
         <div className="flex justify-end mb-3">
           <button
             onClick={() => openModal({ type: "add" })}
-            className="bg-[#263238] text-white text-xs sm:text-sm px-4 py-2 rounded-lg hover:opacity-90"
+            className="bg-[#285943] text-white text-xs sm:text-sm px-4 py-2 rounded-theme hover:opacity-90"
           >
             + Add User
           </button>
         </div>
       )}
 
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-surface rounded-theme border border-theme shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm min-w-[480px]">
-          <thead className="bg-[#F9FAFB] text-[#717171] uppercase text-[10px] sm:text-xs">
+          <thead className="bg-background text-muted uppercase text-[10px] sm:text-xs">
             <tr>
               <th className="px-3 sm:px-5 py-2.5 sm:py-3">Name</th>
               <th className="px-3 sm:px-5 py-2.5 sm:py-3">Email</th>
@@ -144,25 +144,25 @@ export default function UsersTable({
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={colCount} className="px-3 sm:px-5 py-6 text-center text-[#717171]">
+                <td colSpan={colCount} className="px-3 sm:px-5 py-6 text-center text-muted">
                   No users yet.
                 </td>
               </tr>
             ) : (
               users.map((u) => (
-                <tr key={u._id} className="border-t border-gray-100">
-                  <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-[#263238] whitespace-nowrap">
+                <tr key={u._id} className="border-t border-theme">
+                  <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-text whitespace-nowrap">
                     {u.name}
                   </td>
-                  <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-[#263238] max-w-[160px] sm:max-w-none truncate">
+                  <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-text max-w-[160px] sm:max-w-none truncate">
                     {u.email}
                   </td>
                   <td className="px-3 sm:px-5 py-2.5 sm:py-3">
-                    <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap bg-gray-100 text-gray-600">
+                    <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap bg-accent/10 text-[#184343]">
                       {u.role}
                     </span>
                   </td>
-                  <td className="hidden sm:table-cell px-3 sm:px-5 py-2.5 sm:py-3 text-[#717171] whitespace-nowrap">
+                  <td className="hidden sm:table-cell px-3 sm:px-5 py-2.5 sm:py-3 text-muted whitespace-nowrap">
                     {new Date(u.createdAt).toLocaleDateString()}
                   </td>
                   {showActions && (
@@ -170,7 +170,7 @@ export default function UsersTable({
                         <button
                           onClick={(e) => openMenu(e, u)}
                           aria-label="Actions"
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-[#717171]"
+                          className="p-1.5 rounded-theme hover:bg-background text-muted"
                         >
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="12" cy="5" r="2" />
@@ -192,17 +192,17 @@ export default function UsersTable({
         <div
           onClick={(e) => e.stopPropagation()}
           style={{ position: "fixed", top: menu.top, right: menu.right }}
-          className="z-50 w-40 bg-white rounded-xl shadow-lg border border-gray-100 py-1 text-sm"
+          className="z-50 w-40 bg-surface rounded-theme shadow-lg border border-theme py-1 text-sm"
         >
           <button
             onClick={() => openModal({ type: "view", user: menu.user })}
-            className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[#263238]"
+            className="w-full text-left px-4 py-2 hover:bg-background text-text"
           >
             View Details
           </button>
           <button
             onClick={() => openModal({ type: "edit", user: menu.user })}
-            className="w-full text-left px-4 py-2 hover:bg-gray-50 text-[#263238]"
+            className="w-full text-left px-4 py-2 hover:bg-background text-text"
           >
             Edit
           </button>
@@ -222,17 +222,17 @@ export default function UsersTable({
           onClick={closeModal}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6"
+            className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             {/* ADD / EDIT */}
             {(modal.type === "add" || modal.type === "edit") && (
               <form onSubmit={handleSave} className="space-y-4">
-                <h3 className="text-lg font-semibold text-[#263238]">
+                <h3 className="text-lg font-semibold text-text">
                   {modal.type === "add" ? "Add New User" : "Edit User"}
                 </h3>
                 <div>
-                  <label className="block text-xs text-[#717171] mb-1">Name</label>
+                  <label className="block text-xs text-muted mb-1">Name</label>
                   <input
                     className={inputCls}
                     value={form.name}
@@ -241,7 +241,7 @@ export default function UsersTable({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-[#717171] mb-1">Email</label>
+                  <label className="block text-xs text-muted mb-1">Email</label>
                   <input
                     type="email"
                     className={inputCls}
@@ -251,7 +251,7 @@ export default function UsersTable({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-[#717171] mb-1">
+                  <label className="block text-xs text-muted mb-1">
                     Password {modal.type === "edit" && "(leave blank to keep current)"}
                   </label>
                   <input
@@ -268,14 +268,14 @@ export default function UsersTable({
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 text-sm rounded-lg border border-gray-200 text-[#263238]"
+                    className="px-4 py-2 text-sm rounded-theme border border-theme text-text"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 text-sm rounded-lg bg-[#263238] text-white disabled:opacity-60"
+                    className="px-4 py-2 text-sm rounded-theme bg-[#285943] text-white disabled:opacity-60"
                   >
                     {loading ? "Saving..." : modal.type === "add" ? "Add User" : "Save Changes"}
                   </button>
@@ -286,7 +286,7 @@ export default function UsersTable({
             {/* VIEW */}
             {modal.type === "view" && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-[#263238]">User Details</h3>
+                <h3 className="text-lg font-semibold text-text">User Details</h3>
                 <dl className="text-sm space-y-3">
                   {[
                     ["Name", modal.user.name],
@@ -299,15 +299,15 @@ export default function UsersTable({
                     ["User ID", modal.user._id],
                   ].map(([label, value]) => (
                     <div key={label} className="flex justify-between gap-4">
-                      <dt className="text-[#717171]">{label}</dt>
-                      <dd className="text-[#263238] text-right break-all">{value}</dd>
+                      <dt className="text-muted">{label}</dt>
+                      <dd className="text-text text-right break-all">{value}</dd>
                     </div>
                   ))}
                 </dl>
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 text-sm rounded-lg bg-[#263238] text-white"
+                    className="px-4 py-2 text-sm rounded-theme bg-[#285943] text-white"
                   >
                     Close
                   </button>
@@ -318,16 +318,16 @@ export default function UsersTable({
             {/* DELETE */}
             {modal.type === "delete" && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-[#263238]">Delete User</h3>
-                <p className="text-sm text-[#717171]">
-                  Are you sure you want to delete <b className="text-[#263238]">{modal.user.name}</b> (
+                <h3 className="text-lg font-semibold text-text">Delete User</h3>
+                <p className="text-sm text-muted">
+                  Are you sure you want to delete <b className="text-text">{modal.user.name}</b> (
                   {modal.user.email})? This action cannot be undone.
                 </p>
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <div className="flex justify-end gap-2 pt-2">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 text-sm rounded-lg border border-gray-200 text-[#263238]"
+                    className="px-4 py-2 text-sm rounded-theme border border-theme text-text"
                   >
                     Cancel
                   </button>

@@ -9,7 +9,6 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
   variable: "--font-inter",
 });
-
 export const metadata: Metadata = {
   title: "Nextcent",
   description: "Manage your entire community in a single system",
@@ -21,7 +20,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`} suppressHydrationWarning>
-        {children}
+        <div data-theme-scope="website" className="min-h-screen bg-surface text-text font-sans">
+          {children}
+        </div>
         <Toaster position="top-right" richColors />
       </body>
     </html>

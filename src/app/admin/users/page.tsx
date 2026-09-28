@@ -42,7 +42,7 @@ export default async function AdminUsersPage({
 
   return (
     <div className="max-w-5xl mx-auto">
-      <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-[#263238] mb-4 sm:mb-6">
+      <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-text mb-4 sm:mb-6">
         All Users
       </h2>
       <UsersTable users={users} />

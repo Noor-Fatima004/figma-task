@@ -21,7 +21,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   return (
     <aside
       className={`${open ? "flex" : "hidden"} lg:flex flex-col
-      fixed lg:static top-16 lg:top-0 bottom-0 left-0 z-40 bg-[#1e2b32] shrink-0
+      fixed lg:static top-16 lg:top-0 bottom-0 left-0 lg:h-full z-40 bg-primary shrink-0
       w-16 md:w-64
       rounded-tr-2xl lg:rounded-none shadow-xl lg:shadow-none`}
     >
@@ -33,8 +33,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
         <span className="md:hidden text-lg font-bold text-[#4CAF4F]">N</span>
       </div>
 
-      {/* Menu — icon only below md, icon + label at md+ */}
-      <nav className="flex-1 px-2 md:px-3 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-2 md:px-3 py-4 space-y-1">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
