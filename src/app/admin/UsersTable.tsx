@@ -25,11 +25,12 @@ type ModalState =
   | { type: "add" }
   | { type: "edit"; user: UserRow }
   | { type: "view"; user: UserRow }
+  | { type: "adminAuth"; user: UserRow; from: "view" | "edit" }
   | { type: "delete"; user: UserRow }
   | null;
 
 const inputCls =
-  "w-full border border-gray-100 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-border focus:border-border focus:ring-0";
+  "w-full border border-gray-400 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-primary focus:border-primary focus:ring-0";
 
 const inputErrCls =
   "w-full border border-red-500 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-red-500 focus:border-red-500 focus:ring-0";
@@ -39,6 +40,28 @@ const selectCls =
 
 const pageBtnCls =
   "px-3 py-1.5 text-xs sm:text-sm rounded-theme border border-border text-text bg-surface hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface transition-colors";
+
+const smallBtnCls =
+  "shrink-0 px-2.5 py-1 text-xs rounded-theme border border-border text-text hover:bg-surface";
+
+const iconBtnCls =
+  "shrink-0 p-1.5 rounded-theme border border-border text-muted hover:text-text hover:bg-surface transition-colors";
+
+function EyeIcon({ off = false }: { off?: boolean }) {
+  return off ? (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  ) : (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
 
 export default function UsersTable({
   users,
@@ -59,7 +82,22 @@ export default function UsersTable({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
+  // password reveal states
+  const [adminPw, setAdminPw] = useState("");
+  const [revealedHash, setRevealedHash] = useState<string | null>(null); // verified hash (modal band hone tak yaad rahega)
+  const [showHash, setShowHash] = useState(false); // sirf show/hide toggle
+  const [showChange, setShowChange] = useState(false);
+  const [newPw, setNewPw] = useState("");
+
+  function resetPwState() {
+    setAdminPw("");
+    setRevealedHash(null);
+    setShowHash(false);
+    setShowChange(false);
+    setNewPw("");
+  }
+
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
@@ -84,6 +122,7 @@ export default function UsersTable({
     setError("");
     setFieldErrors({});
     setMenu(null);
+    resetPwState();
     if (m?.type === "add") setForm({ name: "", email: "", password: "" });
     if (m?.type === "edit") setForm({ name: m.user.name, email: m.user.email, password: "" });
     setModal(m);
@@ -102,6 +141,28 @@ export default function UsersTable({
     setModal(null);
     setError("");
     setFieldErrors({});
+    resetPwState();
+  }
+
+  function askAdminPassword(user: UserRow, from: "view" | "edit") {
+    setError("");
+    setAdminPw("");
+    setModal({ type: "adminAuth", user, from });
+  }
+
+  // eye click: agar pehle se verified hai to sirf show karo, warna admin password poocho
+  function handleEyeClick(user: UserRow, from: "view" | "edit") {
+    if (revealedHash) {
+      setShowHash(true);
+    } else {
+      askAdminPassword(user, from);
+    }
+  }
+
+  // sirf hide karta hai, verified hash memory mein rehta hai
+  function hidePassword() {
+    setShowHash(false);
+    setError("");
   }
 
   async function request(url: string, method: string, body?: object, successMsg?: string) {
@@ -121,6 +182,7 @@ export default function UsersTable({
         return false;
       }
       setModal(null);
+      resetPwState();
       toast.success(successMsg || "Done successfully");
       router.refresh();
       return true;
@@ -154,6 +216,40 @@ export default function UsersTable({
       return request("/api/admin/users", "POST", data, "User added successfully");
     if (modal?.type === "edit")
       return request(`/api/admin/users/${modal.user._id}`, "PUT", data, "User updated successfully");
+  }
+
+  async function verifyAdminAndReveal(user: UserRow, from: "view" | "edit") {
+    if (!adminPw.trim()) return setError("Enter your admin password");
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/users/${user._id}/reveal-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminPassword: adminPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) return setError(data.error || "Incorrect admin password");
+      if (!data.passwordHash) return setError("Password hash not available");
+      setRevealedHash(data.passwordHash);
+      setShowHash(true);
+      setAdminPw("");
+      setModal({ type: from, user });
+    } catch {
+      setError("Network error, please try again");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function changePassword(user: UserRow) {
+    const result = editUserSchema.safeParse({
+      name: user.name,
+      email: user.email,
+      password: newPw,
+    });
+    if (!result.success) return setError(result.error.issues[0].message);
+    request(`/api/admin/users/${user._id}`, "PUT", result.data, "Password updated successfully");
   }
 
   function setField(key: "name" | "email" | "password", value: string) {
@@ -335,7 +431,7 @@ export default function UsersTable({
           onClick={closeModal}
         >
           <div
-            className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6"
+            className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* ADD / EDIT */}
@@ -370,10 +466,10 @@ export default function UsersTable({
                   )}
                 </div>
 
+                {/* ADD: normal password input */}
+                {modal.type === "add" && (
                 <div>
-                  <label className="block text-xs text-muted mb-1">
-                    Password {modal.type === "edit" && "(leave blank to keep current)"}
-                  </label>
+                  <label className="block text-xs text-muted mb-1">Password</label>
                   <input
                     type="password"
                     className={fieldErrors.password ? inputErrCls : inputCls}
@@ -384,6 +480,78 @@ export default function UsersTable({
                     <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>
                   )}
                 </div>
+              )}
+
+                {/* EDIT: password locked behind admin verification */}
+                {modal.type === "edit" && (
+                  <div>
+                    <label className="block text-xs text-muted mb-1">
+                      Password {showHash && revealedHash && "(hashed)"}
+                    </label>
+
+                    <div className="flex items-start gap-2">
+                      <div className="relative flex-1 min-w-0 border border-gray-400 rounded-theme px-3 py-2 pr-10 text-xs bg-background text-text font-mono break-all select-none">
+                        {showHash && revealedHash ? revealedHash : "••••••••••"}
+                        {showHash ? (
+                          <button
+                            type="button"
+                            aria-label="Hide password"
+                            title="Hide"
+                            onClick={hidePassword}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-theme text-muted hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            <EyeIcon off />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            aria-label="Show password"
+                            title={revealedHash ? "Show" : "Show (admin password required)"}
+                            onClick={() => handleEyeClick(modal.user, "edit")}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-theme text-muted hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            <EyeIcon />
+                          </button>
+                        )}
+                      </div>
+
+                      {showHash && revealedHash && (
+                        <button
+                          type="button"
+                          aria-label="Copy hash"
+                          onClick={() => {
+                            navigator.clipboard.writeText(revealedHash);
+                            toast.success("Hash copied");
+                          }}
+                          className={smallBtnCls + " !py-2"}
+                        >
+                          Copy
+                        </button>
+                      )}
+                    </div>
+
+                    {!revealedHash ? (
+                      <p className="text-[11px] text-muted mt-1">
+                        Password change karne ke liye eye icon dabao aur admin password do.
+                      </p>
+                    ) : (
+                      <div className="mt-3">
+                        <label className="block text-xs text-muted mb-1">
+                          New password (leave blank to keep current)
+                        </label>
+                        <input
+                          type="password"
+                          className={fieldErrors.password ? inputErrCls : inputCls}
+                          value={form.password}
+                          onChange={(e) => setField("password", e.target.value)}
+                        />
+                        {fieldErrors.password && (
+                          <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <div className="flex justify-end gap-2 pt-2">
@@ -407,26 +575,173 @@ export default function UsersTable({
 
             {/* VIEW */}
             {modal.type === "view" && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text">User Details</h3>
-                <dl className="text-sm space-y-3">
-                  {[
-                    ["Name", modal.user.name],
-                    ["Email", modal.user.email],
-                    ["Role", modal.user.role],
-                    ["Joined", new Date(modal.user.createdAt).toLocaleString()],
-                    ...(modal.user.updatedAt
-                      ? [["Last updated", new Date(modal.user.updatedAt).toLocaleString()]]
-                      : []),
-                    ["User ID", modal.user._id],
-                  ].map(([label, value]) => (
-                    <div key={label} className="flex justify-between gap-4">
-                      <dt className="text-muted">{label}</dt>
-                      <dd className="text-text text-right break-all">{value}</dd>
+              <div>
+                {/* Header */}
+                <div className="flex items-center gap-3 pb-4 border-b border-border">
+                  <div className="h-12 w-12 shrink-0 rounded-full bg-[#285943] text-white flex items-center justify-center text-lg font-semibold uppercase">
+                    {modal.user.name.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-semibold text-text truncate">{modal.user.name}</h3>
+                    <p className="text-xs text-muted truncate">{modal.user.email}</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-accent/10 text-[#184343]">
+                    {modal.user.role}
+                  </span>
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="rounded-theme border border-border bg-background p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted">Joined</p>
+                    <p className="text-sm font-medium text-text mt-1">
+                      {new Date(modal.user.createdAt).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-muted">
+                      {new Date(modal.user.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="rounded-theme border border-border bg-background p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted">Last updated</p>
+                    {modal.user.updatedAt ? (
+                      <>
+                        <p className="text-sm font-medium text-text mt-1">
+                          {new Date(modal.user.updatedAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-muted">
+                          {new Date(modal.user.updatedAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted mt-1">—</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Password (hashed) */}
+                <div className="mt-3 rounded-theme border border-border bg-background p-3">
+                  <div className="flex items-end gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] uppercase tracking-wide text-muted">
+                        Password {showHash && revealedHash && "(hashed)"}
+                      </p>
+                      <div className="relative mt-1 border border-border rounded-theme bg-surface px-3 py-2 pr-10">
+                        <p className="text-xs text-text font-mono break-all">
+                          {showHash && revealedHash ? revealedHash : "••••••••••"}
+                        </p>
+                        {showHash ? (
+                          <button
+                            type="button"
+                            aria-label="Hide password"
+                            title="Hide"
+                            onClick={hidePassword}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-theme text-muted hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            <EyeIcon off />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            aria-label="Show password"
+                            title={revealedHash ? "Show" : "Show (admin password required)"}
+                            onClick={() => handleEyeClick(modal.user, "view")}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-theme text-muted hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            <EyeIcon />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </dl>
-                <div className="flex justify-end pt-2">
+                    {showHash && revealedHash && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(revealedHash);
+                          toast.success("Hash copied");
+                        }}
+                        className={smallBtnCls}
+                      >
+                        Copy
+                      </button>
+                    )}
+                  </div>
+
+                  {revealedHash && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      {!showChange ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowChange(true)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Change password
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <input
+                            type="password"
+                            placeholder="New password"
+                            className={error ? inputErrCls : inputCls}
+                            value={newPw}
+                            onChange={(e) => {
+                              setNewPw(e.target.value);
+                              setError("");
+                            }}
+                          />
+                          {error && <p className="text-xs text-red-600">{error}</p>}
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowChange(false);
+                                setNewPw("");
+                                setError("");
+                              }}
+                              className="px-3 py-1.5 text-xs rounded-theme border border-border text-text"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              disabled={loading}
+                              onClick={() => changePassword(modal.user)}
+                              className="px-3 py-1.5 text-xs rounded-theme bg-[#285943] text-white disabled:opacity-60"
+                            >
+                              {loading ? "Saving..." : "Update"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* User ID */}
+                <div className="mt-3 rounded-theme border border-border bg-background p-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide text-muted">User ID</p>
+                    <p className="text-xs text-text mt-1 font-mono truncate">{modal.user._id}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(modal.user._id);
+                      toast.success("User ID copied");
+                    }}
+                    className={smallBtnCls}
+                  >
+                    Copy
+                  </button>
+                </div>
+
+                <div className="flex justify-end pt-5">
                   <button
                     onClick={closeModal}
                     className="px-4 py-2 text-sm rounded-theme bg-[#285943] text-white"
@@ -435,6 +750,56 @@ export default function UsersTable({
                   </button>
                 </div>
               </div>
+            )}
+
+            {/* ADMIN AUTH (View aur Edit dono ke liye) */}
+            {modal.type === "adminAuth" && (
+              <form
+                noValidate
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  verifyAdminAndReveal(modal.user, modal.from);
+                }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-text">Confirm it's you</h3>
+                <p className="text-sm text-muted">
+                  Enter your admin password to view the password of{" "}
+                  <b className="text-text">{modal.user.name}</b>.
+                </p>
+                <input
+                  type="password"
+                  autoFocus
+                  placeholder="Admin password"
+                  className={error ? inputErrCls : inputCls}
+                  value={adminPw}
+                  onChange={(e) => {
+                    setAdminPw(e.target.value);
+                    setError("");
+                  }}
+                />
+                {error && <p className="text-xs text-red-600">{error}</p>}
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdminPw("");
+                      setError("");
+                      setModal({ type: modal.from, user: modal.user });
+                    }}
+                    className="px-4 py-2 text-sm rounded-theme border border-theme text-text"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-4 py-2 text-sm rounded-theme bg-[#285943] text-white disabled:opacity-60"
+                  >
+                    {loading ? "Verifying..." : "Verify"}
+                  </button>
+                </div>
+              </form>
             )}
 
             {/* DELETE */}
