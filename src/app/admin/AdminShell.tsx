@@ -31,7 +31,7 @@ export default function AdminShell({ name, email, children }: AdminShellProps) {
 
         {/* Scroll hoga, lekin scrollbar hidden rahega */}
         <div className="flex-1 overflow-y-auto flex flex-col [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <main className="flex-1 p-4 sm:p-6 lg:p-10">{children}</main>
+          <main className="flex-1 p-4 sm:p-6 lg:p-10 pb-2">{children}</main>
           <AdminFooter />
         </div>
       </div>

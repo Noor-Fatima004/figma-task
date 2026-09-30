@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaTachometerAlt, FaUsers } from "react-icons/fa";
+import { FaTachometerAlt, FaUsers ,FaImages} from "react-icons/fa";
 import LogoutButton from "@/app/components/LogoutButton";
+
 
 // Add more items here as you build out more admin pages
 const menuItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: FaTachometerAlt },
   { label: "Users", href: "/admin/users", icon: FaUsers },
+  { label: "Gallery", href: "/admin/gallery", icon: FaImages },
 ];
 
 interface AdminSidebarProps {
