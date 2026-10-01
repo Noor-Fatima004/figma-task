@@ -146,7 +146,7 @@ export default function GalleryPage() {
             ))}
         </div>
 
-        {images.length === 0 && <p className="text-sm text-gray-500 mt-6">Koi image nahi hai.</p>}
+        {images.length === 0 && <p className="text-sm text-gray-500 mt-6">No images found.</p>}
       </div>
 
       {modalOpen && (
