@@ -37,17 +37,17 @@ export default function GalleryPage() {
   }
 
   async function deleteSelected() {
-    if (!selected.length) return toast.error("Pehle image select karo");
-    if (!confirm(`${selected.length} image(s) delete karni hain?`)) return;
+    if (!selected.length) return toast.error("Please select an image first");
+    if (!confirm(`${selected.length} image Are You Sure you want to Delete?`)) return;
     await Promise.all(
       selected.map((id) => fetch(`/api/admin/gallery/images/${id}`, { method: "DELETE" }))
     );
-    toast.success("Deleted");
+    toast.success("Deleted Successfully!");
     loadImages();
   }
 
   async function deleteActiveCategory() {
-    if (active === "all" || !confirm("Ye category delete karni hai?")) return;
+    if (active === "all" || !confirm("Are You Sure you want to Delete this category?")) return;
     const res = await fetch(`/api/admin/gallery/categories/${active}`, { method: "DELETE" });
     const data = await res.json();
     if (!res.ok) return toast.error(data.error);

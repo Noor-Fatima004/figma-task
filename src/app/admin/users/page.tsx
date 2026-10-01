@@ -43,7 +43,7 @@ export default async function AdminUsersPage({
 
   const total = await User.countDocuments(filter);
   const totalPages = Math.max(1, Math.ceil(total / limit));
-  page = Math.min(page, totalPages); // last row delete ho jaye to bhi page valid rahe
+  page = Math.min(page, totalPages);
 
   const usersRaw = await User.find(filter)
     .select("-password")

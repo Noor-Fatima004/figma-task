@@ -150,7 +150,6 @@ export default function UsersTable({
     setModal({ type: "adminAuth", user, from });
   }
 
-  // eye click: agar pehle se verified hai to sirf show karo, warna admin password poocho
   function handleEyeClick(user: UserRow, from: "view" | "edit") {
     if (revealedHash) {
       setShowHash(true);
@@ -260,7 +259,7 @@ export default function UsersTable({
   function updateParams(changes: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(changes).forEach(([k, v]) => params.set(k, v));
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`,{ scroll: false });
   }
 
   const colCount = showActions ? 5 : 4;
@@ -377,7 +376,7 @@ export default function UsersTable({
 
           <div className="flex items-center gap-2">
             <button
-              className={pageBtnCls}
+              className={`${pageBtnCls} !bg-primary !text-white !border-border hover:!bg-primary disabled:!bg-gray-100 disabled:!text-gray-400 disabled:!border-gray-200`}
               disabled={pagination.page <= 1}
               onClick={() => updateParams({ page: String(pagination.page - 1) })}
             >
@@ -387,7 +386,7 @@ export default function UsersTable({
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
-              className={`${pageBtnCls} !bg-primary !text-white !border-[#4CAF4F] hover:!bg-primary disabled:!bg-gray-100 disabled:!text-gray-400 disabled:!border-gray-200`}
+              className={`${pageBtnCls} !bg-primary !text-white !border-border hover:!bg-primary disabled:!bg-gray-100 disabled:!text-gray-400 disabled:!border-gray-200`}
               disabled={pagination.page >= pagination.totalPages}
               onClick={() => updateParams({ page: String(pagination.page + 1) })}
             >

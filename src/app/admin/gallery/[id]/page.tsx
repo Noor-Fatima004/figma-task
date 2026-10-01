@@ -47,9 +47,9 @@ function ImageCard({
   }
 
   async function remove() {
-    if (!confirm("Ye image delete karni hai?")) return;
+    if (!confirm("Are you sure you want to delete this image?")) return;
     await fetch(`/api/admin/gallery/images/${v._id}`, { method: "DELETE" });
-    toast.success("Deleted");
+    toast.success("Deleted Successfully!");
     onDeleted(v._id);
   }
 
@@ -83,7 +83,7 @@ function ImageCard({
             <button
               onClick={() => {
                 navigator.clipboard.writeText(v._id);
-                toast.success("ID copied");
+                toast.success("Image ID copied");
               }}
             >
               <FaCopy />
@@ -166,7 +166,7 @@ export default function ImageDetailPage() {
         fetch("/api/admin/gallery/categories"),
         fetch(`/api/admin/gallery/images/${id}/variants`),
       ]);
-      if (!a.ok) return toast.error("Image nahi mili");
+      if (!a.ok) return toast.error("Image not found");
 
       const current: Img = await a.json();
       const others: Img[] = c.ok ? await c.json() : [];

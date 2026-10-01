@@ -8,7 +8,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   await connectDB();
   const count = await GalleryImage.countDocuments({ category: id });
   if (count > 0)
-    return NextResponse.json({ error: "Pehle is category ki images delete karo" }, { status: 400 });
+    return NextResponse.json({ error: "Please delete the images in this category first." }, { status: 400 });
   await GalleryCategory.findByIdAndDelete(id);
   return NextResponse.json({ ok: true });
 }
