@@ -34,12 +34,17 @@ export default function ProductVariationsPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>(null);
   useEffect(() => {
-    const t = setTimeout(() => {
-      setDebounced(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
+  const t = setTimeout(() => {
+    setDebounced(search);
+    setPage(1);
+  }, 300);
+  return () => clearTimeout(t);
   }, [search]);
+  const clearSearch = () => {
+  setSearch("");
+  setDebounced(""); // turant reset, 300ms wait nahi
+  setPage(1);
+  };
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -146,14 +151,29 @@ export default function ProductVariationsPage() {
             entries
           </label>
 
-          <label className="flex items-center gap-2">
-            Search:
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border border-gray-200 rounded-md px-3 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </label>
+          <div className="flex items-center gap-2">
+  <span>Search:</span>
+
+  {/* items-stretch: Clear button input ki exact height le leta hai */}
+  <div className="flex items-stretch gap-3">
+    <input
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      onKeyDown={(e) => e.key === "Escape" && clearSearch()}
+      className="border border-gray-200 rounded-md px-3 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+    />
+
+    {search && (
+      <button
+        type="button"
+        onClick={clearSearch}
+        className="flex items-center px-3 rounded-md text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+      >
+        Clear
+      </button>
+    )}
+  </div>
+</div>
         </div>
 
         <div className="overflow-x-auto">

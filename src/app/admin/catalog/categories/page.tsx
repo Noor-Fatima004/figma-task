@@ -57,7 +57,7 @@ export default function ProductCategoriesPage() {
   // debounce search
   useEffect(() => {
     const t = setTimeout(() => {
-      setDebounced(search);
+      setDebounced("");
       setPage(1);
     }, 300);
     return () => clearTimeout(t);
