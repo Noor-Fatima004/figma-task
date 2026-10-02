@@ -2,6 +2,7 @@
 
 :root {
   --theme-primary: #285943;
+  --theme-primary-hover: #2b7e55;
   --theme-secondary: #83a17d;
   --theme-background: #f5f8f3;
   --theme-surface: #ffffff;
@@ -15,6 +16,7 @@
 
 [data-theme-scope="admin"] {
   --theme-primary: #285943;
+  --theme-primary-hover: #2b7e55;
   --theme-secondary: #83a17d;
   --theme-background: #f5f8f3;
   --theme-surface: #ffffff;
@@ -22,6 +24,8 @@
   --theme-muted: #717171;
   --theme-border: #e5e7eb;
   --theme-accent: #6c9a78;
+  --theme-icon: #3F7A60;
+  --theme-icon-hover: #285943;
   --theme-font-family: var(--font-inter), sans-serif;
   --theme-radius: 8px;
   color-scheme: light;
@@ -29,6 +33,10 @@
 
 @theme inline {
   --color-primary: var(--theme-primary);
+  --color-primary-hover: var(--theme-primary-hover);
+  --color-icon: var(--theme-icon);
+  --color-icon-hover: var(--theme-icon-hover);
+
   --color-secondary: var(--theme-secondary);
   --color-background: var(--theme-background);
   --color-surface: var(--theme-surface);
@@ -36,9 +44,11 @@
   --color-muted: var(--theme-muted);
   --color-border: var(--theme-border);
   --color-accent: var(--theme-accent);
+
   --font-sans: var(--theme-font-family);
   --radius-theme: var(--theme-radius);
 }
+
 
 body {
   margin: 0;
