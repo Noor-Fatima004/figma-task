@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { IconType } from "react-icons";
@@ -59,39 +59,107 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   const inCatalog = pathname.startsWith("/admin/catalog");
   const inProducts = pathname.startsWith("/admin/catalog/products");
 
+  // md+ : sidebar ke andar khulne wala menu
   const [catalogOpen, setCatalogOpen] = useState(inCatalog);
   const [productsOpen, setProductsOpen] = useState(inProducts);
-  const SubLink = ({ label, href, icon: Icon }: NavLink) => {
+
+  // mobile : sidebar ke right side me khulne wala icon panel
+  const [flyOpen, setFlyOpen] = useState(false);
+  const [flyTop, setFlyTop] = useState(0);
+  const catalogBtnRef = useRef<HTMLButtonElement>(null);
+  const asideRef = useRef<HTMLElement>(null);
+  const [flyLeft, setFlyLeft] = useState(64);
+  const flyRef = useRef<HTMLDivElement>(null);
+
+  // panel ko Catalog button ke barabar me rakhne ke liye
+  const updateFlyTop = useCallback(() => {
+    const r = catalogBtnRef.current?.getBoundingClientRect();
+    if (r) setFlyTop(r.top);
+    const a = asideRef.current?.getBoundingClientRect();
+    if (a) setFlyLeft(a.right);
+  }, []);
+
+  const toggleCatalog = () => {
+    setCatalogOpen((v) => !v);
+    setFlyOpen((v) => !v);
+    updateFlyTop();
+  };
+
+  // page badalne par mobile panel band
+  useEffect(() => {
+    setFlyOpen(false);
+  }, [pathname]);
+
+  // panel ke bahar click/tap karne par band
+  useEffect(() => {
+    if (!flyOpen) return;
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const t = e.target as Node;
+      if (flyRef.current?.contains(t) || catalogBtnRef.current?.contains(t)) return;
+      setFlyOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [flyOpen]);
+
+  // screen resize par position dobara set
+  useEffect(() => {
+    if (!flyOpen) return;
+    window.addEventListener("resize", updateFlyTop);
+    return () => window.removeEventListener("resize", updateFlyTop);
+  }, [flyOpen, updateFlyTop]);
+
+  // md+ : bullet + text sub-link
+  const SubLink = ({ label, href }: NavLink) => {
+    const active = pathname === href;
+    return (
+      <Link
+        href={href}
+        className={`flex items-center gap-3 pl-4 pr-3 py-2 rounded-lg text-sm transition-colors ${
+          active
+            ? "text-[#4CAF4F] font-medium"
+            : "text-gray-300 hover:text-white hover:bg-white/5"
+        }`}
+      >
+        <span
+          className={`w-2.5 h-2.5 rounded-full border shrink-0 ${
+            active ? "border-[#4CAF4F]" : "border-gray-400"
+          }`}
+        />
+        {label}
+      </Link>
+    );
+  };
+
+  // mobile panel : sirf icon
+  const FlyIcon = ({ label, href, icon: Icon }: NavLink) => {
     const active = pathname === href;
     return (
       <Link
         href={href}
         title={label}
-        className={`flex items-center justify-center md:justify-start gap-3 px-0 md:pl-4 md:pr-3 py-2 rounded-lg text-sm transition-colors ${
+        className={`flex items-center justify-center h-10 rounded-lg transition-colors ${
           active
-            ? "text-[#4CAF4F] font-medium bg-[#4CAF4F]/15 md:bg-transparent"
+            ? "text-[#4CAF4F] bg-[#4CAF4F]/15"
             : "text-gray-300 hover:text-white hover:bg-white/5"
         }`}
       >
-        {/* mobile: icon */}
-        <Icon className="w-4 h-4 shrink-0 md:hidden" />
-        {/* md+: bullet */}
-        <span
-          className={`hidden md:inline-block w-2.5 h-2.5 rounded-full border shrink-0 ${
-            active ? "border-[#4CAF4F]" : "border-gray-400"
-          }`}
-        />
-        <span className="hidden md:inline">{label}</span>
+        <Icon className="w-4 h-4" />
       </Link>
     );
   };
 
   return (
     <aside
+      ref={asideRef}
       className={`${open ? "flex" : "hidden"} lg:flex flex-col
       fixed lg:static top-16 lg:top-0 bottom-0 left-0 lg:h-full z-40 bg-primary shrink-0
       w-16 md:w-64
-      rounded-tr-2xl lg:rounded-none shadow-xl lg:shadow-none`}
+      rounded-none shadow-xl lg:shadow-none`}
     >
       <div className="h-16 flex items-center justify-center md:justify-start px-0 md:px-6 border-b border-white/10">
         <span className="hidden md:inline text-lg font-semibold text-white">
@@ -100,7 +168,10 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
         <span className="md:hidden text-lg font-bold text-[#4CAF4F]">N</span>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 md:px-3 py-4 space-y-1">
+      <nav
+        onScroll={() => flyOpen && updateFlyTop()}
+        className="flex-1 overflow-y-auto px-2 md:px-3 py-4 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -123,9 +194,10 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
         {/* ───────── Catalog dropdown ───────── */}
         <div>
           <button
+            ref={catalogBtnRef}
             type="button"
             title="Catalog"
-            onClick={() => setCatalogOpen((v) => !v)}
+            onClick={toggleCatalog}
             aria-expanded={catalogOpen}
             className={`w-full flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
               catalogOpen || inCatalog
@@ -143,35 +215,30 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
           </button>
 
           {catalogOpen && (
-            <div className="mt-1 space-y-0.5 rounded-lg bg-black/10 md:bg-transparent py-1 md:py-0">
+            <div className="hidden md:block mt-1 space-y-0.5">
               {catalogLinks.map((l) => (
                 <SubLink key={l.href} {...l} />
               ))}
 
-              {/* ───────── Nested: Products dropdown ───────── */}
               <div>
                 <button
                   type="button"
-                  title="Products"
                   onClick={() => setProductsOpen((v) => !v)}
                   aria-expanded={productsOpen}
-                  className={`w-full flex items-center justify-center md:justify-start gap-3 px-0 md:pl-4 md:pr-3 py-2 rounded-lg text-sm transition-colors ${
+                  className={`w-full flex items-center gap-3 pl-4 pr-3 py-2 rounded-lg text-sm transition-colors ${
                     inProducts
                       ? "text-[#4CAF4F] font-medium"
                       : "text-gray-300 hover:text-white hover:bg-white/5"
-                  } ${productsOpen ? "bg-white/5 md:bg-transparent" : ""}`}
+                  }`}
                 >
-                  {/* mobile: icon */}
-                  <FaBox className="w-4 h-4 shrink-0 md:hidden" />
-                  {/* md+: bullet */}
                   <span
-                    className={`hidden md:inline-block w-2.5 h-2.5 rounded-full border shrink-0 ${
+                    className={`w-2.5 h-2.5 rounded-full border shrink-0 ${
                       inProducts ? "border-[#4CAF4F]" : "border-gray-400"
                     }`}
                   />
-                  <span className="hidden md:inline flex-1 text-left">Products</span>
+                  <span className="flex-1 text-left">Products</span>
                   <FaChevronDown
-                    className={`hidden md:inline w-3 h-3 transition-transform duration-200 ${
+                    className={`w-3 h-3 transition-transform duration-200 ${
                       productsOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -179,21 +246,19 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
 
                 {productsOpen && (
                   <div className="mt-0.5 space-y-0.5">
-                    {productsLinks.map(({ label, href, icon: Icon }) => {
+                    {productsLinks.map(({ label, href }) => {
                       const active = pathname === href;
                       return (
                         <Link
                           key={href}
                           href={href}
-                          title={label}
-                          className={`flex items-center justify-center md:justify-start gap-3 px-0 md:pl-11 md:pr-3 py-2 rounded-lg text-sm transition-colors ${
+                          className={`block pl-11 pr-3 py-2 rounded-lg text-sm transition-colors ${
                             active
-                              ? "text-[#4CAF4F] font-medium bg-[#4CAF4F]/15 md:bg-transparent"
+                              ? "text-[#4CAF4F] font-medium"
                               : "text-gray-400 hover:text-white hover:bg-white/5"
                           }`}
                         >
-                          <Icon className="w-3.5 h-3.5 shrink-0 md:hidden" />
-                          <span className="hidden md:inline">{label}</span>
+                          {label}
                         </Link>
                       );
                     })}
@@ -204,10 +269,48 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
               <SubLink {...reviewsLink} />
             </div>
           )}
+          {flyOpen && (
+            <div
+              ref={flyRef}
+              style={{ 
+              top: flyTop,
+              left: flyLeft-1,
+               maxHeight: `calc(100vh - ${flyTop}px - 8px)` }}
+              className="md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {catalogLinks.map((l) => (
+                <FlyIcon key={l.href} {...l} />
+              ))}
+
+              {/* Products: icon dabane par uske 3 icons khulte hain */}
+              <button
+                type="button"
+                title="Products"
+                onClick={() => setProductsOpen((v) => !v)}
+                aria-expanded={productsOpen}
+                className={`w-full flex items-center justify-center h-10 rounded-lg transition-colors ${
+                  inProducts
+                    ? "text-[#4CAF4F]"
+                    : "text-gray-300 hover:text-white hover:bg-white/5"
+                } ${productsOpen ? "bg-white/5" : ""}`}
+              >
+                <FaBox className="w-4 h-4" />
+              </button>
+
+              {productsOpen && (
+                <div className="space-y-1 border-y border-white/10 py-1">
+                  {productsLinks.map((l) => (
+                    <FlyIcon key={l.href} {...l} />
+                  ))}
+                </div>
+              )}
+
+              <FlyIcon {...reviewsLink} />
+            </div>
+          )}
         </div>
       </nav>
 
-          
       <div className="p-2 md:p-3 border-t border-white/10">
         <LogoutButton fullWidth hideLabelOnMobile />
       </div>
