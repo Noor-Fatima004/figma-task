@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   FaPlus,
@@ -9,6 +9,7 @@ import {
   FaSort,
   FaSortUp,
   FaSortDown,
+  FaChevronDown,
 } from "react-icons/fa";
 
 type Variation = {
@@ -404,21 +405,15 @@ function VariationModal({
             <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
               Attribute
             </label>
-            <select
+            <FormSelect
               value={attribute}
-              onChange={(e) => setAttribute(e.target.value)}
+              onChange={setAttribute}
               disabled={loadingAttrs}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-            >
-              <option value="">
-                {loadingAttrs ? "Loading attributes..." : "Select Attribute"}
-              </option>
-              {attributes.map((a) => (
-                <option key={a._id} value={a._id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
+              placeholder={
+                loadingAttrs ? "Loading attributes..." : "Select Attribute"
+              }
+              options={attributes.map((a) => ({ value: a._id, label: a.name }))}
+            />
 
             {!loadingAttrs && attributes.length === 0 && (
               <p className="text-[11px] sm:text-xs text-red-500 mt-1.5">
@@ -445,5 +440,94 @@ function VariationModal({
         </div>
       </div>
     </>
+  );
+}
+function FormSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Select",
+  disabled = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // bahar click ya Escape par band
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+      >
+        <span className={`truncate ${selected ? "text-[#263238]" : "text-gray-400"}`}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <FaChevronDown
+          className={`w-3 h-3 shrink-0 text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute left-0 right-0 top-full mt-1 z-[60] max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+        >
+          {options.length === 0 ? (
+            <li className="px-3 py-2 text-xs sm:text-sm text-gray-400">
+              No options
+            </li>
+          ) : (
+            options.map((o) => (
+              <li
+                key={o.value}
+                role="option"
+                aria-selected={o.value === value}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
+                  o.value === value
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-[#263238] hover:bg-gray-50"
+                }`}
+              >
+                {o.label}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
   );
 }

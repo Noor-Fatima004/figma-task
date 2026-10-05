@@ -11,6 +11,7 @@ import {
   FaSortUp,
   FaSortDown,
   FaTimes,
+  FaChevronDown,
 } from "react-icons/fa";
 import AddImageModal from "@/app/admin/AddImageModal";
 
@@ -43,6 +44,7 @@ export default function ProductBrandsPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>(null);
 
+  // debounce search
   useEffect(() => {
     const t = setTimeout(() => {
       setDebounced(search);
@@ -78,11 +80,13 @@ export default function ProductBrandsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
   const clearSearch = () => {
-  setSearch("");
-  setDebounced(""); // turant reset, 300ms wait nahi
-  setPage(1);
-};
+    setSearch("");
+    setDebounced(""); // turant reset, 300ms wait nahi
+    setPage(1);
+  };
+
   const toggleSort = (key: SortKey) => {
     if (sort === key) setOrder((o) => (o === "asc" ? "desc" : "asc"));
     else {
@@ -148,6 +152,7 @@ export default function ProductBrandsPage() {
 
       {/* Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+        {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
           <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
@@ -189,11 +194,14 @@ export default function ProductBrandsPage() {
           </div>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] table-fixed text-xs sm:text-sm text-left">
             <thead>
               <tr className="text-[#263238] border-b border-gray-200">
-                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold"> ID</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  ID
+                </th>
                 <th
                   className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("name")}
@@ -218,25 +226,36 @@ export default function ProductBrandsPage() {
                     Status <SortIcon k="status" />
                   </span>
                 </th>
-                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Action</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     Loading...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     No brands found
                   </td>
                 </tr>
               ) : (
                 items.map((b, i) => (
-                  <tr key={b._id} className="group border-b border-gray-100">
+                  <tr
+                    key={b._id}
+                    className="group border-b border-gray-100"
+                  >
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
@@ -253,7 +272,9 @@ export default function ProductBrandsPage() {
                         <span className="break-words">{b.name}</span>
                       </div>
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{b.slug}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">
+                      {b.slug}
+                    </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-medium ${
@@ -395,14 +416,14 @@ function BrandModal({
             <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
               Status
             </label>
-            <select
+            <FormSelect
               value={status}
-              onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+              onChange={(v) => setStatus(v as "active" | "inactive")}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
+            />
           </div>
           {/* Brand media */}
           <div>
@@ -476,7 +497,9 @@ function BrandModal({
     </>
   );
 }
+
 /* ───────────────────────── Gallery image picker ───────────────────────── */
+
 function GalleryPicker({
   selectedId,
   onSelect,
@@ -493,6 +516,7 @@ function GalleryPicker({
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const knownIds = useRef<Set<string>>(new Set());
+
   const openUpload = async () => {
     try {
       const res = await fetch("/api/admin/gallery/images?category=all", {
@@ -505,6 +529,7 @@ function GalleryPicker({
     } catch {}
     setShowUpload(true);
   };
+
   const handleUploaded = async () => {
     setShowUpload(false);
     loadCategories();
@@ -521,13 +546,15 @@ function GalleryPicker({
         onSelect(fresh[0]._id);
         return;
       }
-    } catch {
-    }
+    } catch {}
     loadImages();
   };
+
   const loadCategories = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/gallery/categories", { cache: "no-store" });
+      const res = await fetch("/api/admin/gallery/categories", {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (res.ok) setCategories(data);
     } catch {}
@@ -556,6 +583,7 @@ function GalleryPicker({
   useEffect(() => {
     loadImages();
   }, [loadImages]);
+
   return createPortal(
     <div
       className="fixed top-16 right-0 bottom-0 left-0 lg:left-64 z-[60] bg-black/40 flex items-center justify-center p-2 sm:p-4"
@@ -604,6 +632,7 @@ function GalleryPicker({
             </button>
           ))}
         </div>
+
         {/* toolbar */}
         <div className="px-3 sm:px-5 py-3 flex flex-wrap justify-end gap-2 shrink-0">
           <button
@@ -619,11 +648,16 @@ function GalleryPicker({
             Refresh
           </button>
         </div>
+
         <div className="px-3 sm:px-5 pb-4 overflow-y-auto flex-1 min-h-[120px]">
           {loading ? (
-            <p className="text-xs sm:text-sm text-gray-500 py-8 text-center">Loading...</p>
+            <p className="text-xs sm:text-sm text-gray-500 py-8 text-center">
+              Loading...
+            </p>
           ) : images.length === 0 ? (
-            <p className="text-xs sm:text-sm text-gray-500 py-8 text-center">No images found.</p>
+            <p className="text-xs sm:text-sm text-gray-500 py-8 text-center">
+              No images found.
+            </p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {images.map((img) => (
@@ -638,6 +672,7 @@ function GalleryPicker({
                       : "border-transparent hover:border-gray-300"
                   }`}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imgSrc(img._id)}
                     alt={img.alt}
@@ -648,6 +683,7 @@ function GalleryPicker({
             </div>
           )}
         </div>
+
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-3 sm:px-5 py-3 border-t border-gray-100 shrink-0">
           <button
             onClick={onClose}
@@ -675,5 +711,98 @@ function GalleryPicker({
       )}
     </div>,
     document.body
+  );
+}
+
+
+/* ───────────────────────── Responsive custom select ───────────────────────── */
+
+function FormSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Select",
+  disabled = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // bahar click ya Escape par band
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+      >
+        <span className={`truncate ${selected ? "text-[#263238]" : "text-gray-400"}`}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <FaChevronDown
+          className={`w-3 h-3 shrink-0 text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute left-0 right-0 top-full mt-1 z-[60] max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+        >
+          {options.length === 0 ? (
+            <li className="px-3 py-2 text-xs sm:text-sm text-gray-400">
+              No options
+            </li>
+          ) : (
+            options.map((o) => (
+              <li
+                key={o.value}
+                role="option"
+                aria-selected={o.value === value}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
+                  o.value === value
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-[#263238] hover:bg-gray-50"
+                }`}
+              >
+                {o.label}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
   );
 }

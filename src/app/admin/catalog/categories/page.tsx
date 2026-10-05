@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -19,6 +19,7 @@ import {
   FaQuoteRight,
   FaUndo,
   FaRedo,
+  FaChevronDown,
 } from "react-icons/fa";
 import GalleryPicker, { imgSrc } from "@/app/admin/GalleryPicker";
 import { slugify } from "@/lib/slugify";
@@ -54,6 +55,7 @@ export default function ProductCategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>(null);
 
+  // debounce search
   useEffect(() => {
     const t = setTimeout(() => {
       setDebounced(search);
@@ -162,6 +164,7 @@ export default function ProductCategoriesPage() {
 
       {/* Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+        {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
           <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
@@ -184,30 +187,33 @@ export default function ProductCategoriesPage() {
 
           <div className="flex min-w-0 flex-1 sm:flex-none items-center justify-end gap-2">
             <span className="shrink-0">Search:</span>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Escape" && clearSearch()}
-                placeholder="Search..."
-                className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
-                >
-                  Clear
-                </button>
-              )}
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && clearSearch()}
+              placeholder="Search..."
+              className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] table-fixed text-xs sm:text-sm text-left">
             <thead>
               <tr className="text-[#263238] border-b border-gray-200">
-                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">ID</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  ID
+                </th>
                 <th
                   className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("name")}
@@ -216,7 +222,9 @@ export default function ProductCategoriesPage() {
                     Name <SortIcon k="name" />
                   </span>
                 </th>
-                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold"> Description</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  Description
+                </th>
                 <th
                   className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("slug")}
@@ -225,25 +233,36 @@ export default function ProductCategoriesPage() {
                     Slug <SortIcon k="slug" />
                   </span>
                 </th>
-                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Action</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     Loading...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     No categories found
                   </td>
                 </tr>
               ) : (
                 items.map((c, i) => (
-                  <tr key={c._id} className="group border-b border-gray-100">
+                  <tr
+                    key={c._id}
+                    className="group border-b border-gray-100"
+                  >
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
@@ -267,14 +286,21 @@ export default function ProductCategoriesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 max-w-[14rem] truncate" title={c.descriptionText}>
+                    <td
+                      className="px-3 sm:px-4 py-2.5 sm:py-3 max-w-[14rem] truncate"
+                      title={c.descriptionText}
+                    >
                       {c.descriptionText || "—"}
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{c.slug}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">
+                      {c.slug}
+                    </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <div className="flex items-center gap-3 text-[#263238]">
                         <button
-                          onClick={() => setModal({ mode: "edit", category: c })}
+                          onClick={() =>
+                            setModal({ mode: "edit", category: c })
+                          }
                           title="Edit"
                           className="text-[#3F7A60] hover:text-[#285943] transition-colors"
                         >
@@ -341,7 +367,9 @@ function CategoryModal({
   const selfId = state.mode === "edit" ? state.category._id : "";
 
   const [name, setName] = useState(editing ? state.category.name : "");
-  const [description, setDescription] = useState(editing ? state.category.description : "");
+  const [description, setDescription] = useState(
+    editing ? state.category.description : ""
+  );
   const [parent, setParent] = useState(editing ? state.category.parent : "");
   const [slug, setSlug] = useState(editing ? state.category.slug : "");
   const [slugTouched, setSlugTouched] = useState(editing); // edit me slug na badle
@@ -366,7 +394,8 @@ function CategoryModal({
       }
     })();
   }, []);
-    // ── Validation: parent ko chhod kar sab required ──
+
+  // ── Validation: parent ko chhod kar sab required ──
   const missing: string[] = [];
   if (!name.trim()) missing.push("Name");
   if (!description.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim())
@@ -443,7 +472,15 @@ function CategoryModal({
   return (
     <>
       {/* backdrop: bahar click karne par band */}
-      <div className="fixed inset-0 z-40 bg-black/30 sm:bg-transparent" onClick={onClose}/>
+      <div
+        className="fixed inset-0 z-40 bg-black/30 sm:bg-transparent"
+        onClick={onClose}
+      />
+
+      {/*
+        Mobile: screen ke beech me, topbar ke neeche (fixed, full width)
+        sm+: + button ke neeche, right aligned
+      */}
       <div
         className="fixed inset-x-3 top-[72px] bottom-3 z-50 flex flex-col
           bg-white rounded-xl shadow-xl border border-gray-100 text-left
@@ -463,7 +500,9 @@ function CategoryModal({
         {/* body (scrollable) */}
         <div className="px-4 sm:px-5 pb-2 overflow-y-auto flex-1 space-y-4">
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">Name <span className="text-red-500">*</span></label>
+            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+              Name <span className="text-red-500">*</span>
+            </label>
             <input
               autoFocus
               value={name}
@@ -484,28 +523,30 @@ function CategoryModal({
             <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
               Parent Category
             </label>
-            <select
+            <FormSelect
+              inline
               value={parent}
-              onChange={(e) => setParent(e.target.value)}
+              onChange={setParent}
               disabled={loadingOptions}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-            >
-              <option value="">
-                {loadingOptions ? "Loading..." : "main category"}
-              </option>
-              {choices.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+              placeholder={loadingOptions ? "Loading..." : "main category"}
+              options={
+                loadingOptions
+                  ? []
+                  : [
+                      { value: "", label: "main category" },
+                      ...choices.map((c) => ({ value: c.id, label: c.label })),
+                    ]
+              }
+            />
             <p className="text-[11px] text-gray-500 mt-1">
               if you leave it blank it will become main category.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">Slug</label>
+            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+              Slug
+            </label>
             <input
               value={slug}
               onChange={(e) => {
@@ -518,8 +559,16 @@ function CategoryModal({
           </div>
 
           <div className="flex flex-col items-start gap-3">
-            <MediaField label="Upload Category Media" value={image} onChange={setImage}/>
-            <MediaField label="Upload Category Icon" value={icon} onChange={setIcon}/>
+            <MediaField
+              label="Upload Category Media"
+              value={image}
+              onChange={setImage}
+            />
+            <MediaField
+              label="Upload Category Icon"
+              value={icon}
+              onChange={setIcon}
+            />
           </div>
         </div>
 
@@ -593,7 +642,9 @@ function MediaField({
           >
             {label}
           </button>
-          <p className="text-[11px] text-gray-500 mt-1.5">Select image file from gallery.</p>
+          <p className="text-[11px] text-gray-500 mt-1.5">
+            Select image file from gallery.
+          </p>
         </>
       )}
 
@@ -610,6 +661,9 @@ function MediaField({
     </div>
   );
 }
+
+/* ───────────────────────── Rich text editor (Tiptap) ───────────────────────── */
+
 function RichTextEditor({
   value,
   onChange,
@@ -626,7 +680,8 @@ function RichTextEditor({
     onUpdate: ({ editor }) => onChange(editor.isEmpty ? "" : editor.getHTML()),
     editorProps: {
       attributes: {
-        class:"min-h-[120px] sm:min-h-[140px] max-h-48 sm:max-h-56 overflow-y-auto px-3 py-2 text-sm focus:outline-none",
+        class:
+          "min-h-[120px] sm:min-h-[140px] max-h-48 sm:max-h-56 overflow-y-auto px-3 py-2 text-sm focus:outline-none",
       },
     },
   });
@@ -642,7 +697,9 @@ function RichTextEditor({
   }, [editor]);
 
   if (!editor) {
-    return (<div className="h-40 sm:h-48 rounded-lg border border-gray-200 bg-gray-50" />);
+    return (
+      <div className="h-40 sm:h-48 rounded-lg border border-gray-200 bg-gray-50" />
+    );
   }
 
   const btn = (active: boolean) =>
@@ -650,30 +707,27 @@ function RichTextEditor({
       active ? "bg-primary text-white" : "text-[#263238] hover:bg-gray-100"
     }`;
 
-  const headingValue = editor.isActive("heading", { level: 2 })
-    ? "2"
-    : editor.isActive("heading", { level: 3 })
-    ? "3"
-    : "0";
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
       {/* toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-green-200 bg-gray-50">
-        <select
-          value={headingValue}
-          onChange={(e) => {
-            const v = e.target.value;
-            const chain = editor.chain().focus();
-            if (v === "0") chain.setParagraph().run();
-            else chain.setHeading({ level: Number(v) as 2 | 3 }).run();
-          }}
-          className="text-xs border border-gray-200 rounded px-1.5 py-1 mr-1 bg-white"
+        <button
+          type="button"
+          title="Heading"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={`${btn(editor.isActive("heading", { level: 2 }))} font-semibold`}
         >
-          <option value="0">Normal</option>
-          <option value="2">Heading</option>
-          <option value="3">Subheading</option>
-        </select>
+          H2
+        </button>
+        <button
+          type="button"
+          title="Subheading"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          className={`${btn(editor.isActive("heading", { level: 3 }))} font-semibold`}
+        >
+          H3
+        </button>
 
         <button
           type="button"
@@ -746,6 +800,103 @@ function RichTextEditor({
         editor={editor}
         className="[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-600 [&_h2]:text-base sm:[&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-sm sm:[&_h3]:text-base [&_h3]:font-semibold [&_p]:my-1"
       />
+    </div>
+  );
+}
+
+
+/* ───────────────────────── Responsive custom select ───────────────────────── */
+
+function FormSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Select",
+  disabled = false,
+  inline = false, // true: list neeche content ko dhakel kar khulti hai (scroll area me clip nahi hoti)
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  disabled?: boolean;
+  inline?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // bahar click ya Escape par band
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+      >
+        <span className={`truncate ${selected ? "text-[#263238]" : "text-gray-400"}`}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <FaChevronDown
+          className={`w-3 h-3 shrink-0 text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className={`${
+            inline ? "mt-1" : "absolute left-0 right-0 top-full mt-1 z-[60]"
+          } max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1`}
+        >
+          {options.length === 0 ? (
+            <li className="px-3 py-2 text-xs sm:text-sm text-gray-400">
+              No options
+            </li>
+          ) : (
+            options.map((o) => (
+              <li
+                key={o.value}
+                role="option"
+                aria-selected={o.value === value}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
+                  o.value === value
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-[#263238] hover:bg-gray-50"
+                }`}
+              >
+                {o.label}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
     </div>
   );
 }
