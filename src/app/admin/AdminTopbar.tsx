@@ -75,7 +75,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
         <button
           onClick={onMenuClick}
           aria-label="Toggle sidebar"
-          className="lg:hidden flex items-center justify-center w-9 h-9 rounded-theme text-text hover:bg-background transition-colors shrink-0"
+          className="lg:hidden flex items-center justify-center w-9 h-9 rounded-theme text-text hover:bg-surface-hover hover:text-text-hover transition-colors shrink-0"
         >
           <FaBars className="w-4 h-4" />
         </button>
@@ -95,14 +95,14 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search users"
             aria-label="Search users"
-            className="w-full h-10 pl-10 pr-9 rounded-theme bg-background border border-theme text-base sm:text-sm text-text placeholder:text-muted outline-none hover:border-green-700 focus:bg-surface focus:border-green-700 focus:ring-0 transition"
+            className="w-full h-10 pl-10 pr-9 rounded-theme bg-background border border-border text-base sm:text-sm text-text placeholder:text-muted outline-none hover:border-border-hover focus:bg-surface focus:border-primary-hover focus:ring-0 transition"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
               aria-label="Clear search"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-full text-muted hover:bg-background hover:text-text transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-full text-muted hover:bg-surface-hover hover:text-text-hover transition-colors"
             >
               <FaTimes className="w-3 h-3" />
             </button>
@@ -117,7 +117,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
           aria-label="Open profile menu"
           aria-haspopup="menu"
           aria-expanded={open}
-          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#285943] flex items-center justify-center text-white text-[12px] sm:text-xs font-bold ring-2 ring-transparent hover:ring-green-200 focus:outline-none focus:ring-green-300 transition"
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-primary flex items-center justify-center text-white text-[12px] sm:text-xs font-bold ring-2 ring-transparent hover:ring-secondary focus:outline-none focus:ring-secondary transition"
         >
           {initials}
         </button>
@@ -128,7 +128,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
             className="absolute right-0 mt-2 w-56 sm:w-72 max-w-[calc(100vw-1.5rem)] bg-surface rounded-theme border border-border shadow-xl z-50 overflow-hidden"
           >
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 px-4 py-6 sm:p-4 text-center sm:text-left">
-              <div className="w-14 h-14 sm:w-12 sm:h-12 rounded-full bg-[#285943] flex items-center justify-center text-white text-lg sm:text-base font-bold shrink-0">
+              <div className="w-14 h-14 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center text-white text-lg sm:text-base font-bold shrink-0">
                 {initials}
               </div>
               <div className="min-w-0 w-full">
@@ -142,7 +142,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
             <button
               role="menuitem"
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-4 sm:py-3 text-sm text-text hover:bg-background transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-4 sm:py-3 text-sm text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
             >
               <FaSignOutAlt className="w-4 h-4 text-muted" />
               Sign out

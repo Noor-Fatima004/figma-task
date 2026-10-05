@@ -121,11 +121,11 @@ export default function ProductCategoriesPage() {
 
   const SortIcon = ({ k }: { k: SortKey }) =>
     sort !== k ? (
-      <FaSort className="w-3 h-3 text-gray-300" />
+      <FaSort className="w-3 h-3 text-muted" />
     ) : order === "asc" ? (
-      <FaSortUp className="w-3 h-3 text-[#4CAF4F]" />
+      <FaSortUp className="w-3 h-3 text-secondary" />
     ) : (
-      <FaSortDown className="w-3 h-3 text-[#4CAF4F]" />
+      <FaSortDown className="w-3 h-3 text-secondary" />
     );
 
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
@@ -134,8 +134,8 @@ export default function ProductCategoriesPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200">
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-[#263238]">
+      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-border">
+        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-text">
           Product Categories
         </h1>
 
@@ -163,9 +163,9 @@ export default function ProductCategoriesPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+      <div className="bg-surface rounded-2xl border border-border shadow-sm p-3 sm:p-5">
         {/* Toolbar */}
-        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-text">
           <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
             <FormSelect
@@ -187,13 +187,13 @@ export default function ProductCategoriesPage() {
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && clearSearch()}
               placeholder="Search..."
-              className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="min-w-0 w-full sm:w-56 border border-border rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {search && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+                className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
               >
                 Clear
               </button>
@@ -205,7 +205,7 @@ export default function ProductCategoriesPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] table-fixed text-xs sm:text-sm text-left">
             <thead>
-              <tr className="text-[#263238] border-b border-gray-200">
+              <tr className="text-text border-b border-border">
                 <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
                   ID
                 </th>
@@ -238,7 +238,7 @@ export default function ProductCategoriesPage() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-[#717171]"
+                    className="px-4 py-8 text-center text-muted"
                   >
                     Loading...
                   </td>
@@ -247,7 +247,7 @@ export default function ProductCategoriesPage() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-[#717171]"
+                    className="px-4 py-8 text-center text-muted"
                   >
                     No categories found
                   </td>
@@ -256,9 +256,9 @@ export default function ProductCategoriesPage() {
                 items.map((c, i) => (
                   <tr
                     key={c._id}
-                    className="group border-b border-gray-100"
+                    className="group border-b border-border"
                   >
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-background group-hover:bg-surface-hover transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
@@ -268,13 +268,13 @@ export default function ProductCategoriesPage() {
                           <img
                             src={imgSrc(c.image)}
                             alt={c.name}
-                            className="w-6 h-6 sm:w-7 sm:h-7 rounded object-cover shrink-0 bg-gray-100"
+                            className="w-6 h-6 sm:w-7 sm:h-7 rounded object-cover shrink-0 bg-background"
                           />
                         )}
                         <div className="min-w-0">
                           <p className="break-words">{c.name}</p>
                           {c.parentName && (
-                            <p className="text-[11px] text-gray-400 break-words">
+                            <p className="text-[11px] text-muted break-words">
                               in {c.parentName}
                             </p>
                           )}
@@ -291,13 +291,13 @@ export default function ProductCategoriesPage() {
                       {c.slug}
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
-                      <div className="flex items-center gap-3 text-[#263238]">
+                      <div className="flex items-center gap-3 text-text">
                         <button
                           onClick={() =>
                             setModal({ mode: "edit", category: c })
                           }
                           title="Edit"
-                          className="text-[#3F7A60] hover:text-[#285943] transition-colors"
+                          className="text-icon hover:text-icon-hover transition-colors"
                         >
                           <FaRegEdit className="w-4 h-4" />
                         </button>
@@ -318,7 +318,7 @@ export default function ProductCategoriesPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-[#717171]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-muted">
           <p className="shrink-0">
             Showing {from} to {to} of {total} entries
           </p>
@@ -478,16 +478,16 @@ function CategoryModal({
       */}
       <div
         className="fixed inset-x-3 top-[72px] bottom-3 z-50 flex flex-col
-          bg-white rounded-xl shadow-xl border border-gray-100 text-left
+          bg-surface rounded-xl shadow-xl border border-border text-left
           sm:absolute sm:inset-x-auto sm:left-auto sm:right-0 sm:top-full sm:bottom-auto sm:mt-3
           sm:w-[30rem] sm:max-h-[calc(100vh-9rem)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="hidden sm:block absolute -top-1.5 right-3 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45" />
+        <span className="hidden sm:block absolute -top-1.5 right-3 w-3 h-3 bg-surface border-l border-t border-border rotate-45" />
 
         {/* header */}
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 shrink-0">
-          <h2 className="text-base sm:text-lg font-semibold text-[#263238]">
+          <h2 className="text-base sm:text-lg font-semibold text-text">
             {editing ? "Edit Category" : "Add Category"}
           </h2>
         </div>
@@ -495,7 +495,7 @@ function CategoryModal({
         {/* body (scrollable) */}
         <div className="px-4 sm:px-5 pb-2 overflow-y-auto flex-1 space-y-4">
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-text mb-1">
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -503,19 +503,19 @@ function CategoryModal({
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
               placeholder="e.g. Clothing, T-Shirts"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-text mb-1">
               Description
             </label>
             <RichTextEditor value={description} onChange={setDescription} />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-text mb-1">
               Parent Category
             </label>
             <FormSelect
@@ -533,13 +533,13 @@ function CategoryModal({
                     ]
               }
             />
-            <p className="text-[11px] text-gray-500 mt-1">
+            <p className="text-[11px] text-muted mt-1">
               if you leave it blank it will become main category.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-text mb-1">
               Slug
             </label>
             <input
@@ -549,7 +549,7 @@ function CategoryModal({
                 setSlugTouched(true);
               }}
               placeholder="auto-generated from name"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 
@@ -568,10 +568,10 @@ function CategoryModal({
         </div>
 
         {/* footer */}
-        <div className="flex justify-end gap-2 px-4 sm:px-5 py-3 sm:py-4 border-t border-gray-100 shrink-0">
+        <div className="flex justify-end gap-2 px-4 sm:px-5 py-3 sm:py-4 border-t border-border shrink-0">
           <button
             onClick={onClose}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-border hover:bg-surface-hover hover:text-text-hover transition-colors"
           >
             Cancel
           </button>
@@ -609,7 +609,7 @@ function MediaField({
           <img
             src={imgSrc(value)}
             alt={label}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-gray-200 bg-gray-100"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-border bg-background"
           />
           <div className="flex flex-col items-start gap-1">
             <button
@@ -637,7 +637,7 @@ function MediaField({
           >
             {label}
           </button>
-          <p className="text-[11px] text-gray-500 mt-1.5">
+          <p className="text-[11px] text-muted mt-1.5">
             Select image file from gallery.
           </p>
         </>
@@ -693,20 +693,20 @@ function RichTextEditor({
 
   if (!editor) {
     return (
-      <div className="h-40 sm:h-48 rounded-lg border border-gray-200 bg-gray-50" />
+      <div className="h-40 sm:h-48 rounded-lg border border-border bg-background" />
     );
   }
 
   const btn = (active: boolean) =>
     `w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded text-xs sm:text-sm transition-colors ${
-      active ? "bg-primary text-white" : "text-[#263238] hover:bg-gray-100"
+      active ? "bg-primary text-white" : "text-text hover:bg-surface-hover hover:text-text-hover"
     }`;
 
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
+    <div className="border border-border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
       {/* toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-green-200 bg-gray-50">
+      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-border bg-background">
         <button
           type="button"
           title="Heading"
@@ -793,7 +793,7 @@ function RichTextEditor({
       {/* Tailwind reset lists/headings hata deta hai, isliye inko wapas style kiya */}
       <EditorContent
         editor={editor}
-        className="[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-600 [&_h2]:text-base sm:[&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-sm sm:[&_h3]:text-base [&_h3]:font-semibold [&_p]:my-1"
+        className="[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-border-hover [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_h2]:text-base sm:[&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-sm sm:[&_h3]:text-base [&_h3]:font-semibold [&_p]:my-1"
       />
     </div>
   );
@@ -848,17 +848,17 @@ function FormSelect({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex items-center justify-between gap-2 border border-gray-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
+        className={`flex items-center justify-between gap-2 border border-border bg-surface text-text text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
           compact
             ? "rounded-md px-2 py-1 text-xs sm:text-sm min-w-[3.5rem]"
             : "w-full rounded-lg px-3 py-2 text-sm"
         }`}
       >
-        <span className={`truncate ${selected ? "text-[#263238]" : "text-gray-400"}`}>
+        <span className={`truncate ${selected ? "text-text" : "text-muted"}`}>
           {selected ? selected.label : placeholder}
         </span>
         <FaChevronDown
-          className={`w-3 h-3 shrink-0 text-gray-400 transition-transform ${
+          className={`w-3 h-3 shrink-0 text-muted transition-transform ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -873,10 +873,10 @@ function FormSelect({
               : `absolute top-full mt-1 z-[60] left-0 ${
                   compact ? "min-w-full" : "right-0"
                 }`
-          } max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1`}
+          } max-h-44 sm:max-h-52 overflow-y-auto bg-surface border border-border rounded-lg shadow-lg py-1`}
         >
           {options.length === 0 ? (
-            <li className="px-3 py-2 text-xs sm:text-sm text-gray-400">
+            <li className="px-3 py-2 text-xs sm:text-sm text-muted">
               No options
             </li>
           ) : (
@@ -892,7 +892,7 @@ function FormSelect({
                 className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
                   o.value === value
                     ? "bg-primary/10 text-primary font-medium"
-                    : "text-[#263238] hover:bg-gray-50"
+                    : "text-text hover:bg-surface-hover hover:text-text-hover"
                 }`}
               >
                 {o.label}

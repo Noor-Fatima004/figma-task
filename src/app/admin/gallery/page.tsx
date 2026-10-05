@@ -57,13 +57,13 @@ export default function GalleryPage() {
 
   return (
     <div className="">
-      <h1 className="text-2xl font-bold text-gray-900 pb-4 border-b border-gray-200">Image Gallery</h1>
+      <h1 className="text-2xl font-bold text-text pb-4 border-b border-border">Image Gallery</h1>
 
       {/* Categories */}
       <div className="flex flex-wrap gap-3 mt-6">
         <button
           onClick={() => setActive("all")}
-          className={`px-4 py-2 rounded-md text-sm ${active === "all" ? "bg-primary text-white" : "bg-gray-100 hover:bg-gray-200 text-text"}`}
+          className={`px-4 py-2 rounded-md text-sm transition-colors ${active === "all" ? "bg-primary text-white" : "bg-background hover:bg-surface-hover hover:text-text-hover text-text"}`}
         >
           All
         </button>
@@ -71,7 +71,7 @@ export default function GalleryPage() {
           <button
             key={c._id}
             onClick={() => setActive(c._id)}
-            className={`px-4 py-2 rounded-md text-sm ${active === c._id ? "bg-primary text-white" : "bg-gray-100 hover:bg-gray-200 hover:text-green-700"}`}
+            className={`px-4 py-2 rounded-md text-sm transition-colors ${active === c._id ? "bg-primary text-white" : "bg-background hover:bg-surface-hover hover:text-text-hover text-text"}`}
           >
             {c.name}
           </button>
@@ -84,7 +84,7 @@ export default function GalleryPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 mt-6">
+      <div className="bg-surface rounded-xl border border-border shadow-sm p-4 md:p-6 mt-6">
         {/* Select all + buttons */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <label className="flex items-center gap-2 text-sm">
@@ -94,14 +94,14 @@ export default function GalleryPage() {
               onChange={() => setSelected(allSelected ? [] : images.map((i) => i._id))}
             />
             Select All
-            <span className="text-[11px] text-gray-500">({selected.length} Item Selected)</span>
+            <span className="text-[11px] text-muted">({selected.length} Item Selected)</span>
           </label>
 
           <div className="flex gap-2">
             <button onClick={deleteSelected} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm">
               Delete
             </button>
-            <button onClick={() => setModalOpen(true)} className="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-md text-sm">
+            <button onClick={() => setModalOpen(true)} className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md text-sm transition-colors">
               Add New
             </button>
           </div>
@@ -110,7 +110,7 @@ export default function GalleryPage() {
         {/* Images */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mt-6">
             {images.map((img) => (
-                <div key={img._id} className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                <div key={img._id} className="group relative aspect-square rounded-xl overflow-hidden bg-background">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/api/gallery/image/${img._id}`}
@@ -130,14 +130,14 @@ export default function GalleryPage() {
         <Link
           href={`/admin/gallery/${img._id}`}
           title="View more"
-          className="pointer-events-auto w-11 h-11 rounded-full bg-white text-gray-800 flex items-center justify-center shadow-lg shadow-black/20 hover:bg-primary hover:text-white transition"
+          className="pointer-events-auto w-11 h-11 rounded-full bg-surface text-text flex items-center justify-center shadow-lg shadow-black/20 hover:bg-primary hover:text-white transition"
         >
           <FaEye />
         </Link>
 
         <Link
           href={`/admin/gallery/${img._id}`}
-          className="pointer-events-auto text-sm font-medium text-white underline underline-offset-2 decoration-white/80 hover:text-primary-foreground/80"
+          className="pointer-events-auto text-sm font-medium text-white underline underline-offset-2 decoration-white/80 hover:text-secondary transition-colors"
         >
           Read more
         </Link>
@@ -146,7 +146,7 @@ export default function GalleryPage() {
             ))}
         </div>
 
-        {images.length === 0 && <p className="text-sm text-gray-500 mt-6">No images found.</p>}
+        {images.length === 0 && <p className="text-sm text-muted mt-6">No images found.</p>}
       </div>
 
       {modalOpen && (

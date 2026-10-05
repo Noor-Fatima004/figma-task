@@ -110,11 +110,11 @@ export default function ProductBrandsPage() {
 
   const SortIcon = ({ k }: { k: SortKey }) =>
     sort !== k ? (
-      <FaSort className="w-3 h-3 text-gray-300" />
+      <FaSort className="w-3 h-3 text-muted" />
     ) : order === "asc" ? (
-      <FaSortUp className="w-3 h-3 text-[#4CAF4F]" />
+      <FaSortUp className="w-3 h-3 text-secondary" />
     ) : (
-      <FaSortDown className="w-3 h-3 text-[#4CAF4F]" />
+      <FaSortDown className="w-3 h-3 text-secondary" />
     );
 
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
@@ -123,8 +123,8 @@ export default function ProductBrandsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200">
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-[#263238]">
+      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-border">
+        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-text">
           Product Brands
         </h1>
 
@@ -151,9 +151,9 @@ export default function ProductBrandsPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+      <div className="bg-surface rounded-2xl border border-border shadow-sm p-3 sm:p-5">
         {/* Toolbar */}
-        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-text">
           <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
             <FormSelect
@@ -175,13 +175,13 @@ export default function ProductBrandsPage() {
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && clearSearch()}
               placeholder="Search..."
-              className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="min-w-0 w-full sm:w-56 border border-border rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {search && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+                className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
               >
                 Clear
               </button>
@@ -193,7 +193,7 @@ export default function ProductBrandsPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] table-fixed text-xs sm:text-sm text-left">
             <thead>
-              <tr className="text-[#263238] border-b border-gray-200">
+              <tr className="text-text border-b border-border">
                 <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
                   ID
                 </th>
@@ -231,7 +231,7 @@ export default function ProductBrandsPage() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-[#717171]"
+                    className="px-4 py-8 text-center text-muted"
                   >
                     Loading...
                   </td>
@@ -240,7 +240,7 @@ export default function ProductBrandsPage() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-[#717171]"
+                    className="px-4 py-8 text-center text-muted"
                   >
                     No brands found
                   </td>
@@ -249,9 +249,9 @@ export default function ProductBrandsPage() {
                 items.map((b, i) => (
                   <tr
                     key={b._id}
-                    className="group border-b border-gray-100"
+                    className="group border-b border-border"
                   >
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-background group-hover:bg-surface-hover transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
@@ -261,7 +261,7 @@ export default function ProductBrandsPage() {
                           <img
                             src={imgSrc(b.image)}
                             alt={b.name}
-                            className="w-6 h-6 sm:w-7 sm:h-7 rounded object-cover shrink-0 bg-gray-100"
+                            className="w-6 h-6 sm:w-7 sm:h-7 rounded object-cover shrink-0 bg-background"
                           />
                         )}
                         <span className="break-words">{b.name}</span>
@@ -274,7 +274,7 @@ export default function ProductBrandsPage() {
                       <span
                         className={`px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-medium ${
                           b.status === "active"
-                            ? "bg-green-50 text-green-600"
+                            ? "bg-primary-hover/10 text-primary-hover"
                             : "bg-red-50 text-red-500"
                         }`}
                       >
@@ -282,11 +282,11 @@ export default function ProductBrandsPage() {
                       </span>
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
-                      <div className="flex items-center gap-3 text-[#263238]">
+                      <div className="flex items-center gap-3 text-text">
                         <button
                           onClick={() => setModal({ mode: "edit", brand: b })}
                           title="Edit"
-                          className="text-[#3F7A60] hover:text-[#285943] transition-colors"
+                          className="text-icon hover:text-icon-hover transition-colors"
                         >
                           <FaRegEdit className="w-4 h-4" />
                         </button>
@@ -307,7 +307,7 @@ export default function ProductBrandsPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-[#717171]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-muted">
           <p className="shrink-0">
             Showing {from} to {to} of {total} entries
           </p>
@@ -386,16 +386,16 @@ function BrandModal({
       {/* transparent backdrop: click outside to close */}
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
-        className="absolute right-0 top-full mt-3 z-50 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-xl shadow-xl border border-green-200 p-4 sm:p-6 text-left"
+        className="absolute right-0 top-full mt-3 z-50 w-[calc(100vw-2rem)] sm:w-96 bg-surface rounded-xl shadow-xl border border-border p-4 sm:p-6 text-left"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="absolute -top-1.5 right-3 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45" />
-        <h2 className="text-base sm:text-lg font-semibold text-[#263238] mb-4">
+        <span className="absolute -top-1.5 right-3 w-3 h-3 bg-surface border-l border-t border-border rotate-45" />
+        <h2 className="text-base sm:text-lg font-semibold text-text mb-4">
           {editing ? "Edit Brand" : "Add Brand"}
         </h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-text mb-1">
               Brand Name
             </label>
             <input
@@ -404,11 +404,11 @@ function BrandModal({
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="e.g. Nike, KIA"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-text mb-1">
               Status
             </label>
             <FormSelect
@@ -428,7 +428,7 @@ function BrandModal({
                 <img
                   src={imgSrc(image)}
                   alt="Brand"
-                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover border border-gray-200 bg-gray-100"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover border border-border bg-background"
                 />
                 <div className="flex flex-col items-start gap-1">
                   <button
@@ -456,7 +456,7 @@ function BrandModal({
                 >
                   Upload Brand Media
                 </button>
-                <p className="text-[11px] text-gray-500 mt-1.5">
+                <p className="text-[11px] text-muted mt-1.5">
                   Select image file from gallery.
                 </p>
               </>
@@ -466,7 +466,7 @@ function BrandModal({
         <div className="flex justify-end gap-2 mt-5 sm:mt-6">
           <button
             onClick={onClose}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-border hover:bg-surface-hover hover:text-text-hover transition-colors"
           >
             Cancel
           </button>
@@ -585,18 +585,18 @@ function GalleryPicker({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl border border-primary w-full max-w-5xl max-h-full flex flex-col overflow-hidden"
+        className="bg-surface text-text rounded-xl shadow-2xl border border-border w-full max-w-5xl max-h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* top bar */}
-        <div className="flex items-center justify-between gap-3 px-3 sm:px-5 py-3 border-b border-gray-100 shrink-0">
-          <h3 className="text-sm sm:text-base font-semibold text-[#263238] truncate">
+        <div className="flex items-center justify-between gap-3 px-3 sm:px-5 py-3 border-b border-border shrink-0">
+          <h3 className="text-sm sm:text-base font-semibold text-text truncate">
             Select image from gallery
           </h3>
           <button
             onClick={onClose}
             title="Close"
-            className="w-8 h-8 shrink-0 rounded-md flex items-center justify-center text-gray-500 hover:bg-gray-100"
+            className="w-8 h-8 shrink-0 rounded-md flex items-center justify-center text-muted hover:bg-surface-hover hover:text-text-hover transition-colors"
           >
             <FaTimes />
           </button>
@@ -608,7 +608,7 @@ function GalleryPicker({
             className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm ${
               active === "all"
                 ? "bg-primary text-white"
-                : "bg-gray-100 hover:bg-gray-200 text-[#263238]"
+                : "bg-background hover:bg-surface-hover hover:text-text-hover text-text"
             }`}
           >
             All
@@ -620,7 +620,7 @@ function GalleryPicker({
               className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm ${
                 active === c._id
                   ? "bg-primary text-white"
-                  : "bg-gray-100 hover:bg-gray-200 text-[#263238]"
+                  : "bg-background hover:bg-surface-hover hover:text-text-hover text-text"
               }`}
             >
               {c.name}
@@ -632,7 +632,7 @@ function GalleryPicker({
         <div className="px-3 sm:px-5 py-3 flex flex-wrap justify-end gap-2 shrink-0">
           <button
             onClick={openUpload}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm border border-primary text-primary hover:bg-primary hover:text-white transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm border border-border text-primary hover:border-primary-hover hover:bg-primary hover:text-white transition-colors"
           >
             Upload from device
           </button>
@@ -646,11 +646,11 @@ function GalleryPicker({
 
         <div className="px-3 sm:px-5 pb-4 overflow-y-auto flex-1 min-h-[120px]">
           {loading ? (
-            <p className="text-xs sm:text-sm text-gray-500 py-8 text-center">
+            <p className="text-xs sm:text-sm text-muted py-8 text-center">
               Loading...
             </p>
           ) : images.length === 0 ? (
-            <p className="text-xs sm:text-sm text-gray-500 py-8 text-center">
+            <p className="text-xs sm:text-sm text-muted py-8 text-center">
               No images found.
             </p>
           ) : (
@@ -661,10 +661,10 @@ function GalleryPicker({
                   type="button"
                   onClick={() => setPicked(img._id)}
                   onDoubleClick={() => onSelect(img._id)}
-                  className={`aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 transition ${
+                  className={`aspect-square rounded-lg overflow-hidden bg-background border-2 transition ${
                     picked === img._id
                       ? "border-primary ring-2 ring-primary/30"
-                      : "border-transparent hover:border-gray-300"
+                      : "border-transparent hover:border-border-hover"
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -679,10 +679,10 @@ function GalleryPicker({
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-3 sm:px-5 py-3 border-t border-gray-100 shrink-0">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-3 sm:px-5 py-3 border-t border-border shrink-0">
           <button
             onClick={onClose}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
           >
             Cancel
           </button>
@@ -758,17 +758,17 @@ function FormSelect({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex items-center justify-between gap-2 border border-gray-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
+        className={`flex items-center justify-between gap-2 border border-border bg-surface text-text text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
           compact
             ? "rounded-md px-2 py-1 text-xs sm:text-sm min-w-[3.5rem]"
             : "w-full rounded-lg px-3 py-2 text-sm"
         }`}
       >
-        <span className={`truncate ${selected ? "text-[#263238]" : "text-gray-400"}`}>
+        <span className={`truncate ${selected ? "text-text" : "text-muted"}`}>
           {selected ? selected.label : placeholder}
         </span>
         <FaChevronDown
-          className={`w-3 h-3 shrink-0 text-gray-400 transition-transform ${
+          className={`w-3 h-3 shrink-0 text-muted transition-transform ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -783,10 +783,10 @@ function FormSelect({
               : `absolute top-full mt-1 z-[60] left-0 ${
                   compact ? "min-w-full" : "right-0"
                 }`
-          } max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1`}
+          } max-h-44 sm:max-h-52 overflow-y-auto bg-surface border border-border rounded-lg shadow-lg py-1`}
         >
           {options.length === 0 ? (
-            <li className="px-3 py-2 text-xs sm:text-sm text-gray-400">
+            <li className="px-3 py-2 text-xs sm:text-sm text-muted">
               No options
             </li>
           ) : (
@@ -802,7 +802,7 @@ function FormSelect({
                 className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
                   o.value === value
                     ? "bg-primary/10 text-primary font-medium"
-                    : "text-[#263238] hover:bg-gray-50"
+                    : "text-text hover:bg-surface-hover hover:text-text-hover"
                 }`}
               >
                 {o.label}

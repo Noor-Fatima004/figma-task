@@ -40,11 +40,11 @@ function StatCard({
   const up = (trend ?? 0) >= 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+    <div className="bg-surface rounded-2xl border border-border shadow-sm p-5">
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="text-xs sm:text-sm text-[#717171] font-medium">{label}</p>
-          <p className="text-2xl sm:text-3xl font-semibold text-[#263238] mt-1.5">
+          <p className="text-xs sm:text-sm text-muted font-medium">{label}</p>
+          <p className="text-2xl sm:text-3xl font-semibold text-text mt-1.5">
             {value.toLocaleString()}
           </p>
         </div>
@@ -59,7 +59,7 @@ function StatCard({
         {trend !== undefined && (
           <span
             className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full ${
-              up ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
+              up ? "bg-primary-hover/10 text-primary-hover" : "bg-red-50 text-red-500"
             }`}
           >
             {up ? (
@@ -70,7 +70,7 @@ function StatCard({
             {Math.abs(trend)}%
           </span>
         )}
-        {caption && <span className="text-[#9CA3AF]">{caption}</span>}
+        {caption && <span className="text-muted">{caption}</span>}
       </div>
     </div>
   );
@@ -186,10 +186,10 @@ export default async function AdminDashboardPage({
     <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-[#263238]">
+        <h1 className="text-xl sm:text-2xl font-semibold text-text">
           Overview
         </h1>
-        <p className="text-sm text-[#717171] mt-1">
+        <p className="text-sm text-muted mt-1">
           Here&apos;s what&apos;s happening with your users.
         </p>
       </div>
@@ -200,21 +200,21 @@ export default async function AdminDashboardPage({
           label="Total users"
           value={totalUsers}
           icon={FaUsers}
-          iconClass="bg-green-50 text-[#4CAF4F]"
+          iconClass="bg-primary-hover/10 text-primary-hover"
           caption="All registered users"
         />
         <StatCard
           label="Admins"
           value={totalAdmins}
           icon={FaUserShield}
-          iconClass="bg-slate-100 text-[#263238]"
+          iconClass="bg-secondary/10 text-secondary"
           caption="With admin access"
         />
         <StatCard
           label="New this week"
           value={newThisWeek}
           icon={FaUserPlus}
-          iconClass="bg-blue-50 text-blue-500"
+          iconClass="bg-background text-icon"
           trend={weekTrend}
           caption="vs previous 7 days"
         />
@@ -222,7 +222,7 @@ export default async function AdminDashboardPage({
           label="Last 30 days"
           value={newLast30Days}
           icon={FaCalendarAlt}
-          iconClass="bg-amber-50 text-amber-500"
+          iconClass="bg-accent/10 text-accent"
           caption="New signups"
         />
       </div>
@@ -237,10 +237,10 @@ export default async function AdminDashboardPage({
       {/* Recent users */}
       <div>
         <div className="mb-4">
-          <h2 className="text-lg sm:text-xl font-semibold text-[#263238]">
+          <h2 className="text-lg sm:text-xl font-semibold text-text">
             Recent users
           </h2>
-          <p className="text-xs sm:text-sm text-[#717171] mt-0.5">
+          <p className="text-xs sm:text-sm text-muted mt-0.5">
             {query ? `Results for "${query}"` : "Latest signups"}
           </p>
         </div>

@@ -112,18 +112,18 @@ export default function GalleryPicker({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl border border-primary w-full max-w-5xl max-h-full flex flex-col overflow-hidden"
+        className="bg-surface text-text rounded-xl shadow-2xl border border-border w-full max-w-5xl max-h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* top bar */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-gray-100 shrink-0">
-          <h3 className="text-sm sm:text-base font-semibold text-[#263238] truncate">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-border shrink-0">
+          <h3 className="text-sm sm:text-base font-semibold text-text truncate">
             Select image from gallery
           </h3>
           <button
             onClick={onClose}
             title="Close"
-            className="w-8 h-8 shrink-0 rounded-md flex items-center justify-center text-gray-500 hover:bg-gray-100"
+            className="w-8 h-8 shrink-0 rounded-md flex items-center justify-center text-muted hover:bg-surface-hover hover:text-text-hover transition-colors"
           >
             <FaTimes />
           </button>
@@ -136,7 +136,7 @@ export default function GalleryPicker({
             className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm ${
               active === "all"
                 ? "bg-primary text-white"
-                : "bg-gray-100 hover:bg-gray-200 text-[#263238]"
+                : "bg-background hover:bg-surface-hover hover:text-text-hover text-text"
             }`}
           >
             All
@@ -148,7 +148,7 @@ export default function GalleryPicker({
               className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm ${
                 active === c._id
                   ? "bg-primary text-white"
-                  : "bg-gray-100 hover:bg-gray-200 text-[#263238]"
+                  : "bg-background hover:bg-surface-hover hover:text-text-hover text-text"
               }`}
             >
               {c.name}
@@ -160,7 +160,7 @@ export default function GalleryPicker({
         <div className="px-4 sm:px-5 py-3 flex flex-wrap justify-end gap-2 shrink-0">
           <button
             onClick={openUpload}
-            className="px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm border border-primary text-primary hover:bg-primary hover:text-white transition-colors"
+            className="px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm border border-border text-primary hover:border-primary-hover hover:bg-primary hover:text-white transition-colors"
           >
             Upload from device
           </button>
@@ -175,9 +175,9 @@ export default function GalleryPicker({
         {/* image grid (scrollable) */}
         <div className="px-4 sm:px-5 pb-4 overflow-y-auto flex-1 min-h-[120px]">
           {loading ? (
-            <p className="text-sm text-gray-500 py-8 text-center">Loading...</p>
+            <p className="text-sm text-muted py-8 text-center">Loading...</p>
           ) : images.length === 0 ? (
-            <p className="text-sm text-gray-500 py-8 text-center">No images found.</p>
+            <p className="text-sm text-muted py-8 text-center">No images found.</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {images.map((img) => (
@@ -186,10 +186,10 @@ export default function GalleryPicker({
                   type="button"
                   onClick={() => setPicked(img._id)}
                   onDoubleClick={() => onSelect(img._id)}
-                  className={`aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 transition ${
+                  className={`aspect-square rounded-lg overflow-hidden bg-background border-2 transition ${
                     picked === img._id
                       ? "border-primary ring-2 ring-primary/30"
-                      : "border-transparent hover:border-gray-300"
+                      : "border-transparent hover:border-border-hover"
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -205,10 +205,10 @@ export default function GalleryPicker({
         </div>
 
         {/* footer */}
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-4 sm:px-5 py-3 border-t border-gray-100 shrink-0">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-4 sm:px-5 py-3 border-t border-border shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm border border-gray-200 hover:bg-gray-50"
+            className="px-4 py-2 rounded-lg text-sm border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
           >
             Cancel
           </button>

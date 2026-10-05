@@ -98,11 +98,11 @@ export default function ProductAttributesPage() {
 
   const SortIcon = ({ k }: { k: SortKey }) =>
     sort !== k ? (
-      <FaSort className="w-3 h-3 text-gray-300" />
+      <FaSort className="w-3 h-3 text-muted" />
     ) : order === "asc" ? (
-      <FaSortUp className="w-3 h-3 text-[#4CAF4F]" />
+      <FaSortUp className="w-3 h-3 text-secondary" />
     ) : (
-      <FaSortDown className="w-3 h-3 text-[#4CAF4F]" />
+      <FaSortDown className="w-3 h-3 text-secondary" />
     );
 
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
@@ -111,8 +111,8 @@ export default function ProductAttributesPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200">
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-[#263238]">
+      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-border">
+        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-text">
           Product Attributes
         </h1>
 
@@ -140,9 +140,9 @@ export default function ProductAttributesPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+      <div className="bg-surface rounded-2xl border border-border shadow-sm p-3 sm:p-5">
         {/* Toolbar */}
-        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-text">
           <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
             <FormSelect
@@ -165,13 +165,13 @@ export default function ProductAttributesPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Escape" && clearSearch()}
                 placeholder="Search..."
-                className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="min-w-0 w-full sm:w-56 border border-border rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary"
               />
               {search && (
                 <button
                   type="button"
                   onClick={clearSearch}
-                  className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+                  className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
                 >
                   Clear
                 </button>
@@ -183,7 +183,7 @@ export default function ProductAttributesPage() {
         <div className="overflow-x-auto">
           <table className="w-full table-fixed text-xs sm:text-sm text-left">
             <thead>
-              <tr className="text-[#263238] border-b border-gray-200">
+              <tr className="text-text border-b border-border">
                 <th className="w-1/3 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
                   ID
                 </th>
@@ -205,7 +205,7 @@ export default function ProductAttributesPage() {
                 <tr>
                   <td
                     colSpan={3}
-                    className="px-4 py-8 text-center text-[#717171]"
+                    className="px-4 py-8 text-center text-muted"
                   >
                     Loading...
                   </td>
@@ -214,7 +214,7 @@ export default function ProductAttributesPage() {
                 <tr>
                   <td
                     colSpan={3}
-                    className="px-4 py-8 text-center text-[#717171]"
+                    className="px-4 py-8 text-center text-muted"
                   >
                     No attributes found
                   </td>
@@ -223,20 +223,20 @@ export default function ProductAttributesPage() {
                 items.map((a, i) => (
                   <tr
                     key={a._id}
-                    className="group border-b border-gray-100"
+                    className="group border-b border-border"
                   >
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-background group-hover:bg-surface-hover transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">
                       {a.name}
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
-                      <div className="flex items-center gap-3 text-[#263238]">
+                      <div className="flex items-center gap-3 text-text">
                         <button
                           onClick={() => setModal({ mode: "edit", attr: a })}
                           title="Edit"
-                          className="text-[#3F7A60] hover:text-[#285943] transition-colors"
+                          className="text-icon hover:text-icon-hover transition-colors"
                         >
                           <FaRegEdit className="w-4 h-4" />
                         </button>
@@ -257,7 +257,7 @@ export default function ProductAttributesPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-[#717171]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-muted">
           <p className="shrink-0">
             Showing {from} to {to} of {total} entries
           </p>
@@ -331,17 +331,17 @@ function AttributeModal({
 
       {/* Popup: below the + button, right aligned */}
       <div
-        className="absolute right-0 top-full mt-3 z-50 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-xl shadow-xl border border-green-200 p-4 sm:p-6 text-left"
+        className="absolute right-0 top-full mt-3 z-50 w-[calc(100vw-2rem)] sm:w-96 bg-surface rounded-xl shadow-xl border border-border p-4 sm:p-6 text-left"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="absolute -top-1.5 right-3 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45" />
+        <span className="absolute -top-1.5 right-3 w-3 h-3 bg-surface border-l border-t border-border rotate-45" />
 
-        <h2 className="text-base sm:text-lg font-semibold text-[#263238] mb-4">
+        <h2 className="text-base sm:text-lg font-semibold text-text mb-4">
           {editing ? "Edit Attribute" : "Add Attribute"}
         </h2>
 
         <div>
-          <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-text mb-1">
             Name
           </label>
           <input
@@ -350,14 +350,14 @@ function AttributeModal({
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
             placeholder="e.g. Size, Color"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
 
         <div className="flex justify-end gap-2 mt-5 sm:mt-6">
           <button
             onClick={onClose}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-border hover:bg-surface-hover hover:text-text-hover transition-colors"
           >
             Cancel
           </button>
@@ -423,17 +423,17 @@ function FormSelect({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex items-center justify-between gap-2 border border-gray-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
+        className={`flex items-center justify-between gap-2 border border-border bg-surface text-text text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
           compact
             ? "rounded-md px-2 py-1 text-xs sm:text-sm min-w-[3.5rem]"
             : "w-full rounded-lg px-3 py-2 text-sm"
         }`}
       >
-        <span className={`truncate ${selected ? "text-[#263238]" : "text-gray-400"}`}>
+        <span className={`truncate ${selected ? "text-text" : "text-muted"}`}>
           {selected ? selected.label : placeholder}
         </span>
         <FaChevronDown
-          className={`w-3 h-3 shrink-0 text-gray-400 transition-transform ${
+          className={`w-3 h-3 shrink-0 text-muted transition-transform ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -448,10 +448,10 @@ function FormSelect({
               : `absolute top-full mt-1 z-[60] left-0 ${
                   compact ? "min-w-full" : "right-0"
                 }`
-          } max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1`}
+          } max-h-44 sm:max-h-52 overflow-y-auto bg-surface border border-border rounded-lg shadow-lg py-1`}
         >
           {options.length === 0 ? (
-            <li className="px-3 py-2 text-xs sm:text-sm text-gray-400">
+            <li className="px-3 py-2 text-xs sm:text-sm text-muted">
               No options
             </li>
           ) : (
@@ -467,7 +467,7 @@ function FormSelect({
                 className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
                   o.value === value
                     ? "bg-primary/10 text-primary font-medium"
-                    : "text-[#263238] hover:bg-gray-50"
+                    : "text-text hover:bg-surface-hover hover:text-text-hover"
                 }`}
               >
                 {o.label}

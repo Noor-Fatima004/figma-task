@@ -54,8 +54,8 @@ function ImageCard({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 grid gap-6 md:grid-cols-2">
-      <div className="bg-gray-50 rounded-lg flex items-center justify-center p-4 min-h-56">
+    <div className="bg-surface border border-border rounded-xl shadow-sm p-4 md:p-6 grid gap-6 md:grid-cols-2">
+      <div className="bg-background rounded-lg flex items-center justify-center p-4 min-h-56">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`/api/gallery/image/${v._id}`}
@@ -66,19 +66,19 @@ function ImageCard({
         />
       </div>
 
-      <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+      <div className="bg-background rounded-lg p-4 space-y-4">
         <div>
-          <h3 className="text-lg text-[#4CAF4F]">
+          <h3 className="text-lg text-primary-hover">
             {data.width} × {data.height}px
           </h3>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted">
             Actual Size ( {natural.w}*{natural.h} )
           </p>
         </div>
 
         <div>
           <label className="text-sm font-semibold">Image ID</label>
-          <div className="flex items-center gap-2 border bg-white rounded px-3 py-2 text-sm mt-1">
+          <div className="flex items-center gap-2 border border-border bg-surface rounded px-3 py-2 text-sm mt-1">
             <code className="truncate flex-1">{v._id}</code>
             <button
               onClick={() => {
@@ -96,7 +96,7 @@ function ImageCard({
           <select
             value={data.category}
             onChange={(e) => setData({ ...data, category: e.target.value })}
-            className="border rounded-lg px-3 py-2 w-full text-sm mt-1 bg-white"
+            className="border border-border rounded-lg px-3 py-2 w-full text-sm mt-1 bg-surface text-text"
           >
             {categories.map((c) => (
               <option key={c._id} value={c._id}>{c.name}</option>
@@ -111,7 +111,7 @@ function ImageCard({
               type="number"
               value={data.height}
               onChange={(e) => setData({ ...data, height: +e.target.value })}
-              className="border rounded-lg px-3 py-2 w-full text-sm mt-1"
+              className="border border-border rounded-lg px-3 py-2 w-full text-sm mt-1 bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex-1">
@@ -120,7 +120,7 @@ function ImageCard({
               type="number"
               value={data.width}
               onChange={(e) => setData({ ...data, width: +e.target.value })}
-              className="border rounded-lg px-3 py-2 w-full text-sm mt-1"
+              className="border border-border rounded-lg px-3 py-2 w-full text-sm mt-1 bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </div>
@@ -130,7 +130,7 @@ function ImageCard({
           <input
             value={data.alt}
             onChange={(e) => setData({ ...data, alt: e.target.value })}
-            className="border rounded-lg px-3 py-2 w-full text-sm mt-1"
+            className="border border-border rounded-lg px-3 py-2 w-full text-sm mt-1 bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
 
@@ -141,7 +141,7 @@ function ImageCard({
           <button
             onClick={save}
             disabled={saving}
-            className="bg-[#4CAF4F] text-white px-5 py-2 rounded-md text-sm disabled:opacity-60"
+            className="bg-primary text-white px-5 py-2 rounded-md text-sm hover:bg-primary-hover disabled:opacity-60 transition-colors"
           >
             {saving ? "Updating..." : "Update"}
           </button>
@@ -181,13 +181,13 @@ export default function ImageDetailPage() {
     setItems((prev) => prev.filter((x) => x._id !== deletedId));
   }
 
-  if (items.length === 0) return <div className="p-8 text-sm text-gray-500">Loading...</div>;
+  if (items.length === 0) return <div className="p-8 text-sm text-muted">Loading...</div>;
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Image Detail</h1>
-        <Link href="/admin/gallery" className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#4CAF4F]">
+      <div className="flex items-center justify-between pb-4 border-b border-border">
+        <h1 className="text-2xl font-bold text-text">Image Detail</h1>
+        <Link href="/admin/gallery" className="flex items-center gap-2 text-sm text-muted hover:text-text-hover transition-colors">
           <FaArrowLeft /> Back
         </Link>
       </div>

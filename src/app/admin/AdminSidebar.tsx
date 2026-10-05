@@ -121,13 +121,13 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
         href={href}
         className={`flex items-center gap-3 pl-4 pr-3 py-2 rounded-lg text-sm transition-colors ${
           active
-            ? "text-[#4CAF4F] font-medium"
-            : "text-gray-300 hover:text-white hover:bg-white/5"
+            ? "text-white font-medium"
+            : "text-white/70 hover:text-white hover:bg-white/10"
         }`}
       >
         <span
           className={`w-2.5 h-2.5 rounded-full border shrink-0 ${
-            active ? "border-[#4CAF4F]" : "border-gray-400"
+            active ? "border-secondary" : "border-white/30"
           }`}
         />
         {label}
@@ -144,8 +144,8 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
         title={label}
         className={`flex items-center justify-center h-10 rounded-lg transition-colors ${
           active
-            ? "text-[#4CAF4F] bg-[#4CAF4F]/15"
-            : "text-gray-300 hover:text-white hover:bg-white/5"
+            ? "text-white bg-white/10"
+            : "text-white/70 hover:text-white hover:bg-white/10"
         }`}
       >
         <Icon className="w-4 h-4" />
@@ -163,9 +163,9 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
     >
       <div className="h-16 flex items-center justify-center md:justify-start px-0 md:px-6 border-b border-white/10">
         <span className="hidden md:inline text-lg font-semibold text-white">
-          Nextcent <span className="text-[#4CAF4F]">Admin</span>
+          Nextcent <span className="text-secondary">Admin</span>
         </span>
-        <span className="md:hidden text-lg font-bold text-[#4CAF4F]">N</span>
+        <span className="md:hidden text-lg font-bold text-secondary">N</span>
       </div>
 
       <nav
@@ -182,8 +182,8 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
               title={item.label}
               className={`flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-[#4CAF4F]/15 text-[#4CAF4F]"
-                  : "text-gray-300 hover:bg-white/5 hover:text-white"
+                  ? "bg-white/10 text-white"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -201,8 +201,8 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
             aria-expanded={catalogOpen}
             className={`w-full flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
               catalogOpen || inCatalog
-                ? "bg-[#4CAF4F]/15 text-[#4CAF4F]"
-                : "text-gray-300 hover:bg-white/5 hover:text-white"
+                ? "bg-white/10 text-white"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
             <FaBoxes className="w-4 h-4 shrink-0" />
@@ -227,13 +227,13 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
                   aria-expanded={productsOpen}
                   className={`w-full flex items-center gap-3 pl-4 pr-3 py-2 rounded-lg text-sm transition-colors ${
                     inProducts
-                      ? "text-[#4CAF4F] font-medium"
-                      : "text-gray-300 hover:text-white hover:bg-white/5"
+                      ? "text-white font-medium"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
                   }`}
                 >
                   <span
                     className={`w-2.5 h-2.5 rounded-full border shrink-0 ${
-                      inProducts ? "border-[#4CAF4F]" : "border-gray-400"
+                      inProducts ? "border-secondary" : "border-white/30"
                     }`}
                   />
                   <span className="flex-1 text-left">Products</span>
@@ -254,8 +254,8 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
                           href={href}
                           className={`block pl-11 pr-3 py-2 rounded-lg text-sm transition-colors ${
                             active
-                              ? "text-[#4CAF4F] font-medium"
-                              : "text-gray-400 hover:text-white hover:bg-white/5"
+                              ? "text-white font-medium"
+                              : "text-white/60 hover:text-white hover:bg-white/10"
                           }`}
                         >
                           {label}
@@ -290,9 +290,9 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
                 aria-expanded={productsOpen}
                 className={`w-full flex items-center justify-center h-10 rounded-lg transition-colors ${
                   inProducts
-                    ? "text-[#4CAF4F]"
-                    : "text-gray-300 hover:text-white hover:bg-white/5"
-                } ${productsOpen ? "bg-white/5" : ""}`}
+                    ? "text-secondary"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                } ${productsOpen ? "bg-white/10" : ""}`}
               >
                 <FaBox className="w-4 h-4" />
               </button>

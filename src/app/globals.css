@@ -1,34 +1,57 @@
 @import "tailwindcss";
 
+/* Public site theme */
 :root {
-  --theme-primary: #1F4D3F;
-  --theme-primary-hover: #2b7e55;
-  --theme-secondary: #83a17d;
-  --theme-background: #f5f8f3;
+  --theme-primary: #1e293b;
+  --theme-primary-hover: #4338CA;  /* bright indigo: hover */
+  --theme-secondary: #6366F1;
+  --theme-background: #f5f3ff;
   --theme-surface: #ffffff;
-  --theme-text: #263238;
-  --theme-muted: #717171;
-  --theme-border: #e5e7eb;
-  --theme-accent: #6c9a78;
-  --theme-font-family: var(--font-inter), sans-serif;
-  --theme-radius: 8px;
-}
-
-[data-theme-scope="admin"] {
-  --theme-primary: #285943;
-  --theme-primary-hover: #2b7e55;
-  --theme-secondary: #83a17d;
-  --theme-background: #f5f8f3;
-  --theme-surface: #ffffff;
-  --theme-text: #263238;
-  --theme-muted: #717171;
-  --theme-border: #e5e7eb;
-  --theme-accent: #6c9a78;
-  --theme-icon: #3F7A60;
-  --theme-icon-hover: #285943;
+  --theme-text: #1e1b4b;
+  --theme-muted: #6e6b8f;
+  --theme-border: #e4e0f5;
+  --theme-border-hover: #c4b5fd;
+  --theme-surface-hover: #ede9fe;
+  --theme-text-hover: #4f46e5;
+  --theme-accent: #293549;
+  --theme-icon: #4f46e5;
+  --theme-icon-hover: #312e81;
+  --theme-gradient: linear-gradient(160deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%);
   --theme-font-family: var(--font-inter), sans-serif;
   --theme-radius: 8px;
   color-scheme: light;
+}
+
+/*
+  Admin theme: "Midnight Indigo"
+  body:has(...) ki wajah se portal modals (createPortal -> document.body)
+  aur body background bhi admin colors lete hain.
+*/
+[data-theme-scope="admin"],
+body:has([data-theme-scope="admin"]) {
+  --theme-primary: #1e293b;
+  --theme-primary-hover: #4338CA;
+  --theme-secondary: #6366F1;
+  --theme-background: #f5f3ff;
+  --theme-surface: #ffffff;
+  --theme-text: #1e1b4b;
+  --theme-muted: #6e6b8f;
+  --theme-border: #e4e0f5;
+  --theme-border-hover: #c4b5fd;
+  --theme-surface-hover: #ede9fe;
+  --theme-text-hover: #4f46e5;
+  --theme-accent: #f59e0b;
+  --theme-icon: #4f46e5;
+  --theme-icon-hover: #312e81;
+  --theme-gradient: linear-gradient(160deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%);
+  --theme-font-family: var(--font-inter), sans-serif;
+  --theme-radius: 8px;
+  color-scheme: light;
+}
+
+/* optional: sidebar / header par lagane ke liye (class="bg-theme-gradient") */
+.bg-theme-gradient {
+  background-image: var(--theme-gradient);
 }
 
 @theme inline {
@@ -40,9 +63,12 @@
   --color-secondary: var(--theme-secondary);
   --color-background: var(--theme-background);
   --color-surface: var(--theme-surface);
+  --color-surface-hover: var(--theme-surface-hover);
   --color-text: var(--theme-text);
+  --color-text-hover: var(--theme-text-hover);
   --color-muted: var(--theme-muted);
   --color-border: var(--theme-border);
+  --color-border-hover: var(--theme-border-hover);
   --color-accent: var(--theme-accent);
 
   --font-sans: var(--theme-font-family);

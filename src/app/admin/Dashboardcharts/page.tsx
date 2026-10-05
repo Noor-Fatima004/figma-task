@@ -49,7 +49,7 @@ export default function DashboardCharts({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       {/* New signups — area chart */}
-      <section className="lg:col-span-2 bg-surface rounded-theme border border-theme shadow-sm p-5 sm:p-6">
+      <section className="lg:col-span-2 bg-surface rounded-theme border border-border shadow-sm p-5 sm:p-6">
         <div className="mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-text">
             New signups
@@ -107,7 +107,7 @@ export default function DashboardCharts({
       </section>
 
       {/* Users vs admins — donut */}
-      <section className="bg-surface rounded-theme border border-theme shadow-sm p-5 sm:p-6">
+      <section className="bg-surface rounded-theme border border-border shadow-sm p-5 sm:p-6">
         <div className="mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-text">
             Accounts

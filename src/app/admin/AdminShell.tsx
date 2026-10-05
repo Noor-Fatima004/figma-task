@@ -15,12 +15,12 @@ export default function AdminShell({ name, email, children }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="h-dvh overflow-hidden flex bg-[#F5F7FA]">
+    <div data-theme-scope="admin" className="h-dvh overflow-hidden flex bg-background">
       <AdminSidebar open={sidebarOpen} />
 
       <div className="flex-1 flex flex-col min-w-0 h-full">
         <div className="shrink-0">
-          <Suspense fallback={<header className="h-16 bg-white border-b border-gray-100" />}>
+          <Suspense fallback={<header className="h-16 bg-surface border-b border-border" />}>
             <AdminTopbar
               name={name}
               email={email}

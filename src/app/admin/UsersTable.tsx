@@ -30,22 +30,22 @@ type ModalState =
   | null;
 
 const inputCls =
-  "w-full border border-gray-400 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-primary focus:border-primary focus:ring-0";
+  "w-full border border-border rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-border-hover focus:border-primary-hover focus:ring-0";
 
 const inputErrCls =
   "w-full border border-red-500 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-red-500 focus:border-red-500 focus:ring-0";
 
 const selectCls =
-  "border border-gray-100 rounded-theme px-2.5 py-1.5 text-xs sm:text-sm text-text bg-surface outline-none transition-colors hover:border-border focus:border-border focus:ring-0 cursor-pointer";
+  "border border-border rounded-theme px-2.5 py-1.5 text-xs sm:text-sm text-text bg-surface outline-none transition-colors hover:border-border-hover focus:border-primary-hover focus:ring-0 cursor-pointer";
 
 const pageBtnCls =
-  "px-3 py-1.5 text-xs sm:text-sm rounded-theme border border-border text-text bg-surface hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface transition-colors";
+  "px-3 py-1.5 text-xs sm:text-sm rounded-theme border border-border text-text bg-surface hover:bg-surface-hover hover:text-text-hover disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:text-text transition-colors";
 
 const smallBtnCls =
-  "shrink-0 px-2.5 py-1 text-xs rounded-theme border border-border text-text hover:bg-surface";
+  "shrink-0 px-2.5 py-1 text-xs rounded-theme border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors";
 
 const iconBtnCls =
-  "shrink-0 p-1.5 rounded-theme border border-border text-muted hover:text-text hover:bg-surface transition-colors";
+  "shrink-0 p-1.5 rounded-theme border border-border text-muted hover:text-text-hover hover:bg-surface-hover transition-colors";
 
 function EyeIcon({ off = false }: { off?: boolean }) {
   return off ? (
@@ -292,7 +292,7 @@ export default function UsersTable({
           {showActions && (
             <button
               onClick={() => openModal({ type: "add" })}
-              className="bg-[#285943] text-white text-xs sm:text-sm px-4 py-2 rounded-theme hover:opacity-90"
+              className="bg-primary text-white text-xs sm:text-sm px-4 py-2 rounded-theme hover:bg-primary-hover transition-colors"
             >
               + Add User
             </button>
@@ -335,7 +335,7 @@ export default function UsersTable({
                       {u.email}
                     </td>
                     <td className="px-3 sm:px-5 py-2.5 sm:py-3">
-                      <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap bg-accent/10 text-[#184343]">
+                      <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap bg-accent/10 text-primary">
                         {u.role}
                       </span>
                     </td>
@@ -376,7 +376,7 @@ export default function UsersTable({
 
           <div className="flex items-center gap-2">
             <button
-              className={`${pageBtnCls} !bg-primary !text-white !border-border hover:!bg-primary disabled:!bg-gray-100 disabled:!text-gray-400 disabled:!border-gray-200`}
+              className={`${pageBtnCls} !bg-primary !text-white !border-border hover:!bg-primary-hover disabled:!bg-background disabled:!text-muted disabled:!border-border`}
               disabled={pagination.page <= 1}
               onClick={() => updateParams({ page: String(pagination.page - 1) })}
             >
@@ -386,7 +386,7 @@ export default function UsersTable({
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
-              className={`${pageBtnCls} !bg-primary !text-white !border-border hover:!bg-primary disabled:!bg-gray-100 disabled:!text-gray-400 disabled:!border-gray-200`}
+              className={`${pageBtnCls} !bg-primary !text-white !border-border hover:!bg-primary-hover disabled:!bg-background disabled:!text-muted disabled:!border-border`}
               disabled={pagination.page >= pagination.totalPages}
               onClick={() => updateParams({ page: String(pagination.page + 1) })}
             >
@@ -489,7 +489,7 @@ export default function UsersTable({
                     </label>
 
                     <div className="flex items-start gap-2">
-                      <div className="relative flex-1 min-w-0 border border-gray-400 rounded-theme px-3 py-2 pr-10 text-xs bg-background text-text font-mono break-all select-none">
+                      <div className="relative flex-1 min-w-0 border border-border rounded-theme px-3 py-2 pr-10 text-xs bg-background text-text font-mono break-all select-none">
                         {showHash && revealedHash ? revealedHash : "••••••••••"}
                         {showHash ? (
                           <button
@@ -497,7 +497,7 @@ export default function UsersTable({
                             aria-label="Hide password"
                             title="Hide"
                             onClick={hidePassword}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-theme text-muted hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-theme text-muted hover:text-text-hover hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                           >
                             <EyeIcon off />
                           </button>
@@ -507,7 +507,7 @@ export default function UsersTable({
                             aria-label="Show password"
                             title={revealedHash ? "Show" : "Show (admin password required)"}
                             onClick={() => handleEyeClick(modal.user, "edit")}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-theme text-muted hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-theme text-muted hover:text-text-hover hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                           >
                             <EyeIcon />
                           </button>
@@ -557,14 +557,14 @@ export default function UsersTable({
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 text-sm rounded-theme border border-theme text-text"
+                    className="px-4 py-2 text-sm rounded-theme border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 text-sm rounded-theme bg-[#285943] text-white disabled:opacity-60"
+                    className="px-4 py-2 text-sm rounded-theme bg-primary text-white hover:bg-primary-hover transition-colors disabled:opacity-60"
                   >
                     {loading ? "Saving..." : modal.type === "add" ? "Add User" : "Save Changes"}
                   </button>
@@ -577,14 +577,14 @@ export default function UsersTable({
               <div>
                 {/* Header */}
                 <div className="flex items-center gap-3 pb-4 border-b border-border">
-                  <div className="h-12 w-12 shrink-0 rounded-full bg-[#285943] text-white flex items-center justify-center text-lg font-semibold uppercase">
+                  <div className="h-12 w-12 shrink-0 rounded-full bg-primary text-white flex items-center justify-center text-lg font-semibold uppercase">
                     {modal.user.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-base font-semibold text-text truncate">{modal.user.name}</h3>
                     <p className="text-xs text-muted truncate">{modal.user.email}</p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-accent/10 text-[#184343]">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-accent/10 text-primary">
                     {modal.user.role}
                   </span>
                 </div>
@@ -711,7 +711,7 @@ export default function UsersTable({
                               type="button"
                               disabled={loading}
                               onClick={() => changePassword(modal.user)}
-                              className="px-3 py-1.5 text-xs rounded-theme bg-[#285943] text-white disabled:opacity-60"
+                              className="px-3 py-1.5 text-xs rounded-theme bg-primary text-white hover:bg-primary-hover transition-colors disabled:opacity-60"
                             >
                               {loading ? "Saving..." : "Update"}
                             </button>
@@ -743,7 +743,7 @@ export default function UsersTable({
                 <div className="flex justify-end pt-5">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 text-sm rounded-theme bg-[#285943] text-white"
+                    className="px-4 py-2 text-sm rounded-theme bg-primary text-white hover:bg-primary-hover transition-colors"
                   >
                     Close
                   </button>
@@ -786,14 +786,14 @@ export default function UsersTable({
                       setError("");
                       setModal({ type: modal.from, user: modal.user });
                     }}
-                    className="px-4 py-2 text-sm rounded-theme border border-theme text-text"
+                    className="px-4 py-2 text-sm rounded-theme border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 text-sm rounded-theme bg-[#285943] text-white disabled:opacity-60"
+                    className="px-4 py-2 text-sm rounded-theme bg-primary text-white hover:bg-primary-hover transition-colors disabled:opacity-60"
                   >
                     {loading ? "Verifying..." : "Verify"}
                   </button>
@@ -814,7 +814,7 @@ export default function UsersTable({
                 <div className="flex justify-end gap-2 pt-2">
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 text-sm rounded-theme border border-theme text-text"
+                    className="px-4 py-2 text-sm rounded-theme border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors"
                   >
                     Cancel
                   </button>
