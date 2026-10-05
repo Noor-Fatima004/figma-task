@@ -156,7 +156,7 @@ export default function SignupForm() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 tabIndex={-1}
-                className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[11px] sm:text-xs md:text-sm font-medium text-[#4CAF4F] hover:text-[#388E3C] transition-colors"
+                className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[11px] sm:text-xs md:text-sm font-medium text-primary hover:text-[#388E3C] transition-colors"
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
@@ -184,7 +184,7 @@ export default function SignupForm() {
                 type="button"
                 onClick={() => setShowConfirm((v) => !v)}
                 tabIndex={-1}
-                className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[11px] sm:text-xs md:text-sm font-medium text-[#4CAF4F] hover:text-[#388E3C] transition-colors"
+                className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[11px] sm:text-xs md:text-sm font-medium text-primary hover:text-[#388E3C] transition-colors"
               >
                 {showConfirm ? "Hide" : "Show"}
               </button>
@@ -207,14 +207,14 @@ export default function SignupForm() {
               I agree to the{" "}
               <a
                 href="#"
-                className="text-[#4CAF4F] hover:underline font-medium"
+                className="text-primary hover:underline font-medium"
               >
                 Terms of Service
               </a>{" "}
               and{" "}
               <a
                 href="#"
-                className="text-[#4CAF4F] hover:underline font-medium"
+                className="text-primary hover:underline font-medium"
               >
                 Privacy Policy
               </a>
@@ -228,7 +228,7 @@ export default function SignupForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-[#4CAF4F] hover:bg-[#388E3C] active:scale-[0.99] disabled:bg-[#9CA3AF] disabled:cursor-not-allowed text-white font-medium text-sm sm:text-[15px] md:text-base py-3 sm:py-3.5 md:py-4 px-4 rounded-lg sm:rounded-xl transition-all duration-300 shadow-md shadow-[#4CAF4F]/20"
+          className="w-full bg-primary hover:bg-[#388E3C] active:scale-[0.99] disabled:bg-[#9CA3AF] disabled:cursor-not-allowed text-white font-medium text-sm sm:text-[15px] md:text-base py-3 sm:py-3.5 md:py-4 px-4 rounded-lg sm:rounded-xl transition-all duration-300 shadow-md shadow-[#4CAF4F]/20"
         >
           {isLoading ? (
             <span className="inline-flex items-center justify-center gap-2">
@@ -264,7 +264,7 @@ export default function SignupForm() {
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-[#4CAF4F] font-semibold hover:underline whitespace-nowrap"
+            className="text-primary font-semibold hover:underline whitespace-nowrap"
           >
             Login
           </Link>

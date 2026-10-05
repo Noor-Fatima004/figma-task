@@ -14,8 +14,8 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         {/* LEFT – Attract Section (hidden on small screens, form takes full focus) */}
         <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between gap-10 bg-gradient-to-br from-[#eef8ef] via-[#e3f4e4] to-[#d3ebd5] p-10 xl:p-12 overflow-hidden">
           {/* Soft decorative glow — replaces the small corner circles */}
-          <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#4CAF4F]/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-[#4CAF4F]/10 blur-3xl" />
+          <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-primary/10 blur-3xl" />
 
           {/* Logo */}
           <div className="relative flex items-center gap-2">
@@ -34,7 +34,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div className="relative space-y-6">
             <div className="space-y-3">
               <h2 className="text-3xl xl:text-[38px] font-semibold leading-[1.15] text-[#1e2b32]">
-                Grow your <span className="text-[#4CAF4F]">community</span>{" "}
+                Grow your <span className="text-primary">community</span>{" "}
                 with confidence.
               </h2>
               <p className="text-[#5a6b70] text-sm xl:text-[15px] leading-relaxed max-w-sm">
