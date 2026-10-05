@@ -659,7 +659,7 @@ function RichTextEditor({
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
       {/* toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-gray-200 bg-gray-50">
+      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-green-200 bg-gray-50">
         <select
           value={headingValue}
           onChange={(e) => {
