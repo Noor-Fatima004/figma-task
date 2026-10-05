@@ -117,7 +117,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
           aria-label="Open profile menu"
           aria-haspopup="menu"
           aria-expanded={open}
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#285943] flex items-center justify-center text-white text-[11px] sm:text-xs font-bold ring-2 ring-transparent hover:ring-green-200 focus:outline-none focus:ring-green-300 transition"
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#285943] flex items-center justify-center text-white text-[12px] sm:text-xs font-bold ring-2 ring-transparent hover:ring-green-200 focus:outline-none focus:ring-green-300 transition"
         >
           {initials}
         </button>
