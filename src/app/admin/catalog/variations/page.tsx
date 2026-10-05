@@ -151,24 +151,19 @@ export default function ProductVariationsPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
         {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
-          <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+          <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
-            <select
-              value={limit}
-              onChange={(e) => {
-                setLimit(Number(e.target.value));
+            <FormSelect
+              compact
+              value={String(limit)}
+              onChange={(v) => {
+                setLimit(Number(v));
                 setPage(1);
               }}
-              className="border border-gray-200 rounded-md px-2 py-1 bg-white text-xs sm:text-sm"
-            >
-              {LIMITS.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
+              options={LIMITS.map((l) => ({ value: String(l), label: String(l) }))}
+            />
             <span className="hidden sm:inline">entries</span>
-          </label>
+          </div>
 
           <div className="flex min-w-0 flex-1 sm:flex-none items-center justify-end gap-2">
             <span className="shrink-0">Search:</span>
@@ -442,18 +437,25 @@ function VariationModal({
     </>
   );
 }
+
+/* ───────────────────────── Responsive custom select ───────────────────────── */
+
 function FormSelect({
   value,
   onChange,
   options,
   placeholder = "Select",
   disabled = false,
+  inline = false, // true: list neeche content ko dhakel kar khulti hai (scroll area me clip nahi hoti)
+  compact = false, // true: chhota trigger (Show entries wale dropdown ke liye)
 }: {
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   placeholder?: string;
   disabled?: boolean;
+  inline?: boolean;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -478,14 +480,18 @@ function FormSelect({
   const selected = options.find((o) => o.value === value);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={compact ? "relative inline-block" : "relative"}>
       <button
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+        className={`flex items-center justify-between gap-2 border border-gray-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
+          compact
+            ? "rounded-md px-2 py-1 text-xs sm:text-sm min-w-[3.5rem]"
+            : "w-full rounded-lg px-3 py-2 text-sm"
+        }`}
       >
         <span className={`truncate ${selected ? "text-[#263238]" : "text-gray-400"}`}>
           {selected ? selected.label : placeholder}
@@ -500,7 +506,13 @@ function FormSelect({
       {open && (
         <ul
           role="listbox"
-          className="absolute left-0 right-0 top-full mt-1 z-[60] max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+          className={`${
+            inline
+              ? "mt-1"
+              : `absolute top-full mt-1 z-[60] left-0 ${
+                  compact ? "min-w-full" : "right-0"
+                }`
+          } max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1`}
         >
           {options.length === 0 ? (
             <li className="px-3 py-2 text-xs sm:text-sm text-gray-400">
