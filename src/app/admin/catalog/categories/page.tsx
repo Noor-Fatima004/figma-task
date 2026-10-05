@@ -57,7 +57,7 @@ export default function ProductCategoriesPage() {
   // debounce search
   useEffect(() => {
     const t = setTimeout(() => {
-      setDebounced("");
+      setDebounced(search);
       setPage(1);
     }, 300);
     return () => clearTimeout(t);
@@ -104,7 +104,7 @@ export default function ProductCategoriesPage() {
       setOrder("asc");
     }
   };
-  
+
 
   const handleDelete = async (c: Category) => {
     if (!confirm(`Delete category "${c.name}"?`)) return;
@@ -132,10 +132,10 @@ export default function ProductCategoriesPage() {
   const to = Math.min(page * limit, total);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="relative flex items-center justify-between pb-4 border-b border-gray-200">
-        <h1 className="text-xl sm:text-2xl font-semibold text-[#263238]">
+      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200">
+        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-[#263238]">
           Product Categories
         </h1>
 
@@ -144,9 +144,9 @@ export default function ProductCategoriesPage() {
           <button
             onClick={() => setModal({ mode: "add" })}
             title="Add category"
-            className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center shadow transition-colors"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary hover:bg-primary-hover text-white flex items-center justify-center shadow transition-colors"
           >
-            <FaPlus className="w-4 h-4" />
+            <FaPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
           {modal && (
@@ -163,9 +163,9 @@ export default function ProductCategoriesPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 text-sm text-[#263238]">
-          <label className="flex items-center gap-2">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
+          <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
             <select
               value={limit}
@@ -173,7 +173,7 @@ export default function ProductCategoriesPage() {
                 setLimit(Number(e.target.value));
                 setPage(1);
               }}
-              className="border border-gray-200 rounded-md px-2 py-1 bg-white"
+              className="border border-gray-200 rounded-md px-2 py-1 bg-white text-xs sm:text-sm"
             >
               {LIMITS.map((l) => (
                 <option key={l} value={l}>
@@ -181,100 +181,99 @@ export default function ProductCategoriesPage() {
                 </option>
               ))}
             </select>
-            entries
+            <span className="hidden sm:inline">entries</span>
           </label>
 
-          <div className="flex items-center gap-2">
-            <span>Search:</span>
-            <div className="flex items-stretch gap-3">
+          <div className="flex min-w-0 flex-1 sm:flex-none items-center justify-end gap-2">
+            <span className="shrink-0">Search:</span>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Escape" && clearSearch()}
-                className="border border-gray-200 rounded-md px-3 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                placeholder="Search..."
+                className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
               />
               {search && (
                 <button
                   type="button"
                   onClick={clearSearch}
-                  className="flex items-center px-3 rounded-md text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+                  className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
                 >
                   Clear
                 </button>
               )}
-            </div>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] table-fixed text-sm text-left">
+          <table className="w-full min-w-[640px] text-xs sm:text-sm text-left">
             <thead>
-              <tr className="text-[#263238] border-b border-gray-200 text-left">
-                <th className="px-4 py-3 font-semibold text-left">ID</th>
+              <tr className="text-[#263238] border-b border-gray-200">
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-16 sm:w-20">ID</th>
                 <th
-                  className="px-4 py-3 font-semibold text-left cursor-pointer select-none"
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("name")}
                 >
                   <span className="inline-flex items-center gap-2">
                     Name <SortIcon k="name" />
                   </span>
                 </th>
-                <th className="px-4 py-3 font-semibold text-left">Description</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Description</th>
                 <th
-                  className="px-4 py-3 font-semibold text-left cursor-pointer select-none"
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("slug")}
                 >
                   <span className="inline-flex items-center gap-2">
                     Slug <SortIcon k="slug" />
                   </span>
                 </th>
-                <th className="px-4 py-3 font-semibold text-left">Action</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-20 sm:w-28">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[#717171]">
+                  <td colSpan={5}className="px-4 py-8 text-center text-[#717171]">
                     Loading...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[#717171]">
+                  <td colSpan={5}className="px-4 py-8 text-center text-[#717171]">
                     No categories found
                   </td>
                 </tr>
               ) : (
                 items.map((c, i) => (
                   <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 bg-gray-50">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50">
                       {(page - 1) * limit + i + 1}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <div className="flex items-center gap-2 min-w-0">
                         {c.image && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={imgSrc(c.image)}
                             alt={c.name}
-                            className="w-7 h-7 rounded object-cover shrink-0 bg-gray-100"
+                            className="w-6 h-6 sm:w-7 sm:h-7 rounded object-cover shrink-0 bg-gray-100"
                           />
                         )}
                         <div className="min-w-0">
-                          <p className="truncate">{c.name}</p>
+                          <p className="break-words">{c.name}</p>
                           {c.parentName && (
-                            <p className="text-[11px] text-gray-400 truncate">
+                            <p className="text-[11px] text-gray-400 break-words">
                               in {c.parentName}
                             </p>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 truncate" title={c.descriptionText}>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 max-w-[14rem] truncate" title={c.descriptionText}>
                       {c.descriptionText || "—"}
                     </td>
-                    <td className="px-4 py-3 truncate">{c.slug}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{c.slug} </td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <div className="flex items-center gap-3 text-[#263238]">
                         <button
                           onClick={() => setModal({ mode: "edit", category: c })}
@@ -286,7 +285,7 @@ export default function ProductCategoriesPage() {
                         <button
                           onClick={() => handleDelete(c)}
                           title="Delete"
-                          className="hover:text-red-500"
+                          className="hover:text-red-500 transition-colors"
                         >
                           <FaTrash className="w-3.5 h-3.5" />
                         </button>
@@ -300,15 +299,15 @@ export default function ProductCategoriesPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-sm text-[#717171]">
-          <p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-[#717171]">
+          <p className="shrink-0">
             Showing {from} to {to} of {total} entries
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto sm:ml-0">
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 rounded-md text-white bg-primary border border-primary-hover disabled:opacity-40 transition-colors"
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-white bg-primary hover:bg-primary-hover border border-primary-hover disabled:opacity-40 transition-colors"
             >
               Previous
             </button>
@@ -318,7 +317,7 @@ export default function ProductCategoriesPage() {
             <button
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 rounded-md text-white bg-primary border border-primary-hover disabled:opacity-40 transition-colors"
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-white bg-primary hover:bg-primary-hover border border-primary-hover disabled:opacity-40 transition-colors"
             >
               Next
             </button>
@@ -446,15 +445,10 @@ function CategoryModal({
   return (
     <>
       {/* backdrop: bahar click karne par band */}
-      <div className="fixed inset-0 z-40 bg-black/30 sm:bg-transparent" onClick={onClose} />
-
-      {/*
-        Mobile: screen ke beech me, topbar ke neeche (fixed, full width)
-        sm+: + button ke neeche, right aligned
-      */}
+      <div className="fixed inset-0 z-40 bg-black/30 sm:bg-transparent" onClick={onClose}/>
       <div
         className="fixed inset-x-3 top-[72px] bottom-3 z-50 flex flex-col
-          bg-white rounded-2xl shadow-xl border border-gray-100 text-left
+          bg-white rounded-xl shadow-xl border border-gray-100 text-left
           sm:absolute sm:inset-x-auto sm:left-auto sm:right-0 sm:top-full sm:bottom-auto sm:mt-3
           sm:w-[30rem] sm:max-h-[calc(100vh-9rem)]"
         onClick={(e) => e.stopPropagation()}
@@ -462,16 +456,16 @@ function CategoryModal({
         <span className="hidden sm:block absolute -top-1.5 right-3 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45" />
 
         {/* header */}
-        <div className="px-5 pt-5 pb-3 shrink-0">
-          <h2 className="text-lg font-semibold text-[#263238]">
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 shrink-0">
+          <h2 className="text-base sm:text-lg font-semibold text-[#263238]">
             {editing ? "Edit Category" : "Add Category"}
           </h2>
         </div>
 
         {/* body (scrollable) */}
-        <div className="px-5 pb-2 overflow-y-auto flex-1 space-y-4">
+        <div className="px-4 sm:px-5 pb-2 overflow-y-auto flex-1 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#263238] mb-1">Name <span className="text-red-500">* </span></label>
+            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">Name <span className="text-red-500">*</span></label>
             <input
               autoFocus
               value={name}
@@ -482,21 +476,21 @@ function CategoryModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
               Description
             </label>
             <RichTextEditor value={description} onChange={setDescription} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
               Parent Category
             </label>
             <select
               value={parent}
               onChange={(e) => setParent(e.target.value)}
               disabled={loadingOptions}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
             >
               <option value="">
                 {loadingOptions ? "Loading..." : "main category"}
@@ -508,12 +502,12 @@ function CategoryModal({
               ))}
             </select>
             <p className="text-[11px] text-gray-500 mt-1">
-              if you leve it blank it will become main categoery.
+              if you leave it blank it will become main category.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#263238] mb-1">Slug</label>
+            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">Slug</label>
             <input
               value={slug}
               onChange={(e) => {
@@ -526,23 +520,23 @@ function CategoryModal({
           </div>
 
           <div className="flex flex-col items-start gap-3">
-            <MediaField label="Upload Category Media" value={image} onChange={setImage} required />
-            <MediaField label="Upload Category Icon" value={icon} onChange={setIcon} required/>
+            <MediaField label="Upload Category Media" value={image} onChange={setImage}/>
+            <MediaField label="Upload Category Icon" value={icon} onChange={setIcon} />
           </div>
         </div>
 
         {/* footer */}
-        <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-100 shrink-0">
+        <div className="flex justify-end gap-2 px-4 sm:px-5 py-3 sm:py-4 border-t border-gray-100 shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={saving}
-            className="px-4 py-2 rounded-lg text-sm bg-primary text-white hover:bg-primary-hover disabled:opacity-60 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-primary text-white hover:bg-primary-hover disabled:opacity-60 transition-colors"
           >
             {saving ? "Submitting..." : editing ? "Update" : "Submit"}
           </button>
@@ -558,12 +552,10 @@ function MediaField({
   label,
   value,
   onChange,
-  required
 }: {
   label: string;
   value: string;
   onChange: (id: string) => void;
-  required?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -575,20 +567,20 @@ function MediaField({
           <img
             src={imgSrc(value)}
             alt={label}
-            className="w-14 h-14 rounded-lg object-cover border border-gray-200 bg-gray-100"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-gray-200 bg-gray-100"
           />
           <div className="flex flex-col items-start gap-1">
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="text-sm text-primary underline"
+              className="text-xs sm:text-sm text-primary underline"
             >
               Change
             </button>
             <button
               type="button"
               onClick={() => onChange("")}
-              className="text-sm text-red-500 underline"
+              className="text-xs sm:text-sm text-red-500 underline"
             >
               Remove
             </button>
@@ -599,7 +591,7 @@ function MediaField({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="w-full sm:w-auto px-4 py-2 rounded-lg text-sm bg-primary text-white transition-colors"
+            className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-primary hover:bg-primary-hover text-white transition-colors"
           >
             {label}
           </button>
@@ -620,9 +612,6 @@ function MediaField({
     </div>
   );
 }
-
-/* ───────────────────────── Rich text editor (Tiptap) ───────────────────────── */
-
 function RichTextEditor({
   value,
   onChange,
@@ -639,7 +628,7 @@ function RichTextEditor({
     onUpdate: ({ editor }) => onChange(editor.isEmpty ? "" : editor.getHTML()),
     editorProps: {
       attributes: {
-        class: "min-h-[140px] max-h-56 overflow-y-auto px-3 py-2 text-sm focus:outline-none",
+        class:"min-h-[120px] sm:min-h-[140px] max-h-48 sm:max-h-56 overflow-y-auto px-3 py-2 text-sm focus:outline-none",
       },
     },
   });
@@ -655,11 +644,11 @@ function RichTextEditor({
   }, [editor]);
 
   if (!editor) {
-    return <div className="h-48 rounded-lg border border-gray-200 bg-gray-50" />;
+    return (<div className="h-40 sm:h-48 rounded-lg border border-gray-200 bg-gray-50" />);
   }
 
   const btn = (active: boolean) =>
-    `w-8 h-8 flex items-center justify-center rounded text-sm transition-colors ${
+    `w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded text-xs sm:text-sm transition-colors ${
       active ? "bg-primary text-white" : "text-[#263238] hover:bg-gray-100"
     }`;
 
@@ -717,7 +706,7 @@ function RichTextEditor({
       {/* Tailwind reset lists/headings hata deta hai, isliye inko wapas style kiya */}
       <EditorContent
         editor={editor}
-        className="[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-600 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold [&_p]:my-1"
+        className="[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-600 [&_h2]:text-base sm:[&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-sm sm:[&_h3]:text-base [&_h3]:font-semibold [&_p]:my-1"
       />
     </div>
   );

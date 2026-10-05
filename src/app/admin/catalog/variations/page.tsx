@@ -17,7 +17,7 @@ type Variation = {
 };
 type AttributeOption = { _id: string; name: string };
 type SortKey = "createdAt" | "name" | "attribute";
-type ModalState = null | { mode: "add" } | { mode: "edit"; variation: Variation };
+type ModalState =| null| { mode: "add" }| { mode: "edit"; variation: Variation };
 const LIMITS = [10, 25, 50, 100];
 const API = "/api/admin/product-variations";
 const ATTR_API = "/api/admin/product-attributes";
@@ -101,19 +101,19 @@ export default function ProductVariationsPage() {
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="relative flex items-center justify-between pb-4 border-b border-gray-200">
-        <h1 className="text-xl sm:text-2xl font-semibold text-[#263238]">
+      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200">
+        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-[#263238]">
           Product Variations
         </h1>
         <div className="relative">
           <button
             onClick={() => setModal({ mode: "add" })}
             title="Add variation"
-            className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center shadow transition-colors"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary hover:bg-primary-hover text-white flex items-center justify-center shadow transition-colors"
           >
-            <FaPlus className="w-4 h-4" />
+            <FaPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
           {modal && (
@@ -130,9 +130,9 @@ export default function ProductVariationsPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 text-sm text-[#263238]">
-          <label className="flex items-center gap-2">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
+          <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
             <select
               value={limit}
@@ -140,7 +140,7 @@ export default function ProductVariationsPage() {
                 setLimit(Number(e.target.value));
                 setPage(1);
               }}
-              className="border border-gray-200 rounded-md px-2 py-1 bg-white"
+              className="border border-gray-200 rounded-md px-2 py-1 bg-white text-xs sm:text-sm"
             >
               {LIMITS.map((l) => (
                 <option key={l} value={l}>
@@ -148,41 +148,37 @@ export default function ProductVariationsPage() {
                 </option>
               ))}
             </select>
-            entries
+            <span className="hidden sm:inline">entries</span>
           </label>
 
-          <div className="flex items-center gap-2">
-  <span>Search:</span>
-
-  {/* items-stretch: Clear button input ki exact height le leta hai */}
-  <div className="flex items-stretch gap-3">
+          <div className="flex min-w-0 flex-1 sm:flex-none items-center justify-end gap-2">
+    <span className="shrink-0">Search:</span>
     <input
       value={search}
       onChange={(e) => setSearch(e.target.value)}
       onKeyDown={(e) => e.key === "Escape" && clearSearch()}
-      className="border border-gray-200 rounded-md px-3 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+      placeholder="Search..."
+      className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
     />
-
     {search && (
       <button
         type="button"
         onClick={clearSearch}
-        className="flex items-center px-3 rounded-md text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+        className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors "
       >
         Clear
       </button>
     )}
-  </div>
 </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] table-fixed text-sm text-left">
+          <table className="w-full min-w-[480px] text-xs sm:text-sm text-left">
             <thead>
-              <tr className="text-[#263238] border-b border-gray-200 text-left">
-                <th className="px-4 py-3 font-semibold text-left">ID</th>
+              <tr className="text-[#263238] border-b border-gray-200">
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-16 sm:w-20">ID</th>
                 <th
-                  className="px-4 py-3 font-semibold text-left cursor-pointer select-none"
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("name")}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -190,14 +186,14 @@ export default function ProductVariationsPage() {
                   </span>
                 </th>
                 <th
-                  className="px-4 py-3 font-semibold text-left cursor-pointer select-none"
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("attribute")}
                 >
                   <span className="inline-flex items-center gap-2">
                     Attribute <SortIcon k="attribute" />
                   </span>
                 </th>
-                <th className="px-4 py-3 font-semibold text-left">Action</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-20 sm:w-28">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -216,12 +212,12 @@ export default function ProductVariationsPage() {
               ) : (
                 items.map((v, i) => (
                   <tr key={v._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 bg-gray-50">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50">
                       {(page - 1) * limit + i + 1}
                     </td>
-                    <td className="px-4 py-3 truncate">{v.name}</td>
-                    <td className="px-4 py-3 truncate">{v.attributeName || "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{v.name}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{v.attributeName || "—"}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <div className="flex items-center gap-3 text-[#263238]">
                         <button
                           onClick={() => setModal({ mode: "edit", variation: v })}
@@ -233,7 +229,7 @@ export default function ProductVariationsPage() {
                         <button
                           onClick={() => handleDelete(v)}
                           title="Delete"
-                          className="hover:text-red-500"
+                          className="hover:text-red-500 transition-colors"
                         >
                           <FaTrash className="w-3.5 h-3.5" />
                         </button>
@@ -247,15 +243,15 @@ export default function ProductVariationsPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-sm text-[#717171]">
-          <p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-[#717171]">
+          <p className="shrink-0">
             Showing {from} to {to} of {total} entries
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto sm:ml-0">
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 rounded-md text-white bg-primary border border-primary-hover disabled:opacity-40 transition-colors"
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-white bg-primary hover:bg-primary-hover border border-primary-hover disabled:opacity-40 transition-colors"
             >
               Previous
             </button>
@@ -265,7 +261,7 @@ export default function ProductVariationsPage() {
             <button
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 rounded-md text-white bg-primary border border-primary-hover disabled:opacity-40 transition-colors"
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-white bg-primary hover:bg-primary-hover border border-primary-hover disabled:opacity-40 transition-colors"
             >
               Next
             </button>
@@ -338,18 +334,18 @@ function VariationModal({
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
-        className="absolute right-0 top-full mt-3 z-50 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 text-left"
+        className="absolute right-0 top-full mt-3 z-50 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-xl shadow-xl border border-gray-100 p-4 sm:p-6 text-left"
         onClick={(e) => e.stopPropagation()}
       >
         <span className="absolute -top-1.5 right-3 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45" />
 
-        <h2 className="text-lg font-semibold text-[#263238] mb-4">
+        <h2 className="text-base sm:text-lg font-semibold text-[#263238] mb-4">
           {editing ? "Edit Variation" : "Add Variation"}
         </h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
               Name
             </label>
             <input
@@ -363,7 +359,7 @@ function VariationModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#263238] mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
               Attribute
             </label>
             <select
@@ -383,24 +379,24 @@ function VariationModal({
             </select>
 
             {!loadingAttrs && attributes.length === 0 && (
-              <p className="text-xs text-red-500 mt-1.5">
+              <p className="text-[11px] sm:text-xs text-red-500 mt-1.5">
                 No attributes yet. Pehle Product Attributes me attribute add karo.
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex justify-end gap-2 mt-5 sm:mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={saving}
-            className="px-4 py-2 rounded-lg text-sm bg-primary text-white hover:bg-primary-hover disabled:opacity-60 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-primary text-white hover:bg-primary-hover disabled:opacity-60 transition-colors"
           >
             {saving ? "Submitting..." : editing ? "Update" : "Submit"}
           </button>
