@@ -1,4 +1,5 @@
 "use client";
+
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -9,6 +10,7 @@ import {
   FaSortUp,
   FaSortDown,
 } from "react-icons/fa";
+
 type Variation = {
   _id: string;
   name: string;
@@ -17,10 +19,15 @@ type Variation = {
 };
 type AttributeOption = { _id: string; name: string };
 type SortKey = "createdAt" | "name" | "attribute";
-type ModalState =| null| { mode: "add" }| { mode: "edit"; variation: Variation };
+type ModalState =
+  | null
+  | { mode: "add" }
+  | { mode: "edit"; variation: Variation };
+
 const LIMITS = [10, 25, 50, 100];
 const API = "/api/admin/product-variations";
 const ATTR_API = "/api/admin/product-attributes";
+
 export default function ProductVariationsPage() {
   const [items, setItems] = useState<Variation[]>([]);
   const [total, setTotal] = useState(0);
@@ -33,18 +40,22 @@ export default function ProductVariationsPage() {
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>(null);
+
+  // debounce search
   useEffect(() => {
-  const t = setTimeout(() => {
-    setDebounced(search);
-    setPage(1);
-  }, 300);
-  return () => clearTimeout(t);
+    const t = setTimeout(() => {
+      setDebounced(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
   }, [search]);
+
   const clearSearch = () => {
-  setSearch("");
-  setDebounced(""); // turant reset, 300ms wait nahi
-  setPage(1);
+    setSearch("");
+    setDebounced(""); // turant reset, 300ms wait nahi
+    setPage(1);
   };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -68,9 +79,11 @@ export default function ProductVariationsPage() {
       setLoading(false);
     }
   }, [debounced, page, limit, sort, order]);
+
   useEffect(() => {
     load();
   }, [load]);
+
   const toggleSort = (key: SortKey) => {
     if (sort === key) setOrder((o) => (o === "asc" ? "desc" : "asc"));
     else {
@@ -78,6 +91,7 @@ export default function ProductVariationsPage() {
       setOrder("asc");
     }
   };
+
   const handleDelete = async (v: Variation) => {
     if (!confirm(`Delete variation "${v.name}"?`)) return;
     try {
@@ -90,6 +104,7 @@ export default function ProductVariationsPage() {
       toast.error(e.message);
     }
   };
+
   const SortIcon = ({ k }: { k: SortKey }) =>
     sort !== k ? (
       <FaSort className="w-3 h-3 text-gray-300" />
@@ -98,8 +113,10 @@ export default function ProductVariationsPage() {
     ) : (
       <FaSortDown className="w-3 h-3 text-[#4CAF4F]" />
     );
+
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
+
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
@@ -131,6 +148,7 @@ export default function ProductVariationsPage() {
 
       {/* Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+        {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
           <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
@@ -152,33 +170,36 @@ export default function ProductVariationsPage() {
           </label>
 
           <div className="flex min-w-0 flex-1 sm:flex-none items-center justify-end gap-2">
-    <span className="shrink-0">Search:</span>
-    <input
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      onKeyDown={(e) => e.key === "Escape" && clearSearch()}
-      placeholder="Search..."
-      className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
-    />
-    {search && (
-      <button
-        type="button"
-        onClick={clearSearch}
-        className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors "
-      >
-        Clear
-      </button>
-    )}
-</div>
+            <span className="shrink-0">Search:</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && clearSearch()}
+              placeholder="Search..."
+              className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[480px] text-xs sm:text-sm text-left">
+          <table className="w-full min-w-[480px] table-fixed text-xs sm:text-sm text-left">
             <thead>
               <tr className="text-[#263238] border-b border-gray-200">
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-16 sm:w-20">ID</th>
+                <th className="w-1/4 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  ID
+                </th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/4 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("name")}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -186,41 +207,58 @@ export default function ProductVariationsPage() {
                   </span>
                 </th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/4 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("attribute")}
                 >
                   <span className="inline-flex items-center gap-2">
                     Attribute <SortIcon k="attribute" />
                   </span>
                 </th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-20 sm:w-28">Action</th>
+                <th className="w-1/4 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={4}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     Loading...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={4}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     No variations found
                   </td>
                 </tr>
               ) : (
                 items.map((v, i) => (
-                  <tr key={v._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50">
+                  <tr
+                    key={v._id}
+                    className="group border-b border-gray-100"
+                  >
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{v.name}</td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{v.attributeName || "—"}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">
+                      {v.name}
+                    </td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">
+                      {v.attributeName || "—"}
+                    </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <div className="flex items-center gap-3 text-[#263238]">
                         <button
-                          onClick={() => setModal({ mode: "edit", variation: v })}
+                          onClick={() =>
+                            setModal({ mode: "edit", variation: v })
+                          }
                           title="Edit"
                           className="text-[#3F7A60] hover:text-[#285943] transition-colors"
                         >
@@ -271,6 +309,7 @@ export default function ProductVariationsPage() {
     </div>
   );
 }
+
 function VariationModal({
   state,
   onClose,
@@ -288,6 +327,7 @@ function VariationModal({
   const [attributes, setAttributes] = useState<AttributeOption[]>([]);
   const [loadingAttrs, setLoadingAttrs] = useState(true);
   const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     (async () => {
       try {
@@ -304,6 +344,7 @@ function VariationModal({
       }
     })();
   }, []);
+
   const submit = async () => {
     if (!name.trim()) {
       toast.error("Name is required");
@@ -330,6 +371,7 @@ function VariationModal({
       setSaving(false);
     }
   };
+
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />

@@ -177,7 +177,6 @@ export default function ProductBrandsPage() {
               placeholder="Search..."
               className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
             />
-
             {search && (
               <button
                 type="button"
@@ -191,12 +190,12 @@ export default function ProductBrandsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] text-xs sm:text-sm text-left">
+          <table className="w-full min-w-[560px] table-fixed text-xs sm:text-sm text-left">
             <thead>
               <tr className="text-[#263238] border-b border-gray-200">
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-16 sm:w-20">ID</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold"> ID</th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("name")}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -204,7 +203,7 @@ export default function ProductBrandsPage() {
                   </span>
                 </th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("slug")}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -212,14 +211,14 @@ export default function ProductBrandsPage() {
                   </span>
                 </th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("status")}
                 >
                   <span className="inline-flex items-center gap-2">
                     Status <SortIcon k="status" />
                   </span>
                 </th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-20 sm:w-28">Action</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -237,8 +236,8 @@ export default function ProductBrandsPage() {
                 </tr>
               ) : (
                 items.map((b, i) => (
-                  <tr key={b._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50">
+                  <tr key={b._id} className="group border-b border-gray-100">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
@@ -389,7 +388,7 @@ function BrandModal({
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="e.g. Nike, KIA"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div>
@@ -531,8 +530,7 @@ function GalleryPicker({
       const res = await fetch("/api/admin/gallery/categories", { cache: "no-store" });
       const data = await res.json();
       if (res.ok) setCategories(data);
-    } catch {
-    }
+    } catch {}
   }, []);
 
   const loadImages = useCallback(async () => {

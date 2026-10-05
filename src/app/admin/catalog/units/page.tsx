@@ -31,19 +31,21 @@ export default function ProductUnitsPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>(null);
 
-useEffect(() => {
-  const t = setTimeout(() => {
-    setDebounced(search);
-    setPage(1);
-  }, 300);
-  return () => clearTimeout(t);
-}, [search]);
+  // debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebounced(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
-const clearSearch = () => {
-  setSearch("");
-  setDebounced(""); // turant reset, 300ms wait nahi
-  setPage(1);
-};
+  const clearSearch = () => {
+    setSearch("");
+    setDebounced(""); // turant reset, 300ms wait nahi
+    setPage(1);
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -114,7 +116,7 @@ const clearSearch = () => {
         </h1>
         <div className="relative">
           <button
-           onClick={() => setModal({ mode: "add" })}
+            onClick={() => setModal({ mode: "add" })}
             title="Add unit"
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary hover:bg-primary-hover text-white flex items-center justify-center shadow transition-colors"
           >
@@ -132,8 +134,10 @@ const clearSearch = () => {
           )}
         </div>
       </div>
+
       {/* Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+        {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
           <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
@@ -155,34 +159,37 @@ const clearSearch = () => {
           </label>
 
           <div className="flex min-w-0 flex-1 sm:flex-none items-center justify-end gap-2">
-  <span className="shrink-0">Search:</span>
+            <span className="shrink-0">Search:</span>
 
-    <input
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      onKeyDown={(e) => e.key === "Escape" && clearSearch()}
-      placeholder="Search..."
-      className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
-    />
-    {search && (
-      <button
-        type="button"
-        onClick={clearSearch}
-        className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
-      >
-        Clear
-      </button>
-    )}
-  </div>
-</div>
-          {/* Table */}
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && clearSearch()}
+              placeholder="Search..."
+              className="min-w-0 w-full sm:w-56 border border-gray-200 rounded-md px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="hidden min-[400px]:flex shrink-0 items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm border border-gray-200 text-[#263238] hover:bg-gray-50 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-xs sm:text-sm text-left">
+          <table className="w-full table-fixed text-xs sm:text-sm text-left">
             <thead>
               <tr className="text-[#263238] border-b border-gray-200">
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-16 sm:w-20">ID</th>
+                <th className="w-1/4 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  ID
+                </th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/4 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("name")}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -190,36 +197,49 @@ const clearSearch = () => {
                   </span>
                 </th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/4 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("status")}
                 >
                   <span className="inline-flex items-center gap-2">
                     Status <SortIcon k="status" />
                   </span>
                 </th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-20 sm:w-28"> Action</th>
+                <th className="w-1/4 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={4}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     Loading...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={4}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     No units found
                   </td>
                 </tr>
               ) : (
                 items.map((u, i) => (
-                  <tr key={u._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50">
+                  <tr
+                    key={u._id}
+                    className="group border-b border-gray-100"
+                  >
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{u.name}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">
+                      {u.name}
+                    </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-medium ${
@@ -255,6 +275,7 @@ const clearSearch = () => {
             </tbody>
           </table>
         </div>
+
         {/* Footer */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-[#717171]">
           <p className="shrink-0">
@@ -284,6 +305,7 @@ const clearSearch = () => {
     </div>
   );
 }
+
 function UnitModal({
   state,
   onClose,
@@ -299,6 +321,7 @@ function UnitModal({
     editing ? state.unit.status : "active"
   );
   const [saving, setSaving] = useState(false);
+
   const submit = async () => {
     if (!name.trim()) {
       toast.error("Name is required");
@@ -323,6 +346,7 @@ function UnitModal({
       setSaving(false);
     }
   };
+
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />

@@ -54,7 +54,6 @@ export default function ProductCategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>(null);
 
-  // debounce search
   useEffect(() => {
     const t = setTimeout(() => {
       setDebounced(search);
@@ -93,7 +92,7 @@ export default function ProductCategoriesPage() {
 
   const clearSearch = () => {
     setSearch("");
-    setDebounced("");
+    setDebounced(""); // turant reset, 300ms wait nahi
     setPage(1);
   };
 
@@ -104,7 +103,6 @@ export default function ProductCategoriesPage() {
       setOrder("asc");
     }
   };
-
 
   const handleDelete = async (c: Category) => {
     if (!confirm(`Delete category "${c.name}"?`)) return;
@@ -206,47 +204,47 @@ export default function ProductCategoriesPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-xs sm:text-sm text-left">
+          <table className="w-full min-w-[640px] table-fixed text-xs sm:text-sm text-left">
             <thead>
               <tr className="text-[#263238] border-b border-gray-200">
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-16 sm:w-20">ID</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">ID</th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("name")}
                 >
                   <span className="inline-flex items-center gap-2">
                     Name <SortIcon k="name" />
                   </span>
                 </th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Description</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold"> Description</th>
                 <th
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
                   onClick={() => toggleSort("slug")}
                 >
                   <span className="inline-flex items-center gap-2">
                     Slug <SortIcon k="slug" />
                   </span>
                 </th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-20 sm:w-28">Action</th>
+                <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5}className="px-4 py-8 text-center text-[#717171]">
+                  <td colSpan={5} className="px-4 py-8 text-center text-[#717171]">
                     Loading...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={5}className="px-4 py-8 text-center text-[#717171]">
+                  <td colSpan={5} className="px-4 py-8 text-center text-[#717171]">
                     No categories found
                   </td>
                 </tr>
               ) : (
                 items.map((c, i) => (
-                  <tr key={c._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50">
+                  <tr key={c._id} className="group border-b border-gray-100">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
@@ -272,7 +270,7 @@ export default function ProductCategoriesPage() {
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3 max-w-[14rem] truncate" title={c.descriptionText}>
                       {c.descriptionText || "—"}
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{c.slug} </td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">{c.slug}</td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <div className="flex items-center gap-3 text-[#263238]">
                         <button
@@ -521,7 +519,7 @@ function CategoryModal({
 
           <div className="flex flex-col items-start gap-3">
             <MediaField label="Upload Category Media" value={image} onChange={setImage}/>
-            <MediaField label="Upload Category Icon" value={icon} onChange={setIcon} />
+            <MediaField label="Upload Category Icon" value={icon} onChange={setIcon}/>
           </div>
         </div>
 
@@ -677,28 +675,68 @@ function RichTextEditor({
           <option value="3">Subheading</option>
         </select>
 
-        <button type="button" title="Bold" onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive("bold"))}>
+        <button
+          type="button"
+          title="Bold"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={btn(editor.isActive("bold"))}
+        >
           <FaBold />
         </button>
-        <button type="button" title="Italic" onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive("italic"))}>
+        <button
+          type="button"
+          title="Italic"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={btn(editor.isActive("italic"))}
+        >
           <FaItalic />
         </button>
-        <button type="button" title="Strikethrough" onClick={() => editor.chain().focus().toggleStrike().run()} className={btn(editor.isActive("strike"))}>
+        <button
+          type="button"
+          title="Strikethrough"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          className={btn(editor.isActive("strike"))}
+        >
           <FaStrikethrough />
         </button>
-        <button type="button" title="Bullet list" onClick={() => editor.chain().focus().toggleBulletList().run()} className={btn(editor.isActive("bulletList"))}>
+        <button
+          type="button"
+          title="Bullet list"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={btn(editor.isActive("bulletList"))}
+        >
           <FaListUl />
         </button>
-        <button type="button" title="Numbered list" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={btn(editor.isActive("orderedList"))}>
+        <button
+          type="button"
+          title="Numbered list"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={btn(editor.isActive("orderedList"))}
+        >
           <FaListOl />
         </button>
-        <button type="button" title="Quote" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={btn(editor.isActive("blockquote"))}>
+        <button
+          type="button"
+          title="Quote"
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          className={btn(editor.isActive("blockquote"))}
+        >
           <FaQuoteRight />
         </button>
-        <button type="button" title="Undo" onClick={() => editor.chain().focus().undo().run()} className={btn(false)}>
+        <button
+          type="button"
+          title="Undo"
+          onClick={() => editor.chain().focus().undo().run()}
+          className={btn(false)}
+        >
           <FaUndo />
         </button>
-        <button type="button" title="Redo" onClick={() => editor.chain().focus().redo().run()} className={btn(false)}>
+        <button
+          type="button"
+          title="Redo"
+          onClick={() => editor.chain().focus().redo().run()}
+          className={btn(false)}
+        >
           <FaRedo />
         </button>
       </div>

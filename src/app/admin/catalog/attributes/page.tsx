@@ -30,19 +30,22 @@ export default function ProductAttributesPage() {
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>(null);
-useEffect(() => {
-  const t = setTimeout(() => {
-    setDebounced(search);
-    setPage(1);
-  }, 300);
-  return () => clearTimeout(t);
-}, [search]);
 
-const clearSearch = () => {
-  setSearch("");
-  setDebounced(""); // turant reset, 300ms wait nahi
-  setPage(1);
-};
+  // debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebounced(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const clearSearch = () => {
+    setSearch("");
+    setDebounced(""); // turant reset, 300ms wait nahi
+    setPage(1);
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -137,6 +140,7 @@ const clearSearch = () => {
 
       {/* Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
+        {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
           <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
@@ -180,41 +184,51 @@ const clearSearch = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs sm:text-sm text-left">
+          <table className="w-full table-fixed text-xs sm:text-sm text-left">
             <thead>
               <tr className="text-[#263238] border-b border-gray-200">
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-16 sm:w-20">ID</th>
+                <th className="w-1/3 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">ID</th>
                 <th
-                className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
-                onClick={() => toggleSort("name")}
-            >
-            <span className="inline-flex items-center gap-2">
-      Name <SortIcon k="name" />
-    </span>
-  </th>
-  <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold w-20 sm:w-28">Action</th>
-</tr>
+                  className="w-1/3 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold cursor-pointer select-none"
+                  onClick={() => toggleSort("name")}
+                >
+                  <span className="inline-flex items-center gap-2">Name <SortIcon k="name" /></span></th>
+                <th className="w-1/3 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  Action
+                </th>
+              </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={3}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     Loading...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-[#717171]">
+                  <td
+                    colSpan={3}
+                    className="px-4 py-8 text-center text-[#717171]"
+                  >
                     No attributes found
                   </td>
                 </tr>
               ) : (
                 items.map((a, i) => (
-                  <tr key={a._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50">
+                  <tr
+                    key={a._id}
+                    className="group border-b border-gray-100"
+                  >
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 group-hover:bg-gray-100 transition-colors">
                       {(page - 1) * limit + i + 1}
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words"> {a.name}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">
+                      {a.name}
+                    </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <div className="flex items-center gap-3 text-[#263238]">
                         <button
