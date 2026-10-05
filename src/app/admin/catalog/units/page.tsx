@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   FaPlus,
@@ -9,6 +9,7 @@ import {
   FaSort,
   FaSortUp,
   FaSortDown,
+  FaChevronDown,
 } from "react-icons/fa";
 
 type Unit = { _id: string; name: string; status: "active" | "inactive" };
@@ -139,24 +140,19 @@ export default function ProductUnitsPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5">
         {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 text-xs sm:text-sm text-[#263238]">
-          <label className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+          <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             Show
-            <select
-              value={limit}
-              onChange={(e) => {
-                setLimit(Number(e.target.value));
+            <FormSelect
+              compact
+              value={String(limit)}
+              onChange={(v) => {
+                setLimit(Number(v));
                 setPage(1);
               }}
-              className="border border-gray-200 rounded-md px-2 py-1 bg-white text-xs sm:text-sm"
-            >
-              {LIMITS.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
+              options={LIMITS.map((l) => ({ value: String(l), label: String(l) }))}
+            />
             <span className="hidden sm:inline">entries</span>
-          </label>
+          </div>
 
           <div className="flex min-w-0 flex-1 sm:flex-none items-center justify-end gap-2">
             <span className="shrink-0">Search:</span>
@@ -377,16 +373,14 @@ function UnitModal({
             <label className="block text-xs sm:text-sm font-medium text-[#263238] mb-1">
               Status
             </label>
-            <select
+            <FormSelect
               value={status}
-              onChange={(e) =>
-                setStatus(e.target.value as "active" | "inactive")
-              }
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+              onChange={(v) => setStatus(v as "active" | "inactive")}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
+            />
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-5 sm:mt-6">
@@ -406,5 +400,111 @@ function UnitModal({
         </div>
       </div>
     </>
+  );
+}
+
+/* ───────────────────────── Responsive custom select ───────────────────────── */
+
+function FormSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Select",
+  disabled = false,
+  inline = false, // true: list neeche content ko dhakel kar khulti hai (scroll area me clip nahi hoti)
+  compact = false, // true: chhota trigger (Show entries wale dropdown ke liye)
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  disabled?: boolean;
+  inline?: boolean;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // bahar click ya Escape par band
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className={compact ? "relative inline-block" : "relative"}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`flex items-center justify-between gap-2 border border-gray-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
+          compact
+            ? "rounded-md px-2 py-1 text-xs sm:text-sm min-w-[3.5rem]"
+            : "w-full rounded-lg px-3 py-2 text-sm"
+        }`}
+      >
+        <span className={`truncate ${selected ? "text-[#263238]" : "text-gray-400"}`}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <FaChevronDown
+          className={`w-3 h-3 shrink-0 text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className={`${
+            inline
+              ? "mt-1"
+              : `absolute top-full mt-1 z-[60] left-0 ${
+                  compact ? "min-w-full" : "right-0"
+                }`
+          } max-h-44 sm:max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1`}
+        >
+          {options.length === 0 ? (
+            <li className="px-3 py-2 text-xs sm:text-sm text-gray-400">
+              No options
+            </li>
+          ) : (
+            options.map((o) => (
+              <li
+                key={o.value}
+                role="option"
+                aria-selected={o.value === value}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
+                  o.value === value
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-[#263238] hover:bg-gray-50"
+                }`}
+              >
+                {o.label}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
   );
 }
