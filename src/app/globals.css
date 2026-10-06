@@ -43,7 +43,7 @@ body:has([data-theme-scope="admin"]) {
   --theme-accent: #f59e0b;
   --theme-icon: #4f46e5;
   --theme-icon-hover: #312e81;
-  --theme-gradient: linear-gradient(160deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%);
+  --theme-gradient: linear-gradient(160deg, #1e1b4b 0%, #515157 55%, #1d194b 100%);
   --theme-font-family: var(--font-inter), sans-serif;
   --theme-radius: 8px;
   color-scheme: light;

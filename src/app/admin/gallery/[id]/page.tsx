@@ -48,9 +48,15 @@ function ImageCard({
 
   async function remove() {
     if (!confirm("Are you sure you want to delete this image?")) return;
-    await fetch(`/api/admin/gallery/images/${v._id}`, { method: "DELETE" });
-    toast.success("Deleted Successfully!");
-    onDeleted(v._id);
+    try {
+      const res = await fetch(`/api/admin/gallery/images/${v._id}`, { method: "DELETE" });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to delete image");
+      toast.success("Deleted Successfully!");
+      onDeleted(v._id);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete image");
+    }
   }
 
   return (

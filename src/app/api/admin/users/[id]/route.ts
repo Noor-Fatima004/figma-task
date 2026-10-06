@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
 import User from "@/app/models/User";
 import { requireAdmin } from "@/lib/requireAdmin";
+import { safeDelete, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -69,7 +70,12 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   if (err) return err;
 
   await connectDB();
-  const deleted = await User.findOneAndDelete({ _id: id, role: "user" });
+  const { deleted, usage } = await safeDelete("user", id, (session) =>
+    User.findOneAndDelete({ _id: id, role: "user" }).session(session)
+  );
+  if (usage.length > 0) {
+    return NextResponse.json({ error: usageError("user", usage) }, { status: 409 });
+  }
   if (!deleted) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   return NextResponse.json({ success: true });

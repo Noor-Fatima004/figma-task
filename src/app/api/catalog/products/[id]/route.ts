@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { requireAdmin } from "@/lib/requireAdmin";
 import Product from "@/app/models/Product";
+import { safeDelete, usageError } from "@/lib/safeDelete";
 import { productSchema } from "@/app/admin/catalog/products/add/schemas";
 
 type Context = { params: Promise<{ id: string }> };
@@ -147,7 +148,12 @@ export async function DELETE(_request: Request, { params }: Context) {
     if (error) return error;
 
     await connectDB();
-    const product = await Product.findByIdAndDelete(id);
+    const { deleted: product, usage } = await safeDelete("product", id, (session) =>
+      Product.findByIdAndDelete(id).session(session)
+    );
+    if (usage.length > 0) {
+      return NextResponse.json({ error: usageError("product", usage) }, { status: 409 });
+    }
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }

@@ -1,4 +1,10 @@
-import mongoose, { Schema, models, model } from "mongoose";
+import {
+  InferSchemaType,
+  Model,
+  Schema,
+  models,
+  model,
+} from "mongoose";
 
 const ProductCategorySchema = new Schema(
   {
@@ -8,8 +14,8 @@ const ProductCategorySchema = new Schema(
     // parent category (null = main category)
     parent: { type: Schema.Types.ObjectId, ref: "ProductCategory", default: null },
     // gallery image ids
-    image: { type: Schema.Types.ObjectId, default: null },
-    icon: { type: Schema.Types.ObjectId, default: null },
+    image: { type: Schema.Types.ObjectId, ref: "GalleryImage", default: null },
+    icon: { type: Schema.Types.ObjectId, ref: "GalleryImage", default: null },
   },
   { timestamps: true }
 );
@@ -21,5 +27,10 @@ ProductCategorySchema.index(
 );
 ProductCategorySchema.index({ slug: 1 }, { unique: true });
 
-export default (models.ProductCategory as mongoose.Model<any>) ||
-  model("ProductCategory", ProductCategorySchema);
+type ProductCategoryDoc = InferSchemaType<typeof ProductCategorySchema>;
+
+const ProductCategory: Model<ProductCategoryDoc> =
+  (models.ProductCategory as Model<ProductCategoryDoc>) ||
+  model<ProductCategoryDoc>("ProductCategory", ProductCategorySchema);
+
+export default ProductCategory;

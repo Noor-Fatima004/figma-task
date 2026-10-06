@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import ProductCategory from "@/app/models/ProductCategory";
 import { slugify } from "@/lib/slugify";
+import { safeDelete, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
 const oid = (v: unknown) => (mongoose.isValidObjectId(v) ? String(v) : null);
@@ -63,14 +64,14 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     existing.name = name;
     existing.slug = slug;
     existing.description = description;
-    existing.parent = parent;
-    existing.image = image;
-    existing.icon = icon;
+    existing.parent = parent ? new mongoose.Types.ObjectId(parent) : null;
+    existing.image = image ? new mongoose.Types.ObjectId(image) : null;
+    existing.icon = icon ? new mongoose.Types.ObjectId(icon) : null;
     await existing.save();
 
     return NextResponse.json({ _id: existing._id.toString() });
-  } catch (err: any) {
-    if (err?.code === 11000) {
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === 11000) {
       return NextResponse.json(
         { error: "A category with this name already exists under the selected parent" },
         { status: 409 }
@@ -90,15 +91,12 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
 
     await connectDB();
 
-    const children = await ProductCategory.countDocuments({ parent: id });
-    if (children > 0) {
-      return NextResponse.json(
-        { error: `Cannot delete: it has ${children} sub-categor${children === 1 ? "y" : "ies"}` },
-        { status: 409 }
-      );
+    const { deleted, usage } = await safeDelete("category", id, (session) =>
+      ProductCategory.findByIdAndDelete(id).session(session)
+    );
+    if (usage.length > 0) {
+      return NextResponse.json({ error: usageError("category", usage) }, { status: 409 });
     }
-
-    const deleted = await ProductCategory.findByIdAndDelete(id);
     if (!deleted) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 });
     }

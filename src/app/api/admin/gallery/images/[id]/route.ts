@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import  connectDB  from "@/lib/mongodb";
+import mongoose from "mongoose";
+import connectDB from "@/lib/mongodb";
 import GalleryImage from "@/app/models/GalleryImage";
+import { safeDelete, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -27,7 +29,16 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
 export async function DELETE(_: Request, { params }: Ctx) {
   const { id } = await params;
+  if (!mongoose.isValidObjectId(id)) {
+    return NextResponse.json({ error: "Invalid image id" }, { status: 400 });
+  }
   await connectDB();
-  await GalleryImage.findByIdAndDelete(id);
+  const { deleted, usage } = await safeDelete("image", id, (session) =>
+    GalleryImage.findByIdAndDelete(id).session(session)
+  );
+  if (usage.length > 0) {
+    return NextResponse.json({ error: usageError("image", usage) }, { status: 409 });
+  }
+  if (!deleted) return NextResponse.json({ error: "Image not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

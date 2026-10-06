@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import ProductUnit from "@/app/models/ProductUnit";
+import { safeDelete, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -32,8 +33,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     }
 
     return NextResponse.json({ _id: unit._id.toString(), name: unit.name, status: unit.status });
-  } catch (err: any) {
-    if (err?.code === 11000) {
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === 11000) {
       return NextResponse.json({ error: "This unit already exists" }, { status: 409 });
     }
     console.error("PUT product-units:", err);
@@ -49,7 +50,12 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     }
 
     await connectDB();
-    const deleted = await ProductUnit.findByIdAndDelete(id);
+    const { deleted, usage } = await safeDelete("unit", id, (session) =>
+      ProductUnit.findByIdAndDelete(id).session(session)
+    );
+    if (usage.length > 0) {
+      return NextResponse.json({ error: usageError("unit", usage) }, { status: 409 });
+    }
     if (!deleted) {
       return NextResponse.json({ error: "Unit not found" }, { status: 404 });
     }

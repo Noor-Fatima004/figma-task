@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
-import Product from "@/app/models/Product";
 import ProductVariation from "@/app/models/ProductVariation";
 import ProductAttribute from "@/app/models/ProductAttribute";
+import { safeDelete, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -71,16 +71,12 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     }
 
     await connectDB();
-
-    const inUse = await Product.countDocuments({ "attributes.variations": id });
-    if (inUse > 0) {
-      return NextResponse.json(
-        { error: `Cannot delete: this variation is used by ${inUse} product(s)` },
-        { status: 409 }
-      );
+    const { deleted, usage } = await safeDelete("variation", id, (session) =>
+      ProductVariation.findByIdAndDelete(id).session(session)
+    );
+    if (usage.length > 0) {
+      return NextResponse.json({ error: usageError("variation", usage) }, { status: 409 });
     }
-
-    const deleted = await ProductVariation.findByIdAndDelete(id);
     if (!deleted) {
       return NextResponse.json({ error: "Variation not found" }, { status: 404 });
     }

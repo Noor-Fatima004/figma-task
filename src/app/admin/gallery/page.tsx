@@ -18,17 +18,32 @@ export default function GalleryPage() {
 
   const loadCategories = useCallback(async () => {
     const res = await fetch("/api/admin/gallery/categories");
-    setCategories(await res.json());
+    return (await res.json()) as Category[];
   }, []);
 
   const loadImages = useCallback(async () => {
     const res = await fetch(`/api/admin/gallery/images?category=${active}`);
-    setImages(await res.json());
-    setSelected([]);
+    return (await res.json()) as Img[];
   }, [active]);
 
-  useEffect(() => { loadCategories(); }, [loadCategories]);
-  useEffect(() => { loadImages(); }, [loadImages]);
+  useEffect(() => {
+    let cancelled = false;
+    void loadCategories().then((items) => {
+      if (!cancelled) setCategories(items);
+    });
+    return () => { cancelled = true; };
+  }, [loadCategories]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadImages().then((items) => {
+      if (!cancelled) {
+        setImages(items);
+        setSelected([]);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [loadImages]);
 
   const allSelected = images.length > 0 && selected.length === images.length;
 
@@ -39,11 +54,33 @@ export default function GalleryPage() {
   async function deleteSelected() {
     if (!selected.length) return toast.error("Please select an image first");
     if (!confirm(`${selected.length} image Are You Sure you want to Delete?`)) return;
-    await Promise.all(
-      selected.map((id) => fetch(`/api/admin/gallery/images/${id}`, { method: "DELETE" }))
-    );
-    toast.success("Deleted Successfully!");
-    loadImages();
+    try {
+      const res = await fetch("/api/admin/gallery/images", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selected }),
+      });
+      const data: {
+        error?: string;
+        deleted?: string[];
+        skipped?: { id: string; reason: string }[];
+      } = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete images");
+      if (data.deleted?.length) {
+        toast.success(`${data.deleted.length} image(s) deleted`);
+      }
+      if (data.skipped?.length) {
+        toast.error(
+          data.skipped
+            .map(({ id, reason }) => `${id.slice(-6)}: ${reason}`)
+            .join("; ")
+        );
+      }
+      setImages(await loadImages());
+      setSelected([]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete images");
+    }
   }
 
   async function deleteActiveCategory() {
@@ -52,7 +89,7 @@ export default function GalleryPage() {
     const data = await res.json();
     if (!res.ok) return toast.error(data.error);
     setActive("all");
-    loadCategories();
+    setCategories(await loadCategories());
   }
 
   return (
@@ -153,7 +190,11 @@ export default function GalleryPage() {
         <AddImageModal
           categories={categories}
           onClose={() => setModalOpen(false)}
-          onDone={() => { loadCategories(); loadImages(); }}
+          onDone={async () => {
+            setCategories(await loadCategories());
+            setImages(await loadImages());
+            setSelected([]);
+          }}
         />
       )}
     </div>

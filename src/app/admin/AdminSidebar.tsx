@@ -157,7 +157,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
     <aside
       ref={asideRef}
       className={`${open ? "flex" : "hidden"} lg:flex flex-col
-      fixed lg:static top-16 lg:top-0 bottom-0 left-0 lg:h-full z-40 bg-primary shrink-0
+      fixed lg:static top-16 lg:top-0 bottom-0 left-0 lg:h-full z-40 bg-theme-gradient shrink-0
       w-16 md:w-64
       rounded-none shadow-xl lg:shadow-none`}
     >

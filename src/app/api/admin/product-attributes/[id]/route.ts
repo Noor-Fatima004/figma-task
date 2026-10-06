@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import ProductAttribute from "@/app/models/ProductAttribute";
+import { safeDelete, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -30,8 +31,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     }
 
     return NextResponse.json({ _id: attr._id.toString(), name: attr.name });
-  } catch (err: any) {
-    if (err?.code === 11000) {
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === 11000) {
       return NextResponse.json({ error: "This attribute already exists" }, { status: 409 });
     }
     console.error("PUT product-attributes:", err);
@@ -47,7 +48,12 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     }
 
     await connectDB();
-    const deleted = await ProductAttribute.findByIdAndDelete(id);
+    const { deleted, usage } = await safeDelete("attribute", id, (session) =>
+      ProductAttribute.findByIdAndDelete(id).session(session)
+    );
+    if (usage.length > 0) {
+      return NextResponse.json({ error: usageError("attribute", usage) }, { status: 409 });
+    }
     if (!deleted) {
       return NextResponse.json({ error: "Attribute not found" }, { status: 404 });
     }

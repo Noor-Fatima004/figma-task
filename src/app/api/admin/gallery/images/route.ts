@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import  connectDB  from "@/lib/mongodb";
+import mongoose from "mongoose";
 import GalleryImage from "@/app/models/GalleryImage";
 import { createHash } from "crypto";
+import { deleteIfUnused, inTransaction, usageError } from "@/lib/safeDelete";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -37,4 +39,50 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ _id: img._id, width: img.width, height: img.height }, { status: 201 });
+}
+
+export async function DELETE(req: Request) {
+  let body: { ids?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  if (!Array.isArray(body.ids) || body.ids.length === 0 || body.ids.length > 100) {
+    return NextResponse.json(
+      { error: "Provide between 1 and 100 image IDs" },
+      { status: 400 }
+    );
+  }
+  const ids = [...new Set(body.ids.map(String))];
+  if (ids.some((id) => !mongoose.isValidObjectId(id))) {
+    return NextResponse.json({ error: "One or more image IDs are invalid" }, { status: 400 });
+  }
+
+  await connectDB();
+  const result = await inTransaction(async (session) => {
+    const deleted: string[] = [];
+    const skipped: { id: string; reason: string }[] = [];
+
+    for (const id of ids) {
+      const { deleted: image, usage } = await deleteIfUnused(
+        "image",
+        id,
+        session,
+        () => GalleryImage.findByIdAndDelete(id).session(session)
+      );
+      if (usage.length > 0) {
+        skipped.push({ id, reason: usageError("image", usage) });
+      } else if (image) {
+        deleted.push(id);
+      } else {
+        skipped.push({ id, reason: "Image not found" });
+      }
+    }
+
+    return { deleted, skipped };
+  });
+
+  return NextResponse.json(result);
 }
