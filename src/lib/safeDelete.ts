@@ -36,12 +36,19 @@ export async function inTransaction<T>(
   }
 }
 
-function imageReferencePatterns(id: string, name: string): RegExp[] {
-  const escapedId = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const patterns = [new RegExp(escapedId, "i")];
-  if (name) {
-    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    patterns.push(new RegExp(`(?:^|[/\\\\?&=])${escapedName}(?:$|[?#&])`, "i"));
+function imageReferencePatterns(id: string, name: string, url: string): RegExp[] {
+  const patterns = [id, url, name]
+    .filter(Boolean)
+    .map((value) => {
+      const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(escaped, "i");
+    });
+  if (url) {
+    const fileName = url.split("/").pop()?.split("?")[0] ?? "";
+    if (fileName && fileName !== name) {
+      const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      patterns.push(new RegExp(escapedFileName, "i"));
+    }
   }
   return patterns;
 }
@@ -66,11 +73,23 @@ export async function checkUsage(
 
   switch (entity) {
     case "image": {
-      const image = await GalleryImage.findById(id).select("name").session(session);
-      const mediaPatterns = imageReferencePatterns(id, image?.name ?? "");
+      const image = await GalleryImage.findById(id).select("name url publicId").session(session);
+      const mediaPatterns = imageReferencePatterns(
+        id,
+        image?.name ?? "",
+        image?.url ?? ""
+      );
       add(
         "product(s)",
-        await count(Product.countDocuments({ media: { $in: mediaPatterns } }), session)
+        await count(
+          Product.countDocuments({
+            $or: [
+              { media: { $in: mediaPatterns } },
+              ...(image?.publicId ? [{ mediaPublicIds: image.publicId }] : []),
+            ],
+          }),
+          session
+        )
       );
       add(
         "category(ies)",
@@ -82,7 +101,15 @@ export async function checkUsage(
       add("brand(s)", await count(ProductBrand.countDocuments({ image: id }), session));
       add(
         "user(s)",
-        await count(User.countDocuments({ image: { $in: mediaPatterns } }), session)
+        await count(
+          User.countDocuments({
+            $or: [
+              { image: { $in: mediaPatterns } },
+              ...(image?.publicId ? [{ imagePublicId: image.publicId }] : []),
+            ],
+          }),
+          session
+        )
       );
       break;
     }

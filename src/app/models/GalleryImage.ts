@@ -6,7 +6,11 @@ const GalleryImageSchema = new Schema(
     name: { type: String, default: "" },
     alt: { type: String, default: "" },
     contentType: { type: String, required: true },
-    data: { type: Buffer, required: true },
+    url: { type: String, default: "" },
+    publicId: { type: String, default: "", index: true },
+    format: { type: String, default: "" },
+    bytes: { type: Number, default: 0 },
+    data: { type: Buffer },
     width: { type: Number, default: 400 },   // display width (px)
     height: { type: Number, default: 300 },
     hash: { type: String, index: true },  // display height (px)

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 // NOTE: in 2 imports ko apne existing API routes (jaise product-units/route.ts) ke
 // hisaab se match karo: DB connect function ka naam/path.
 import  connectDB  from "@/lib/mongodb";
 import { slugify } from "@/lib/slugify";
 import Product from "@/app/models/Product";
+import { isCloudinaryImageUrl, resolveMediaPublicIds } from "@/lib/galleryMedia";
 // NOTE: path apne schemas.ts ke asli location ke hisaab se rakho
 import { productSchema } from "@/app/admin/catalog/products/add/schemas";
 
@@ -48,6 +50,9 @@ export async function POST(req: Request) {
     });
   }
   const d = parsed.data;
+  if (d.media.some((value) => !mongoose.isValidObjectId(value) && !isCloudinaryImageUrl(value))) {
+    return fail("Product media must use a gallery image or Cloudinary URL", 400);
+  }
 
   try {
     await connectDB();
@@ -58,6 +63,7 @@ export async function POST(req: Request) {
     const product = await Product.create({
       slug,
       media: d.media,
+      mediaPublicIds: await resolveMediaPublicIds(d.media),
       category: d.category,
       translations: { en: { name, description: d.translations.en.description } },
       videoEmbedCode: d.videoEmbedCode,
@@ -84,9 +90,18 @@ export async function POST(req: Request) {
       { message: "Product created", product: { _id: String(product._id), slug } },
       { status: 201 }
     );
-  } catch (e: any) {
-    if (e?.code === 11000) {
-      if (e.keyPattern?.sku) return fail("This SKU already exists", 409);
+  } catch (e: unknown) {
+    if (
+      typeof e === "object" &&
+      e !== null &&
+      "code" in e &&
+      e.code === 11000
+    ) {
+      const keyPattern =
+        "keyPattern" in e && typeof e.keyPattern === "object" && e.keyPattern !== null
+          ? e.keyPattern
+          : {};
+      if ("sku" in keyPattern) return fail("This SKU already exists", 409);
       return fail("Product already exists, please try again", 409);
     }
     console.error("Create product failed:", e);

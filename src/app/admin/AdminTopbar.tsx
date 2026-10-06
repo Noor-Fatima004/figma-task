@@ -117,7 +117,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
           aria-label="Open profile menu"
           aria-haspopup="menu"
           aria-expanded={open}
-          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-primary flex items-center justify-center text-white text-[12px] sm:text-xs font-bold ring-2 ring-transparent hover:ring-secondary focus:outline-none focus:ring-secondary transition"
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-theme-gradient flex items-center justify-center text-white text-[12px] sm:text-xs font-bold ring-2 ring-transparent hover:ring-secondary focus:outline-none focus:ring-secondary transition"
         >
           {initials}
         </button>
@@ -128,7 +128,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
             className="absolute right-0 mt-2 w-56 sm:w-72 max-w-[calc(100vw-1.5rem)] bg-surface rounded-theme border border-border shadow-xl z-50 overflow-hidden"
           >
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 px-4 py-6 sm:p-4 text-center sm:text-left">
-              <div className="w-14 h-14 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center text-white text-lg sm:text-base font-bold shrink-0">
+              <div className="w-14 h-14 sm:w-12 sm:h-12 rounded-full bg-theme-gradient flex items-center justify-center text-white text-lg sm:text-base font-bold shrink-0">
                 {initials}
               </div>
               <div className="min-w-0 w-full">
@@ -137,7 +137,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
               </div>
             </div>
 
-            <div className="border-t border-border" />
+            <div className="border-t border-theme-gradient" />
 
             <button
               role="menuitem"

@@ -33,7 +33,9 @@ type Category = {
   parent: string;
   parentName: string;
   image: string;
+  imageUrl: string;
   icon: string;
+  iconUrl: string;
 };
 type CategoryOption = { _id: string; name: string; parent: string };
 type SortKey = "createdAt" | "name" | "slug";
@@ -134,7 +136,7 @@ export default function ProductCategoriesPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-border">
+      <div className="relative flex items-center justify-between pb-3 sm:pb-4 border-b border-theme-gradient">
         <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-text">
           Product Categories
         </h1>
@@ -144,7 +146,7 @@ export default function ProductCategoriesPage() {
           <button
             onClick={() => setModal({ mode: "add" })}
             title="Add category"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary hover:bg-primary-hover text-white flex items-center justify-center shadow transition-colors"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary hover:bg-theme-gradient text-white flex items-center justify-center shadow transition-colors"
           >
             <FaPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
@@ -266,7 +268,7 @@ export default function ProductCategoriesPage() {
                         {c.image && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={imgSrc(c.image)}
+                            src={c.imageUrl || imgSrc(c.image)}
                             alt={c.name}
                             className="w-6 h-6 sm:w-7 sm:h-7 rounded object-cover shrink-0 bg-background"
                           />

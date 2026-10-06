@@ -13,10 +13,10 @@ import {
   FaArrowRight,
   FaRightFromBracket,
 } from "react-icons/fa6";
-import logo_icon from "../../public/icons.png";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ReviewsSection from "@/app/components/ReviewsSection";
+import { siteAssetUrl } from "@/lib/cloudinaryAssets";
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -106,7 +106,7 @@ export default function Home() {
         <nav className="mx-auto flex w-full items-center justify-between px-4 py-3 sm:px-6 md:px-8 lg:px-[5%] text-[#263238]">
           {/* Logo */}
           <div className="flex flex-1 items-center gap-1.5 sm:gap-2">
-            <img src="/Icon.jpg" alt="Logo" className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
+            <img src={siteAssetUrl("Icon.jpg")} alt="Logo" className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
             <span className="text-sm sm:text-base md:text-lg font-semibold whitespace-nowrap">Nextcent</span>
           </div>
 
@@ -206,7 +206,7 @@ export default function Home() {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <img src="/Icon.jpg" alt="Logo" className="w-7 h-7 rounded" />
+            <img src={siteAssetUrl("Icon.jpg")} alt="Logo" className="w-7 h-7 rounded" />
             <span className="text-base font-semibold text-[#263238]">Nextcent</span>
           </div>
           <button
@@ -315,7 +315,7 @@ export default function Home() {
           </div>
           <div className="w-full sm:w-auto flex justify-center">
             <img
-              src="/Illustration-removebg-preview.png"
+              src={siteAssetUrl("Illustration-removebg-preview.png")}
               alt=""
               className="w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[282px] lg:h-[283px]"
             />
@@ -339,7 +339,7 @@ export default function Home() {
             {[1, 2, 3, 4, 5, 6, 7].map((n) => (
               <div key={n} className="flex-shrink-0">
                 <img
-                  src={`/Logo__${n}_-removebg-preview.png`}
+                  src={siteAssetUrl(`Logo__${n}_-removebg-preview.png`)}
                   alt=""
                   className="w-7 h-7 rounded-md"
                 />
@@ -352,7 +352,7 @@ export default function Home() {
           {[1, 2, 3, 4, 5, 6, 7].map((n) => (
             <div key={n} className="flex-shrink-0">
               <img
-                src={`/Logo__${n}_-removebg-preview.png`}
+                src={siteAssetUrl(`Logo__${n}_-removebg-preview.png`)}
                 alt=""
                 className="w-7 h-7 sm:w-8 sm:h-8 rounded-md"
               />
@@ -374,9 +374,9 @@ export default function Home() {
 
         <div className="flex w-full h-auto flex-col sm:flex-row justify-between gap-6 lg:px-[100px]">
           {[
-            { title: "Membership Organisations", img: "/Icon (3).png" },
-            { title: "National Associations", img: "/Icon (2).png" },
-            { title: "Clubs And Groups", img: "/Icon (1).png" },
+            { title: "Membership Organisations", img: siteAssetUrl("Icon (3).png") },
+            { title: "National Associations", img: siteAssetUrl("Icon (2).png") },
+            { title: "Clubs And Groups", img: siteAssetUrl("Icon (1).png") },
           ].map((item, i) => (
             <div
               key={i}
@@ -409,7 +409,7 @@ export default function Home() {
         <div className="w-full h-auto">
           <div className="flex w-full h-auto flex-col sm:flex-row items-center gap-8 lg:gap-16 justify-center lg:px-[100px]">
             <div className="w-full max-w-[308px] sm:w-[35%] lg:w-[308px] h-auto flex-shrink-0">
-              <img src="/craiyon_111152_image.png" alt="" className="w-full h-auto" />
+              <img src={siteAssetUrl("craiyon_111152_image.png")} alt="" className="w-full h-auto" />
             </div>
             <div className="flex w-full h-auto flex-col items-center sm:items-start gap-4 lg:gap-[22px] px-4 sm:px-0">
               <div className="flex w-full h-auto flex-col gap-3 text-center sm:text-left">
@@ -452,10 +452,10 @@ export default function Home() {
 
           <div className="grid grid-cols-2 gap-4 sm:gap-6 w-full sm:w-[55%] lg:w-[376px]">
             {[
-              { icon: "/Icon (3).png", value: "2,245,341", label: "Members" },
-              { icon: "/Icon (4).png", value: "46,328", label: "Clubs" },
-              { icon: "/Icon (5).png", value: "828,867", label: "Event Bookings" },
-              { icon: "/Vector.png", value: "1,926,436", label: "Payments" },
+              { icon: siteAssetUrl("Icon (3).png"), value: "2,245,341", label: "Members" },
+              { icon: siteAssetUrl("Icon (4).png"), value: "46,328", label: "Clubs" },
+              { icon: siteAssetUrl("Icon (5).png"), value: "828,867", label: "Event Bookings" },
+              { icon: siteAssetUrl("Vector.png"), value: "1,926,436", label: "Payments" },
             ].map((stat) => (
               <div key={stat.label} className="flex flex-row items-center gap-3 min-w-0">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
@@ -480,7 +480,7 @@ export default function Home() {
         <div className="w-full h-auto">
           <div className="flex w-full h-auto flex-col-reverse sm:flex-row items-center gap-8 lg:gap-16 justify-center lg:px-[100px]">
             <div className="w-[55%] sm:w-[35%] lg:w-auto h-auto flex-shrink-0 mx-auto sm:mx-0 self-center mb-2 sm:mb-0">
-              <img src="/pana-removebg-preview.png" alt="" className="w-full h-auto lg:h-[302px] lg:w-auto" />
+              <img src={siteAssetUrl("pana-removebg-preview.png")} alt="" className="w-full h-auto lg:h-[302px] lg:w-auto" />
             </div>
             <div className="flex w-full h-auto flex-col items-center sm:items-start gap-4 lg:gap-[22px] px-4 sm:px-0">
               <div className="w-full h-auto flex flex-col gap-2 text-center sm:text-left">
@@ -512,7 +512,7 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-[1140px] h-auto flex-col-reverse sm:flex-row justify-center items-center gap-8 lg:gap-[54px] py-8 lg:pt-[22px] lg:pb-[22px] px-4 sm:px-8 md:px-12 lg:px-[100px]">
           <div className="mx-auto sm:mx-0 flex-shrink-0">
             <img
-              src="/image 9.png"
+              src={siteAssetUrl("image 9.png")}
               alt=""
               className="w-[260px] h-[180px] sm:w-[226px] sm:h-[290px] rounded-md shadow-[0px_5.57px_11.14px_0px_#ABBED166]"
             />
@@ -546,7 +546,7 @@ export default function Home() {
               <div className="flex w-full max-w-[343px] flex-row flex-wrap items-center justify-center gap-6 sm:flex-nowrap sm:justify-between sm:gap-4">
                 {[1, 2, 3, 4, 5, 6].map((n) => (
                   <div key={n} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md flex-shrink-0">
-                    <img src={`/Logo__${n}_-removebg-preview.png`} alt="" className="w-full h-full object-contain" />
+                    <img src={siteAssetUrl(`Logo__${n}_-removebg-preview.png`)} alt="" className="w-full h-full object-contain" />
                   </div>
                 ))}
               </div>
@@ -554,7 +554,7 @@ export default function Home() {
                 <p className="h-auto w-auto text-sm font-semibold leading-[19px] text-[#4CAF4F]">
                   Meet all customers
                 </p>
-                <img src="/dr.png" alt="" className="w-4 h-4" />
+                <img src={siteAssetUrl("dr.png")} alt="" className="w-4 h-4" />
               </div>
             </div>
           </div>
@@ -578,9 +578,9 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 w-full h-auto justify-items-center gap-10 sm:gap-4 lg:gap-8 lg:px-[100px]">
             {[
-              { img: "/image 18.png", text: "Creating Streamlined Safeguarding Processes with OneRen" },
-              { img: "/image 18.png", text: "What are your safeguarding responsibilities and how can you manage them?" },
-              { img: "/image 18.png", text: "Revamping the Membership Model with Triathlon Australia" },
+              { img: siteAssetUrl("image 18.png"), text: "Creating Streamlined Safeguarding Processes with OneRen" },
+              { img: siteAssetUrl("image 18.png"), text: "What are your safeguarding responsibilities and how can you manage them?" },
+              { img: siteAssetUrl("image 18.png"), text: "Revamping the Membership Model with Triathlon Australia" },
             ].map((card, index) => (
               <div key={index} className="relative flex w-full max-w-[316px] h-auto flex-col">
                 <img src={card.img} alt="" className="w-full h-auto sm:h-[199px] rounded-md" />
@@ -590,7 +590,7 @@ export default function Home() {
                   </p>
                   <div className="flex w-full h-auto flex-row items-center justify-center gap-1.5">
                     <span className="h-auto w-auto text-sm leading-[19px] text-[#4CAF4F]">Read more</span>
-                    <img src="/dr.png" alt="" className="h-[17px] w-4 text-[#4CAF4F]" />
+                    <img src={siteAssetUrl("dr.png")} alt="" className="h-[17px] w-4 text-[#4CAF4F]" />
                   </div>
                 </div>
               </div>
@@ -622,7 +622,7 @@ export default function Home() {
           <div className="mx-auto flex w-full max-w-[1140px] flex-col lg:flex-row justify-between gap-10 lg:gap-[125px]">
             <div className="flex w-full lg:w-[244px] h-auto flex-col gap-6 lg:gap-10">
               <div className="flex items-center gap-2">
-                <img src={logo_icon.src} alt="Logo" className="w-8 h-8 rounded" />
+                <img src={siteAssetUrl("icons.png")} alt="Logo" className="w-8 h-8 rounded" />
                 <span className="text-white text-lg sm:text-xl font-semibold">Nexcent</span>
               </div>
               <div className="flex flex-col gap-1">
@@ -685,7 +685,7 @@ export default function Home() {
                     aria-label="Subscribe"
                     className="flex items-center justify-center w-7 h-7 rounded-md bg-transparent hover:bg-[#4CAF4F] transition-colors flex-shrink-0"
                   >
-                    <img src="/dr.png" alt="" className="w-4 h-4" />
+                    <img src={siteAssetUrl("dr.png")} alt="" className="w-4 h-4" />
                   </button>
                 </div>
               </div>

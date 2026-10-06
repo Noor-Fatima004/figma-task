@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { FaInstagram, FaFacebookF, FaTwitter, FaYoutube } from "react-icons/fa";
+import { siteAssetUrl } from "@/lib/cloudinaryAssets";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -20,7 +21,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           {/* Logo */}
           <div className="relative flex items-center gap-2">
             <img
-              src="/Icon.jpg"
+              src={siteAssetUrl("Icon.jpg")}
               alt="Nextcent"
               className="w-8 h-8 rounded-lg object-cover"
               onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}

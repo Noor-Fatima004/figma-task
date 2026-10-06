@@ -20,6 +20,28 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Cloudinary image storage
+
+All uploaded gallery images and profile avatars use Cloudinary. Product media refers to gallery records, while category and brand images reference the same gallery records. Gallery records store the secure URL and Cloudinary public ID; the binary data field remains optional only for legacy records until migration.
+
+1. Create a Cloudinary account at [cloudinary.com](https://cloudinary.com/).
+2. In the Cloudinary Console dashboard, copy the **Cloud name**, **API Key**, and **API Secret**.
+3. Add those values to the matching variables in the root `.env.local` file. Set `CLOUDINARY_FOLDER=nextcent` (or another root folder if desired). The API secret is used only by server-side code. Restart the Next.js server after editing environment values.
+4. Preview the migration without uploading anything with `npm run migrate:images -- --dry-run`.
+5. With MongoDB and Cloudinary credentials configured, run `npm run migrate:images`. It uploads existing MongoDB gallery image data, user-avatar data URIs, references to local files, and every image in `public/` using stable Cloudinary IDs. The script is safe to rerun and does not remove local files.
+
+The site uses `CLOUDINARY_CLOUD_NAME` in the client only to construct delivery URLs for bundled public artwork. Cloud name is public information; the API key and API secret are never exposed to client code. Do not commit `.env.local`.
+
+### Cloudinary acceptance checks
+
+After setting credentials and starting the app:
+
+- Upload a valid image in Gallery; response and MongoDB record should contain a `https://res.cloudinary.com/` URL and a `publicId`.
+- Upload a renamed text/SVG file; the endpoint should reject it with HTTP 400.
+- Delete an unused gallery image; it should disappear from MongoDB and Cloudinary.
+- Reference an image from a product, category, brand, or user and try deleting it; the request should return HTTP 409 and the Cloudinary asset should remain.
+- Run `npm run migrate:images` twice; the second run should report existing public IDs and should not create duplicate Cloudinary assets.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

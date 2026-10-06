@@ -4,6 +4,7 @@ import connectDB from "@/lib/mongodb";
 import { requireAdmin } from "@/lib/requireAdmin";
 import Product from "@/app/models/Product";
 import { safeDelete, usageError } from "@/lib/safeDelete";
+import { isCloudinaryImageUrl, resolveMediaPublicIds } from "@/lib/galleryMedia";
 import { productSchema } from "@/app/admin/catalog/products/add/schemas";
 
 type Context = { params: Promise<{ id: string }> };
@@ -102,7 +103,14 @@ export async function PUT(request: Request, { params }: Context) {
     }
 
     const data = parsed.data;
+    if (data.media.some((value) => !mongoose.isValidObjectId(value) && !isCloudinaryImageUrl(value))) {
+      return NextResponse.json(
+        { error: "Product media must use a gallery image or Cloudinary URL" },
+        { status: 400 }
+      );
+    }
     product.media = data.media;
+    product.mediaPublicIds = await resolveMediaPublicIds(data.media);
     product.category = new mongoose.Types.ObjectId(data.category);
     product.translations.set("en", data.translations.en);
     product.videoEmbedCode = data.videoEmbedCode;

@@ -37,6 +37,7 @@ const ProductSchema = new Schema(
       lowercase: true,
     },
     media: { type: [String], default: [] }, // gallery image ids
+    mediaPublicIds: { type: [String], default: [] },
     category: {
       type: Schema.Types.ObjectId,
       ref: "ProductCategory",

@@ -11,22 +11,22 @@ interface Props {
 }
 
 export default function AddImageModal({ categories, onClose, onDone }: Props) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState("");
   const [tag, setTag] = useState("");
   const [w, setW] = useState(400);
   const [h, setH] = useState(300);
   const [loading, setLoading] = useState(false);
 
-  function pickFile(f: File | null) {
+  function pickFiles(selected: File[]) {
     if (preview) URL.revokeObjectURL(preview);
-    setFile(f);
-    setPreview(f ? URL.createObjectURL(f) : "");
+    setFiles(selected);
+    setPreview(selected[0] ? URL.createObjectURL(selected[0]) : "");
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) return toast.error("Image select karo");
+    if (files.length === 0) return toast.error("Image select karo");
     if (!tag.trim()) return toast.error("Tag / category likho");
 
     setLoading(true);
@@ -45,7 +45,7 @@ export default function AddImageModal({ categories, onClose, onDone }: Props) {
       }
 
       const fd = new FormData();
-      fd.append("file", file);
+      files.forEach((file) => fd.append("files", file));
       fd.append("category", cat!._id);
       fd.append("width", String(w));
       fd.append("height", String(h));
@@ -54,7 +54,16 @@ export default function AddImageModal({ categories, onClose, onDone }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      toast.success("Image uploaded");
+      if (data.uploaded?.length) {
+        toast.success(`${data.uploaded.length} image(s) uploaded`);
+      }
+      if (data.failures?.length) {
+        toast.error(
+          data.failures.map((failure: { file: string; error: string }) =>
+            `${failure.file}: ${failure.error}`
+          ).join("; ")
+        );
+      }
       onDone();
       onClose();
     } catch (err) {
@@ -80,10 +89,14 @@ export default function AddImageModal({ categories, onClose, onDone }: Props) {
           <label className="text-sm font-medium">Image</label>
           <input
             type="file"
-            accept="image/*"
-            onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+            accept=".jpg,.jpeg,.png,.webp,.gif"
+            multiple
+            onChange={(e) => pickFiles(Array.from(e.target.files ?? []))}
             className="block w-full text-sm mt-1"
           />
+          {files.length > 0 && (
+            <p className="mt-2 text-xs text-muted">{files.length} image(s) selected</p>
+          )}
           {preview && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="preview" className="mt-3 h-40 w-full object-cover rounded-lg" />

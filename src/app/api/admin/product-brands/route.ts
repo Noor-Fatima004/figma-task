@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import ProductBrand from "@/app/models/ProductBrand";
+import "@/app/models/GalleryImage";
 import { uniqueBrandSlug } from "@/lib/brandSlug";
 
 const SORT_FIELDS = ["createdAt", "name", "slug", "status"];
+type PopulatedGalleryImage = { _id: mongoose.Types.ObjectId; url: string };
 
 // GET /api/admin/product-brands?q=&page=1&limit=10&sort=createdAt&order=asc
 export async function GET(req: NextRequest) {
@@ -36,17 +38,19 @@ export async function GET(req: NextRequest) {
     page = Math.min(page, totalPages);
 
     const docs = await ProductBrand.find(filter)
+      .populate<{ image: PopulatedGalleryImage | null }>("image", "url")
       .sort({ [sortField]: order, _id: 1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
-    const items = docs.map((d: any) => ({
+    const items = docs.map((d) => ({
       _id: d._id.toString(),
       name: d.name,
       slug: d.slug,
       status: d.status,
-      image: d.image ? d.image.toString() : "",
+      image: d.image?._id ? d.image._id.toString() : d.image ? d.image.toString() : "",
+      imageUrl: d.image?.url ?? "",
     }));
 
     return NextResponse.json({ items, total, page, totalPages });
@@ -82,8 +86,8 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (err: any) {
-    if (err?.code === 11000) {
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === 11000) {
       return NextResponse.json({ error: "This brand already exists" }, { status: 409 });
     }
     console.error("POST product-brands:", err);

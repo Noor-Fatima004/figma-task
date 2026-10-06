@@ -7,7 +7,14 @@ import { toast } from "sonner";
 import { FaArrowLeft, FaCopy } from "react-icons/fa";
 
 type Category = { _id: string; name: string };
-type Img = { _id: string; alt: string; width: number; height: number; category: string };
+type Img = {
+  _id: string;
+  alt: string;
+  url: string;
+  width: number;
+  height: number;
+  category: string;
+};
 
 // box ke andar ratio ke hisaab se fit karta hai
 const fit = (w: number, h: number, maxW = 360, maxH = 220) => {
@@ -64,7 +71,7 @@ function ImageCard({
       <div className="bg-background rounded-lg flex items-center justify-center p-4 min-h-56">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/api/gallery/image/${v._id}`}
+          src={data.url || `/api/gallery/image/${v._id}`}
           alt={data.alt}
           onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
           style={{ width: size.width, height: size.height, objectFit: "cover" }}

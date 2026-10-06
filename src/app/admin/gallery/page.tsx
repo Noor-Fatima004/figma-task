@@ -5,9 +5,17 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { FaEye } from "react-icons/fa";
 import AddImageModal from "../AddImageModal";
+import { imgSrc } from "@/app/admin/GalleryPicker";
 
 export type Category = { _id: string; name: string };
-type Img = { _id: string; alt: string; width: number; height: number; category: string };
+type Img = {
+  _id: string;
+  alt: string;
+  url: string;
+  width: number;
+  height: number;
+  category: string;
+};
 
 export default function GalleryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -150,7 +158,7 @@ export default function GalleryPage() {
                 <div key={img._id} className="group relative aspect-square rounded-xl overflow-hidden bg-background">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={`/api/gallery/image/${img._id}`}
+        src={img.url || imgSrc(img._id)}
         alt={img.alt}
         className="w-full h-full object-cover transition duration-300 group-hover:blur-[3px] group-hover:scale-105"
       />

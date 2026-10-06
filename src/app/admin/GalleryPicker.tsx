@@ -7,17 +7,24 @@ import { FaTimes } from "react-icons/fa";
 import AddImageModal from "@/app/admin/AddImageModal";
 
 export type GalleryCategory = { _id: string; name: string };
-export type GalleryImage = { _id: string; alt: string };
+export type GalleryImage = {
+  _id: string;
+  alt: string;
+  url: string;
+  publicId: string;
+};
 export const imgSrc = (id: string) => `/api/gallery/image/${id}`;
 
 export default function GalleryPicker({
   selectedId,
   onSelect,
   onClose,
+  selectUrl = false,
 }: {
   selectedId: string;
-  onSelect: (id: string) => void;
+  onSelect: (idOrUrl: string) => void;
   onClose: () => void;
+  selectUrl?: boolean;
 }) {
   const [categories, setCategories] = useState<GalleryCategory[]>([]);
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -28,6 +35,11 @@ export default function GalleryPicker({
 
   // upload se pehle gallery me jo image ids thi
   const knownIds = useRef<Set<string>>(new Set());
+
+  const selectImage = (id: string) => {
+    const selected = images.find((image) => image._id === id);
+    onSelect(selectUrl && selected?.url ? selected.url : id);
+  };
 
   const openUpload = async () => {
     try {
@@ -60,7 +72,7 @@ export default function GalleryPicker({
       );
 
       if (fresh.length > 0) {
-        onSelect(fresh[0]._id); // nayi image select + picker band
+        onSelect(selectUrl && fresh[0].url ? fresh[0].url : fresh[0]._id);
         return;
       }
     } catch {
@@ -90,12 +102,16 @@ export default function GalleryPicker({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load images");
       setImages(data);
+      if (selectUrl && selectedId && !data.some((image: GalleryImage) => image._id === selectedId)) {
+        const selectedImage = data.find((image: GalleryImage) => image.url === selectedId);
+        setPicked(selectedImage?._id ?? "");
+      }
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setLoading(false);
     }
-  }, [active]);
+  }, [active, selectUrl, selectedId]);
 
   useEffect(() => {
     loadCategories();
@@ -185,7 +201,7 @@ export default function GalleryPicker({
                   key={img._id}
                   type="button"
                   onClick={() => setPicked(img._id)}
-                  onDoubleClick={() => onSelect(img._id)}
+                  onDoubleClick={() => selectImage(img._id)}
                   className={`aspect-square rounded-lg overflow-hidden bg-background border-2 transition ${
                     picked === img._id
                       ? "border-primary ring-2 ring-primary/30"
@@ -194,7 +210,7 @@ export default function GalleryPicker({
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={imgSrc(img._id)}
+                    src={img.url || imgSrc(img._id)}
                     alt={img.alt}
                     className="w-full h-full object-cover"
                   />
@@ -214,7 +230,7 @@ export default function GalleryPicker({
           </button>
           <button
             disabled={!picked}
-            onClick={() => onSelect(picked)}
+            onClick={() => selectImage(picked)}
             className="px-4 py-2 rounded-lg text-sm bg-primary text-white disabled:opacity-50"
           >
             Select Image

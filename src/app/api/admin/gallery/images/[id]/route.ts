@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import GalleryImage from "@/app/models/GalleryImage";
-import { safeDelete, usageError } from "@/lib/safeDelete";
+import { deleteImage } from "@/lib/cloudinary";
+import { checkUsage, inTransaction, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -32,13 +33,34 @@ export async function DELETE(_: Request, { params }: Ctx) {
   if (!mongoose.isValidObjectId(id)) {
     return NextResponse.json({ error: "Invalid image id" }, { status: 400 });
   }
-  await connectDB();
-  const { deleted, usage } = await safeDelete("image", id, (session) =>
-    GalleryImage.findByIdAndDelete(id).session(session)
-  );
-  if (usage.length > 0) {
-    return NextResponse.json({ error: usageError("image", usage) }, { status: 409 });
+  try {
+    await connectDB();
+    const result = await inTransaction(async (session) => {
+      const usage = await checkUsage("image", id, session);
+      if (usage.length > 0) return { usage, deleted: false };
+
+      const image = await GalleryImage.findById(id).session(session);
+      if (!image) return { usage: [], deleted: false };
+      if (image.publicId) await deleteImage(image.publicId);
+      await GalleryImage.deleteOne({ _id: id }).session(session);
+      return { usage: [], deleted: true };
+    });
+
+    if (result.usage.length > 0) {
+      return NextResponse.json(
+        { error: usageError("image", result.usage) },
+        { status: 409 }
+      );
+    }
+    if (!result.deleted) {
+      return NextResponse.json({ error: "Image not found" }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error(`DELETE gallery image "${id}" failed:`, error);
+    return NextResponse.json(
+      { error: "Image deletion failed; the database record was kept" },
+      { status: 502 }
+    );
   }
-  if (!deleted) return NextResponse.json({ error: "Image not found" }, { status: 404 });
-  return NextResponse.json({ ok: true });
 }

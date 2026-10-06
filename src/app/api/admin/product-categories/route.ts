@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import ProductCategory from "@/app/models/ProductCategory";
+import "@/app/models/GalleryImage";
 import { uniqueCategorySlug } from "@/lib/categorySlug";
 import { slugify } from "@/lib/slugify";
 import { stripHtml } from "@/lib/stripHtml";
 
 const SORT_FIELDS = ["createdAt", "name", "slug"];
 const oid = (v: unknown) => (mongoose.isValidObjectId(v) ? String(v) : null);
+type PopulatedRef = {
+  _id: mongoose.Types.ObjectId;
+  name?: string;
+  url?: string;
+} | null;
 
 // GET /api/admin/product-categories?q=&page=1&limit=10&sort=createdAt&order=asc
 // GET /api/admin/product-categories?all=1  -> parent dropdown ke liye poori list
@@ -24,7 +30,7 @@ export async function GET(req: NextRequest) {
         .lean();
 
       return NextResponse.json(
-        all.map((c: any) => ({
+        all.map((c) => ({
           _id: c._id.toString(),
           name: c.name,
           parent: c.parent ? c.parent.toString() : "",
@@ -56,13 +62,15 @@ export async function GET(req: NextRequest) {
     page = Math.min(page, totalPages);
 
     const docs = await ProductCategory.find(filter)
-      .populate("parent", "name")
+      .populate<{ parent: PopulatedRef }>("parent", "name")
+      .populate<{ image: PopulatedRef }>("image", "url")
+      .populate<{ icon: PopulatedRef }>("icon", "url")
       .sort({ [sortField]: order, _id: 1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
-    const items = docs.map((d: any) => ({
+    const items = docs.map((d) => ({
       _id: d._id.toString(),
       name: d.name,
       slug: d.slug,
@@ -70,8 +78,10 @@ export async function GET(req: NextRequest) {
       descriptionText: stripHtml(d.description ?? "").slice(0, 200),
       parent: d.parent?._id ? d.parent._id.toString() : "",
       parentName: d.parent?.name ?? "",
-      image: d.image ? d.image.toString() : "",
-      icon: d.icon ? d.icon.toString() : "",
+      image: d.image?._id ? d.image._id.toString() : d.image ? d.image.toString() : "",
+      imageUrl: d.image?.url ?? "",
+      icon: d.icon?._id ? d.icon._id.toString() : d.icon ? d.icon.toString() : "",
+      iconUrl: d.icon?.url ?? "",
     }));
 
     return NextResponse.json({ items, total, page, totalPages });
@@ -117,8 +127,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ _id: cat._id.toString() }, { status: 201 });
-  } catch (err: any) {
-    if (err?.code === 11000) {
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === 11000) {
       return NextResponse.json(
         { error: "A category with this name already exists under the selected parent" },
         { status: 409 }

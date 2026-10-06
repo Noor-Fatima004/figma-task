@@ -12,7 +12,7 @@ export type LangCode = (typeof LANGUAGES)[number]["code"];
 export type Translation = { name: string; description: string };
 
 export type BasicInfoData = {
-  media: string[]; // gallery image ids (purane URLs bhi chalenge)
+  media: string[]; // Cloudinary URLs; legacy gallery IDs remain readable.
   category: string; // category _id
   translations: Record<string, Translation>;
   videoEmbedCode: string;
@@ -29,7 +29,7 @@ export const emptyBasicInfo: BasicInfoData = {
 
 type Category = { _id: string; name: string };
 
-// gallery id ho to API url banao, pehle se URL ho to waisa hi rehne do
+// Legacy gallery IDs are redirected to their Cloudinary URLs by the image route.
 const mediaSrc = (m: string) =>
   /^(https?:)?\/|^data:/.test(m) ? m : imgSrc(m);
 
@@ -255,6 +255,7 @@ export default function BasicInfoStep({
           selectedId=""
           onClose={() => setShowPicker(false)}
           onSelect={addMedia}
+          selectUrl
         />
       )}
     </>

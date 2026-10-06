@@ -5,6 +5,7 @@ import connectDB from "@/lib/mongodb";
 import User from "@/app/models/User";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { safeDelete, usageError } from "@/lib/safeDelete";
+import { deleteImage } from "@/lib/cloudinary";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -69,14 +70,24 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   const err = await guard(id);
   if (err) return err;
 
-  await connectDB();
-  const { deleted, usage } = await safeDelete("user", id, (session) =>
-    User.findOneAndDelete({ _id: id, role: "user" }).session(session)
-  );
-  if (usage.length > 0) {
-    return NextResponse.json({ error: usageError("user", usage) }, { status: 409 });
+  try {
+    await connectDB();
+    const { deleted, usage } = await safeDelete("user", id, async (session) => {
+      const user = await User.findOne({ _id: id, role: "user" }).session(session);
+      if (!user) return null;
+      if (user.imagePublicId) await deleteImage(user.imagePublicId);
+      return User.findOneAndDelete({ _id: id, role: "user" }).session(session);
+    });
+    if (usage.length > 0) {
+      return NextResponse.json({ error: usageError("user", usage) }, { status: 409 });
+    }
+    if (!deleted) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error(`DELETE user "${id}" failed:`, error);
+    return NextResponse.json(
+      { error: "User deletion failed; the database record was kept" },
+      { status: 502 }
+    );
   }
-  if (!deleted) return NextResponse.json({ error: "User not found" }, { status: 404 });
-
-  return NextResponse.json({ success: true });
 }

@@ -22,6 +22,7 @@ const UserSchema = new mongoose.Schema(
       default: "user",     // every signup is a normal user by default
     },
     image: { type: String, default: "" },
+    imagePublicId: { type: String, default: "", index: true },
   },
   { timestamps: true }
 );

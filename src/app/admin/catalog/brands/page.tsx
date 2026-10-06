@@ -21,9 +21,10 @@ type Brand = {
   slug: string;
   status: "active" | "inactive";
   image: string; // gallery image id ("" = no image)
+  imageUrl: string;
 };
 type GalleryCategory = { _id: string; name: string };
-type GalleryImage = { _id: string; alt: string };
+type GalleryImage = { _id: string; alt: string; url: string; publicId: string };
 type SortKey = "createdAt" | "name" | "slug" | "status";
 type ModalState = null | { mode: "add" } | { mode: "edit"; brand: Brand };
 
@@ -259,7 +260,7 @@ export default function ProductBrandsPage() {
                         {b.image && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={imgSrc(b.image)}
+                            src={b.imageUrl || imgSrc(b.image)}
                             alt={b.name}
                             className="w-6 h-6 sm:w-7 sm:h-7 rounded object-cover shrink-0 bg-background"
                           />
@@ -669,7 +670,7 @@ function GalleryPicker({
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={imgSrc(img._id)}
+                    src={img.url || imgSrc(img._id)}
                     alt={img.alt}
                     className="w-full h-full object-cover"
                   />
