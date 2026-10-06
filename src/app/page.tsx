@@ -16,6 +16,7 @@ import {
 import logo_icon from "../../public/icons.png";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import ReviewsSection from "@/app/components/ReviewsSection";
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -273,7 +274,6 @@ export default function Home() {
             ))}
           </ul>
         </nav>
-
         {/* Logout footer */}
         <div
           className={`px-5 py-5 border-t border-gray-100 transform transition-all duration-300 ${
@@ -598,6 +598,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <ReviewsSection />
 
       {/* FOOTER */}
       <div className="w-full mt-10 lg:mt-16 flex flex-col">
