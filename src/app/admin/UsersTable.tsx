@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { FaChevronDown } from "react-icons/fa";
 import { addUserSchema, editUserSchema } from "@/lib/validations/auth";
 import { LIMIT_OPTIONS } from "@/lib/pagination";
 
@@ -34,12 +35,6 @@ const inputCls =
 
 const inputErrCls =
   "w-full border border-red-500 rounded-theme px-3 py-2 text-sm text-text bg-surface outline-none transition-colors hover:border-red-500 focus:border-red-500 focus:ring-0";
-
-const selectCls =
-  "border border-border rounded-theme px-2.5 py-1.5 text-xs sm:text-sm text-text bg-surface outline-none transition-colors hover:border-border-hover focus:border-primary-hover focus:ring-0 cursor-pointer";
-
-const pageBtnCls =
-  "px-3 py-1.5 text-xs sm:text-sm rounded-theme border border-border text-text bg-surface hover:bg-surface-hover hover:text-text-hover disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:text-text transition-colors";
 
 const smallBtnCls =
   "shrink-0 px-2.5 py-1 text-xs rounded-theme border border-border text-text hover:bg-surface-hover hover:text-text-hover transition-colors";
@@ -259,10 +254,10 @@ export default function UsersTable({
   function updateParams(changes: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(changes).forEach(([k, v]) => params.set(k, v));
-    router.push(`${pathname}?${params.toString()}`,{ scroll: false });
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
-  const colCount = showActions ? 5 : 4;
+  const colCount = showActions ? 6 : 5;
   const startIndex = pagination ? (pagination.page - 1) * pagination.limit : 0;
 
   return (
@@ -270,20 +265,17 @@ export default function UsersTable({
       {(pagination || showActions) && (
         <div className="flex items-center justify-between gap-3 mb-3">
           {pagination ? (
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted">
-              <span>Show</span>
-              <select
-                className={selectCls}
-                value={pagination.limit}
-                onChange={(e) => updateParams({ limit: e.target.value, page: "1" })}
-              >
-                {LIMIT_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              <span>rows</span>
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-text shrink-0 whitespace-nowrap">
+              Show
+              <FormSelect
+                value={String(pagination.limit)}
+                onChange={(v) => updateParams({ limit: v, page: "1" })}
+                options={LIMIT_OPTIONS.map((n) => ({
+                  value: String(n),
+                  label: String(n),
+                }))}
+              />
+              <span className="hidden sm:inline">entries</span>
             </div>
           ) : (
             <span />
@@ -323,7 +315,7 @@ export default function UsersTable({
                   </td>
                 </tr>
               ) : (
-                users.map((u,i) => (
+                users.map((u, i) => (
                   <tr key={u._id} className="border-t border-border">
                     <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-muted whitespace-nowrap">
                       {startIndex + i + 1}
@@ -367,28 +359,28 @@ export default function UsersTable({
 
       {/* Pagination footer */}
       {pagination && pagination.total > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-3">
-          <p className="text-xs sm:text-sm text-muted">
-            Showing {(pagination.page - 1) * pagination.limit + 1}–
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 text-xs sm:text-sm text-muted">
+          <p className="shrink-0">
+            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
             {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
-            {pagination.total}
+            {pagination.total} entries
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto sm:ml-0">
             <button
-              className={`${pageBtnCls} !bg-primary !text-white !border-border hover:!bg-primary-hover disabled:!bg-background disabled:!text-muted disabled:!border-border`}
               disabled={pagination.page <= 1}
               onClick={() => updateParams({ page: String(pagination.page - 1) })}
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-white bg-primary hover:bg-primary-hover border border-primary-hover disabled:opacity-40 transition-colors"
             >
-              Prev
+              Previous
             </button>
-            <span className="text-xs sm:text-sm text-text px-1">
-              Page {pagination.page} of {pagination.totalPages}
+            <span className="px-2">
+              {pagination.page} / {pagination.totalPages}
             </span>
             <button
-              className={`${pageBtnCls} !bg-primary !text-white !border-border hover:!bg-primary-hover disabled:!bg-background disabled:!text-muted disabled:!border-border`}
               disabled={pagination.page >= pagination.totalPages}
               onClick={() => updateParams({ page: String(pagination.page + 1) })}
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-white bg-primary hover:bg-primary-hover border border-primary-hover disabled:opacity-40 transition-colors"
             >
               Next
             </button>
@@ -467,19 +459,19 @@ export default function UsersTable({
 
                 {/* ADD: normal password input */}
                 {modal.type === "add" && (
-                <div>
-                  <label className="block text-xs text-muted mb-1">Password</label>
-                  <input
-                    type="password"
-                    className={fieldErrors.password ? inputErrCls : inputCls}
-                    value={form.password}
-                    onChange={(e) => setField("password", e.target.value)}
-                  />
-                  {fieldErrors.password && (
-                    <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>
-                  )}
-                </div>
-              )}
+                  <div>
+                    <label className="block text-xs text-muted mb-1">Password</label>
+                    <input
+                      type="password"
+                      className={fieldErrors.password ? inputErrCls : inputCls}
+                      value={form.password}
+                      onChange={(e) => setField("password", e.target.value)}
+                    />
+                    {fieldErrors.password && (
+                      <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* EDIT: password locked behind admin verification */}
                 {modal.type === "edit" && (
@@ -839,5 +831,84 @@ export default function UsersTable({
         </div>
       )}
     </>
+  );
+}
+
+/* ───────────────────────── Custom select (same as Variations page) ───────────────────────── */
+
+function FormSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // bahar click ya Escape par band
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="flex items-center justify-between gap-2 border border-border bg-surface text-text text-left focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md px-2 py-1 text-xs sm:text-sm min-w-[3.5rem]"
+      >
+        <span className="truncate">{selected?.label ?? value}</span>
+        <FaChevronDown
+          className={`w-3 h-3 shrink-0 text-muted transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute top-full mt-1 z-[60] left-0 min-w-full max-h-44 sm:max-h-52 overflow-y-auto bg-surface border border-border rounded-lg shadow-lg py-1"
+        >
+          {options.map((o) => (
+            <li
+              key={o.value}
+              role="option"
+              aria-selected={o.value === value}
+              onClick={() => {
+                onChange(o.value);
+                setOpen(false);
+              }}
+              className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
+                o.value === value
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-text hover:bg-surface-hover hover:text-text-hover"
+              }`}
+            >
+              {o.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
