@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
+import Product from "@/app/models/Product";
 import ProductVariation from "@/app/models/ProductVariation";
 import ProductAttribute from "@/app/models/ProductAttribute";
 
@@ -33,7 +34,7 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     const v = await ProductVariation.findByIdAndUpdate(
       id,
       { name, attribute: attributeId },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
     if (!v) {
       return NextResponse.json({ error: "Variation not found" }, { status: 404 });
@@ -45,8 +46,13 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       attribute: attributeId,
       attributeName: attr.name,
     });
-  } catch (err: any) {
-    if (err?.code === 11000) {
+  } catch (err: unknown) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      err.code === 11000
+    ) {
       return NextResponse.json(
         { error: "This variation already exists for the selected attribute" },
         { status: 409 }
@@ -66,22 +72,22 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
 
     await connectDB();
 
-    const inUse = await ProductVariation.countDocuments({ attribute: id });
+    const inUse = await Product.countDocuments({ "attributes.variations": id });
     if (inUse > 0) {
       return NextResponse.json(
-        { error: `Cannot delete: ${inUse} variation(s) use this attribute` },
+        { error: `Cannot delete: this variation is used by ${inUse} product(s)` },
         { status: 409 }
       );
     }
 
-    const deleted = await ProductAttribute.findByIdAndDelete(id);
+    const deleted = await ProductVariation.findByIdAndDelete(id);
     if (!deleted) {
-      return NextResponse.json({ error: "Attribute not found" }, { status: 404 });
+      return NextResponse.json({ error: "Variation not found" }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("DELETE product-attributes:", err);
-    return NextResponse.json({ error: "Failed to delete attribute" }, { status: 500 });
+    console.error("DELETE product-variations:", err);
+    return NextResponse.json({ error: "Failed to delete variation" }, { status: 500 });
   }
 }
