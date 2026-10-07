@@ -50,6 +50,12 @@ export const advanceSchema = z
         (v) => v.trim() === "" || (isNum(v) && Number(v) >= 0),
         "Enter a valid discount price"
       ),
+    stock: z
+      .string()
+      .refine(
+        (v) => isNum(v) && Number.isSafeInteger(Number(v)) && Number(v) >= 0,
+        "Stock must be a whole number of 0 or more"
+      ),
     minOrder: z
       .string()
       .refine(
@@ -171,6 +177,12 @@ export const productSchema = z
       .number()
       .min(0, "Enter a valid discount price")
       .nullable(),
+    stock: z
+      .number()
+      .int("Stock must be a whole number")
+      .min(0, "Stock cannot be negative")
+      .max(Number.MAX_SAFE_INTEGER, "Stock is too large")
+      .default(0),
     minOrder: z.number().int().min(1, "Minimum order must be at least 1"),
     maxOrder: z.number().int().min(1, "Maximum order must be at least 1"),
     sku: z.string().trim().max(100).default(""),

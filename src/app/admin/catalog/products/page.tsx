@@ -21,6 +21,7 @@ type Product = {
   type: string;
   price: number;
   discountPrice?: number | null;
+  stock: number;
   status: "Active" | "Inactive";
 };
 
@@ -32,6 +33,7 @@ type ApiProduct = {
   productType: string;
   price: number;
   discountPrice: number | null;
+  stock: number;
   isActive: boolean;
 };
 
@@ -50,6 +52,7 @@ const columns = [
   { key: "type", label: "Type", sortable: true },
   { key: "price", label: "Price (INR)", sortable: true },
   { key: "discountPrice", label: "Discount Price (INR)", sortable: true },
+  { key: "stock", label: "Stock", sortable: true },
   { key: "status", label: "Status", sortable: true },
   { key: "action", label: "Action", sortable: false },
 ] as const;
@@ -73,6 +76,10 @@ function readApiProduct(value: unknown): ApiProduct {
     typeof value.productType !== "string" ||
     typeof value.price !== "number" ||
     (value.discountPrice !== null && typeof value.discountPrice !== "number") ||
+    (value.stock !== undefined &&
+      (typeof value.stock !== "number" ||
+        !Number.isSafeInteger(value.stock) ||
+        value.stock < 0)) ||
     typeof value.isActive !== "boolean"
   ) {
     throw new Error("Invalid product data returned by the API.");
@@ -86,6 +93,7 @@ function readApiProduct(value: unknown): ApiProduct {
     productType: value.productType,
     price: value.price,
     discountPrice: value.discountPrice,
+    stock: typeof value.stock === "number" ? value.stock : 0,
     isActive: value.isActive,
   };
 }
@@ -243,6 +251,7 @@ export default function ProductListPage() {
             type: product.productType,
             price: product.price,
             discountPrice: product.discountPrice,
+            stock: product.stock,
             status: product.isActive ? "Active" : "Inactive",
           } satisfies Product;
         });
@@ -455,6 +464,9 @@ export default function ProductListPage() {
                     </td>
                     <td className="px-3 py-2.5 sm:px-4 sm:py-3">
                       {product.discountPrice ?? "-"}
+                    </td>
+                    <td className="px-3 py-2.5 sm:px-4 sm:py-3">
+                      {product.stock}
                     </td>
                     <td className="px-3 py-2.5 sm:px-4 sm:py-3">
                       <span
