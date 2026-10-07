@@ -16,7 +16,6 @@ export type AdvanceInfoData = {
   weight: string;
   price: string;
   discountPrice: string;
-  stock: string;
   minOrder: string;
   maxOrder: string;
   sku: string;
@@ -34,7 +33,6 @@ export const emptyAdvanceInfo: AdvanceInfoData = {
   weight: "",
   price: "",
   discountPrice: "",
-  stock: "0",
   minOrder: "1",
   maxOrder: "5",
   sku: "",
@@ -412,19 +410,6 @@ export default function AdvanceInfoStep({
               className={inputCls}
             />
             {err("discountPrice")}
-          </div>
-          <div>
-            <label className={labelCls}>Stock Quantity</label>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={data.stock}
-              onChange={(e) => set("stock", e.target.value)}
-              placeholder="Enter stock quantity"
-              className={inputCls}
-            />
-            {err("stock")}
           </div>
           <div>
             <label className={labelCls}>Minimum Order</label>

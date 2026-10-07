@@ -98,7 +98,6 @@ export default function AddProductPage() {
         discountPrice: advance.discountPrice
           ? Number(advance.discountPrice)
           : null,
-        stock: Number(advance.stock),
         minOrder: Number(advance.minOrder),
         maxOrder: Number(advance.maxOrder),
         sku: advance.sku.trim(),

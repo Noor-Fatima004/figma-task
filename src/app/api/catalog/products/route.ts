@@ -77,7 +77,6 @@ export async function POST(req: Request) {
       weight: d.weight,
       price: d.price,
       discountPrice: d.discountPrice,
-      stock: d.stock,
       minOrder: d.minOrder,
       maxOrder: d.maxOrder,
       sku: d.sku || undefined, // khali SKU save nahi karte (sparse unique index)

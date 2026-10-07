@@ -53,7 +53,6 @@ export async function GET(_request: Request, { params }: Context) {
         weight: product.weight,
         price: product.price,
         discountPrice: product.discountPrice,
-        stock: product.stock ?? 0,
         minOrder: product.minOrder,
         maxOrder: product.maxOrder,
         sku: product.sku ?? "",
@@ -124,7 +123,6 @@ export async function PUT(request: Request, { params }: Context) {
     product.weight = data.weight;
     product.price = data.price;
     product.discountPrice = data.discountPrice;
-    product.stock = data.stock;
     product.minOrder = data.minOrder;
     product.maxOrder = data.maxOrder;
     product.sku = data.sku || undefined;

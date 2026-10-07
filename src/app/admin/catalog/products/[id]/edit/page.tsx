@@ -47,7 +47,6 @@ type EditProduct = {
   weight: number | null;
   price: number;
   discountPrice: number | null;
-  stock: number;
   minOrder: number;
   maxOrder: number;
   sku: string;
@@ -86,10 +85,6 @@ function parseProduct(value: unknown): EditProduct {
     (value.weight !== null && typeof value.weight !== "number") ||
     typeof value.price !== "number" ||
     (value.discountPrice !== null && typeof value.discountPrice !== "number") ||
-    (value.stock !== undefined &&
-      (typeof value.stock !== "number" ||
-        !Number.isSafeInteger(value.stock) ||
-        value.stock < 0)) ||
     typeof value.minOrder !== "number" ||
     typeof value.maxOrder !== "number" ||
     typeof value.sku !== "string" ||
@@ -125,7 +120,6 @@ function parseProduct(value: unknown): EditProduct {
     weight: value.weight,
     price: value.price,
     discountPrice: value.discountPrice,
-    stock: typeof value.stock === "number" ? value.stock : 0,
     minOrder: value.minOrder,
     maxOrder: value.maxOrder,
     sku: value.sku,
@@ -159,7 +153,6 @@ function getPayload(
     discountPrice: advance.discountPrice
       ? Number(advance.discountPrice)
       : null,
-    stock: Number(advance.stock),
     minOrder: Number(advance.minOrder),
     maxOrder: Number(advance.maxOrder),
     sku: advance.sku.trim(),
@@ -229,7 +222,6 @@ export default function EditProductPage() {
             product.discountPrice === null
               ? ""
               : String(product.discountPrice),
-          stock: String(product.stock),
           minOrder: String(product.minOrder),
           maxOrder: String(product.maxOrder),
           sku: product.sku,

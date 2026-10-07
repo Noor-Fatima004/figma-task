@@ -61,7 +61,6 @@ const ProductSchema = new Schema(
     weight: { type: Number, min: 0, default: null },
     price: { type: Number, required: true, min: 0 },
     discountPrice: { type: Number, min: 0, default: null },
-    stock: { type: Number, min: 0, default: 0 },
     minOrder: { type: Number, required: true, min: 1, default: 1 },
     maxOrder: { type: Number, required: true, min: 1, default: 5 },
     // sparse unique: khali SKU wale products ek dusre se clash nahi karte
