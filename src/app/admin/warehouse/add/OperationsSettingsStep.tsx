@@ -30,6 +30,25 @@ const weekdays = [
   "Sunday",
 ];
 
+const HOURS_24_7 = "24/7";
+const HOURS_CUSTOM = "custom";
+
+const hoursPresets = [
+  { value: "09:00 - 17:00", label: "Office (9 AM - 5 PM)" },
+  { value: "08:00 - 16:00", label: "Early shift (8 AM - 4 PM)" },
+  { value: "10:00 - 18:00", label: "Late shift (10 AM - 6 PM)" },
+  { value: HOURS_24_7, label: "24/7 (Open all day)" },
+  { value: HOURS_CUSTOM, label: "Custom" },
+];
+
+const isPresetValue = (value: string) =>
+  hoursPresets.some((p) => p.value === value && p.value !== HOURS_CUSTOM);
+
+const getInitialHoursMode = (operatingHours: string) => {
+  if (!operatingHours) return "09:00 - 17:00";
+  return isPresetValue(operatingHours) ? operatingHours : HOURS_CUSTOM;
+};
+
 export default function OperationsSettingsStep({
   data,
   onChange,
@@ -39,6 +58,54 @@ export default function OperationsSettingsStep({
   saving,
 }: Props) {
   const [managers, setManagers] = useState<ManagerOption[]>([]);
+  const [hoursMode, setHoursMode] = useState<string>(() =>
+    getInitialHoursMode(data.operatingHours)
+  );
+
+  const is24x7 = hoursMode === HOURS_24_7;
+  const isCustomHours = hoursMode === HOURS_CUSTOM;
+  const [startTime = "", endTime = ""] = isCustomHours
+    ? data.operatingHours.split(" - ")
+    : [];
+
+  // Edit mode: data baad mein load ho to dropdown sync rakho.
+  // Custom mode mein skip karte hain taake typing ke dauran dropdown na badle.
+  useEffect(() => {
+    if (hoursMode === HOURS_CUSTOM) return;
+    const value = data.operatingHours;
+    if (!value) return;
+    const next = isPresetValue(value) ? value : HOURS_CUSTOM;
+    if (next !== hoursMode) setHoursMode(next);
+  }, [data.operatingHours, hoursMode]);
+
+  // 24/7 ho to backend ko hamesha saare 7 din hi jayein
+  useEffect(() => {
+    if (data.operatingHours === HOURS_24_7 && data.workingDays.length !== 7) {
+      onChange({ ...data, workingDays: [...weekdays] });
+    }
+  }, [data, onChange]);
+
+  const handleHoursModeChange = (value: string) => {
+    setHoursMode(value);
+    if (value === HOURS_24_7) {
+      onChange({
+        ...data,
+        operatingHours: HOURS_24_7,
+        workingDays: [...weekdays],
+      });
+    } else if (value === HOURS_CUSTOM) {
+      onChange({ ...data, operatingHours: "" });
+    } else {
+      onChange({ ...data, operatingHours: value });
+    }
+  };
+
+  const handleCustomTime = (start: string, end: string) => {
+    onChange({
+      ...data,
+      operatingHours: start || end ? `${start} - ${end}` : "",
+    });
+  };
 
   useEffect(() => {
     let active = true;
@@ -142,7 +209,7 @@ export default function OperationsSettingsStep({
               onChange={(value) =>
                 onChange({
                   ...data,
-                   storageType: value as OperationsSettingsData["storageType"],
+                  storageType: value as OperationsSettingsData["storageType"],
                 })
               }
               options={[
@@ -155,45 +222,69 @@ export default function OperationsSettingsStep({
           </div>
           <div>
             <label className={labelCls}>Operating Hours</label>
-            <input
-              value={data.operatingHours}
-              onChange={(event) =>
-                onChange({ ...data, operatingHours: event.target.value })
-              }
-              placeholder="09:00 - 17:00"
-              className={inputCls}
+            <FormSelect
+              value={hoursMode}
+              onChange={handleHoursModeChange}
+              options={hoursPresets}
             />
+            {isCustomHours && (
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(event) =>
+                    handleCustomTime(event.target.value, endTime)
+                  }
+                  className={inputCls}
+                />
+                <span className="text-sm text-text">to</span>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(event) =>
+                    handleCustomTime(startTime, event.target.value)
+                  }
+                  className={inputCls}
+                />
+              </div>
+            )}
+            {err("operatingHours")}
           </div>
-          <fieldset className="sm:col-span-2">
-            <legend className={labelCls}>Working Days</legend>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {weekdays.map((day) => (
-                <label
-                  key={day}
-                  className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm transition-colors ${
-                    data.workingDays.includes(day)
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-surface text-text hover:bg-surface-hover"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={data.workingDays.includes(day)}
-                    onChange={(event) =>
-                      onChange({
-                        ...data,
-                        workingDays: event.target.checked
-                          ? [...data.workingDays, day]
-                          : data.workingDays.filter((value) => value !== day),
-                      })
-                    }
-                    className="h-4 w-4 accent-primary"
-                  />
-                  {day}
-                </label>
-              ))}
-            </div>
-          </fieldset>
+
+          {/* 24/7 par Working Days UI hide hoti hai, lekin saare din data mein set rehte hain */}
+          {!is24x7 && (
+            <fieldset className="sm:col-span-2">
+              <legend className={labelCls}>Working Days</legend>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {weekdays.map((day) => (
+                  <label
+                    key={day}
+                    className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm transition-colors ${
+                      data.workingDays.includes(day)
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-surface text-text hover:bg-surface-hover"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={data.workingDays.includes(day)}
+                      onChange={(event) =>
+                        onChange({
+                          ...data,
+                          workingDays: event.target.checked
+                            ? [...data.workingDays, day]
+                            : data.workingDays.filter((value) => value !== day),
+                        })
+                      }
+                      className="h-4 w-4 accent-primary"
+                    />
+                    {day}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
           <div>
             <label className={labelCls}>Priority (lower is higher)</label>
             <input

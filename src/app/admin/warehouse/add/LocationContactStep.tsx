@@ -1,9 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import FormSelect from "@/app/components/FormSelect";
 import type { FieldErrors, LocationContactData } from "./schemas";
+
+// Leaflet sirf browser mein chalta hai, isliye ssr: false
+const LocationPicker = dynamic(() => import("./LocationPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 animate-pulse rounded-lg bg-background sm:h-80" />
+  ),
+});
 
 const inputCls =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:ring-2 focus:ring-primary/30";
@@ -262,8 +271,25 @@ export default function LocationContactStep({
             {textField("address", "Address", true)}
           </div>
           {textField("postalCode", "Postal Code")}
-          {textField("latitude", "Latitude", false, "number")}
-          {textField("longitude", "Longitude", false, "number")}
+        </div>
+
+        {/* Map location: map se pick karo ya coordinates khud likho */}
+        <div className="mt-6 space-y-4">
+          <h3 className="text-sm font-semibold text-text">Map location</h3>
+          <LocationPicker
+            latitude={data.latitude}
+            longitude={data.longitude}
+            onPick={(latitude, longitude) =>
+              onChange({ ...data, latitude, longitude })
+            }
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {textField("latitude", "Latitude", false, "number")}
+            {textField("longitude", "Longitude", false, "number")}
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {textField("contactPerson", "Contact Person", true)}
           {textField("phone", "Phone", true, "tel")}
           {textField("alternatePhone", "Alternate Phone", false, "tel")}

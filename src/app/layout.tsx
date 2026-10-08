@@ -18,8 +18,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} min-h-screen bg-surface text-text font-sans`}>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${inter.variable} min-h-screen bg-surface text-text font-sans`}
+        suppressHydrationWarning
+      >
         {children}
         <Toaster position="top-right" richColors />
       </body>
