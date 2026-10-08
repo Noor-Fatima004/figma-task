@@ -27,6 +27,7 @@ const errorResponse = (error: string, status: number) =>
 type RawRow = {
   _id: mongoose.Types.ObjectId;
   product: mongoose.Types.ObjectId;
+  variantKey: string;
   variations?: mongoose.Types.ObjectId[];
   warehouse: mongoose.Types.ObjectId;
   onHand: number;
@@ -461,7 +462,7 @@ export async function DELETE(request: Request) {
   try {
     await connectDB();
     const level = await StockLevel.findById(parsed.data.id)
-      .select("_id onHand reserved")
+      .select("_id onHand reserved product variantKey warehouse")
       .lean();
     if (!level) return errorResponse("Stock record not found", 404);
 

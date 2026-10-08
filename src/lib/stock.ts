@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import StockLevel from "@/app/models/StockLevel";
 import StockMovement from "@/app/models/StockMovement";
+import Order from "@/app/models/Order";
+import Warehouse from "@/app/models/Warehouse";
+import type { OrderDoc } from "@/app/models/Order";
 
 export const stockReasons = [
   "purchase",
@@ -128,6 +131,9 @@ export type StockDeleteLevel = {
   _id: mongoose.Types.ObjectId;
   onHand: number;
   reserved: number;
+  product: mongoose.Types.ObjectId;
+  variantKey: string;
+  warehouse: mongoose.Types.ObjectId;
 };
 
 /**
@@ -136,7 +142,222 @@ export type StockDeleteLevel = {
  */
 export const stockReferenceChecks: Array<
   (levels: StockDeleteLevel[]) => Promise<Map<string, string>>
-> = [];
+> = [
+  async (levels) => {
+    const result = new Map<string, string>();
+    if (levels.length === 0) return result;
+    const rows = await Order.aggregate<{
+      _id: {
+        product: mongoose.Types.ObjectId;
+        variantKey: string;
+        warehouse: mongoose.Types.ObjectId;
+      };
+      count: number;
+    }>([
+      { $match: { status: { $in: ["pending", "confirmed"] } } },
+      { $unwind: "$items" },
+      { $unwind: "$items.allocations" },
+      {
+        $match: {
+          $or: levels.map((level) => ({
+            "items.product": level.product,
+            "items.variantKey": level.variantKey,
+            "items.allocations.warehouse": level.warehouse,
+          })),
+        },
+      },
+      {
+        $group: {
+          _id: {
+            product: "$items.product",
+            variantKey: "$items.variantKey",
+            warehouse: "$items.allocations.warehouse",
+          },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const levelIds = new Map(
+      levels.map((level) => [
+        `${level.product.toString()}:${level.variantKey}:${level.warehouse.toString()}`,
+        level._id.toString(),
+      ])
+    );
+    for (const row of rows) {
+      const id = levelIds.get(
+        `${row._id.product.toString()}:${row._id.variantKey}:${row._id.warehouse.toString()}`
+      );
+      if (id) {
+        result.set(
+          id,
+          `referenced by ${row.count} open ${row.count === 1 ? "order" : "orders"}`
+        );
+      }
+    }
+    return result;
+  },
+];
+
+export type StockAllocation = {
+  warehouse: mongoose.Types.ObjectId;
+  quantity: number;
+};
+
+export type ReservableStockItem = {
+  product: string;
+  variantKey: string;
+  quantity: number;
+  label: string;
+};
+
+/** Atomically reserves available stock across active warehouses. */
+export async function reserveStock(
+  item: ReservableStockItem,
+  session: mongoose.ClientSession,
+  activeWarehouses?: {
+    _id: mongoose.Types.ObjectId;
+    isDefault: boolean;
+  }[]
+): Promise<{ allocations: StockAllocation[]; available: number }> {
+  const warehouses =
+    activeWarehouses ??
+    (await Warehouse.find({ isActive: true })
+      .select("_id isDefault")
+      .session(session)
+      .lean());
+  if (warehouses.length === 0) return { allocations: [], available: 0 };
+
+  const warehouseById = new Map(
+    warehouses.map((warehouse) => [warehouse._id.toString(), warehouse])
+  );
+  const levels = await StockLevel.find({
+    product: new mongoose.Types.ObjectId(item.product),
+    variantKey: item.variantKey,
+    warehouse: { $in: warehouses.map((warehouse) => warehouse._id) },
+  })
+    .select("_id warehouse onHand reserved")
+    .session(session)
+    .lean();
+  const candidates = levels
+    .map((level) => ({
+      ...level,
+      available: Math.max(0, level.onHand - level.reserved),
+      isDefault: Boolean(warehouseById.get(level.warehouse.toString())?.isDefault),
+    }))
+    .filter((level) => level.available > 0)
+    .sort(
+      (left, right) =>
+        Number(right.isDefault) - Number(left.isDefault) ||
+        right.available - left.available ||
+        left._id.toString().localeCompare(right._id.toString())
+    );
+  const available = candidates.reduce((total, level) => total + level.available, 0);
+  let remaining = item.quantity;
+  const allocations: StockAllocation[] = [];
+
+  for (const level of candidates) {
+    if (remaining <= 0) break;
+    const quantity = Math.min(remaining, level.available);
+    const reserved = await StockLevel.findOneAndUpdate(
+      {
+        _id: level._id,
+        $expr: {
+          $gte: [{ $subtract: ["$onHand", "$reserved"] }, quantity],
+        },
+      },
+      { $inc: { reserved: quantity } },
+      { new: true, session }
+    ).select("_id");
+    if (!reserved) continue;
+    allocations.push({ warehouse: level.warehouse, quantity });
+    remaining = round3(remaining - quantity);
+  }
+
+  if (remaining > 0) {
+    throw new StockError(
+      `Not enough stock for "${item.label}". Requested ${item.quantity}, available ${round3(available)}.`,
+      409
+    );
+  }
+  return { allocations, available };
+}
+
+/** Releases an order's reservations; only open orders can be released. */
+export async function releaseStock(
+  order: Pick<OrderDoc, "status" | "items">,
+  session: mongoose.ClientSession
+) {
+  if (order.status !== "pending" && order.status !== "confirmed") return false;
+  for (const item of order.items) {
+    for (const allocation of item.allocations) {
+      const result = await StockLevel.updateOne(
+        {
+          product: item.product,
+          variantKey: item.variantKey,
+          warehouse: allocation.warehouse,
+          reserved: { $gte: allocation.quantity },
+        },
+        { $inc: { reserved: -allocation.quantity } },
+        { session }
+      );
+      if (result.modifiedCount !== 1) {
+        throw new StockError(
+          `Could not release the reservation for "${item.nameSnapshot}".`,
+          409
+        );
+      }
+    }
+  }
+  return true;
+}
+
+/** Converts each reservation to on-hand reduction and a sale ledger entry. */
+export async function fulfillStock(
+  order: Pick<OrderDoc, "status" | "items" | "orderNumber">,
+  session: mongoose.ClientSession
+) {
+  if (order.status !== "confirmed") return false;
+  for (const item of order.items) {
+    for (const allocation of item.allocations) {
+      const result = await StockLevel.updateOne(
+        {
+          product: item.product,
+          variantKey: item.variantKey,
+          warehouse: allocation.warehouse,
+          reserved: { $gte: allocation.quantity },
+        },
+        { $inc: { reserved: -allocation.quantity } },
+        { session }
+      );
+      if (result.modifiedCount !== 1) {
+        throw new StockError(
+          `Could not fulfill the reservation for "${item.nameSnapshot}".`,
+          409
+        );
+      }
+
+      await applyStockChange(
+        {
+          product: item.product.toString(),
+          variations: item.variations.map(String),
+          warehouse: allocation.warehouse.toString(),
+          mode: "out",
+          quantity: allocation.quantity,
+          reason: "sale",
+          reference: order.orderNumber,
+          note: "",
+          allowNegative: false,
+          userId: null,
+          label: item.variantLabel
+            ? `${item.nameSnapshot} (${item.variantLabel})`
+            : item.nameSnapshot,
+        },
+        session
+      );
+    }
+  }
+  return true;
+}
 
 /** Returns each stock row's on-hand, reserved, and registered blockers. */
 export async function getStockDeleteBlockers(
