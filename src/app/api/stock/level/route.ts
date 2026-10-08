@@ -6,7 +6,14 @@ import StockLevel from "@/app/models/StockLevel";
 import Warehouse from "@/app/models/Warehouse";
 import connectDB from "@/lib/mongodb";
 import { requireAdmin } from "@/lib/requireAdmin";
-import { buildVariantKey, validateVariantSelection } from "@/lib/stock";
+import {
+  applyStockChange,
+  buildVariantKey,
+  productDisplayName,
+  readUserId,
+  StockError,
+  validateVariantSelection,
+} from "@/lib/stock";
 
 const errorResponse = (error: string, status: number) =>
   NextResponse.json({ error }, { status });
@@ -16,6 +23,26 @@ const querySchema = z.object({
   warehouse: objectId,
   product: objectId,
   variations: z.string().default(""),
+});
+const updateSchema = z.object({
+  id: objectId,
+  quantity: z.number().min(0).max(1_000_000_000),
+  binLocation: z.string().trim().max(50),
+  reason: z.enum([
+    "purchase",
+    "opening_stock",
+    "customer_return",
+    "production",
+    "sale",
+    "damaged",
+    "expired",
+    "lost",
+    "internal_use",
+    "stock_count",
+    "other",
+  ]),
+  reference: z.string().trim().max(100),
+  note: z.string().trim().max(500),
 });
 
 export async function GET(request: Request) {
@@ -79,5 +106,99 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Load stock level failed:", error);
     return errorResponse("Failed to load stock level", 500);
+  }
+}
+
+export async function PATCH(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("Unauthorized", 401);
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse("Invalid JSON body", 400);
+  }
+
+  const parsed = updateSchema.safeParse(body);
+  if (!parsed.success) {
+    return errorResponse(parsed.error.issues[0]?.message ?? "Invalid stock data", 400);
+  }
+
+  try {
+    await connectDB();
+    const session = await mongoose.startSession();
+    try {
+      let response: {
+        onHand: number;
+        reserved: number;
+        available: number;
+        binLocation: string;
+      } | null = null;
+
+      await session.withTransaction(async () => {
+        const level = await StockLevel.findById(parsed.data.id)
+          .session(session)
+          .lean();
+        if (!level) throw new StockError("Stock record not found", 404);
+
+        const product = await Product.findById(level.product)
+          .select("productType attributes translations slug")
+          .session(session)
+          .lean();
+        const warehouse = await Warehouse.findById(level.warehouse)
+          .select("allowNegativeStock")
+          .session(session)
+          .lean();
+        if (!product) throw new StockError("Product not found", 404);
+        if (!warehouse) throw new StockError("Warehouse not found", 404);
+        if (!warehouse.allowNegativeStock && parsed.data.quantity < level.reserved) {
+          throw new StockError(
+            "Counted quantity cannot be lower than stock reserved for orders.",
+            409
+          );
+        }
+
+        await applyStockChange(
+          {
+            product: level.product.toString(),
+            variations: (level.variations ?? []).map(String),
+            warehouse: level.warehouse.toString(),
+            mode: "set",
+            quantity: parsed.data.quantity,
+            reason: parsed.data.reason,
+            reference: parsed.data.reference,
+            note: parsed.data.note,
+            allowNegative: Boolean(warehouse.allowNegativeStock),
+            userId: readUserId(admin),
+            label: productDisplayName(product),
+          },
+          session
+        );
+
+        const updated = await StockLevel.findByIdAndUpdate(
+          level._id,
+          { $set: { binLocation: parsed.data.binLocation } },
+          { new: true, session }
+        ).select("onHand reserved binLocation");
+
+        if (!updated) throw new StockError("Stock record not found", 404);
+        response = {
+          onHand: updated.onHand,
+          reserved: updated.reserved,
+          available: updated.onHand - updated.reserved,
+          binLocation: updated.binLocation ?? "",
+        };
+      });
+
+      if (!response) throw new Error("Stock update transaction returned no result.");
+      return NextResponse.json(response);
+    } finally {
+      await session.endSession();
+    }
+  } catch (error) {
+    if (error instanceof StockError) return errorResponse(error.message, error.status);
+    console.error("Update stock record failed:", error);
+    return errorResponse("Failed to update stock record", 500);
   }
 }

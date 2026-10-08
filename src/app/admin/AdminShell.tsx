@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
 import AdminFooter from "./AdminFooter";
@@ -20,13 +20,11 @@ export default function AdminShell({ name, email, children }: AdminShellProps) {
 
       <div className="flex-1 flex flex-col min-w-0 h-full">
         <div className="shrink-0">
-          <Suspense fallback={<header className="h-16 bg-surface border-b border-border" />}>
-            <AdminTopbar
-              name={name}
-              email={email}
-              onMenuClick={() => setSidebarOpen((v) => !v)}
-            />
-          </Suspense>
+          <AdminTopbar
+            name={name}
+            email={email}
+            onMenuClick={() => setSidebarOpen((v) => !v)}
+          />
         </div>
 
         {/* Scroll hoga, lekin scrollbar hidden rahega */}

@@ -32,10 +32,9 @@ type RawRow = {
   warehouse: mongoose.Types.ObjectId;
   onHand: number;
   reserved: number;
-  reorderLevel: number;
   binLocation: string;
   available: number;
-  status: "in" | "low" | "out";
+  status: "in" | "out";
   productName: string;
   sku: string;
   warehouseName: string;
@@ -126,7 +125,6 @@ export async function GET(request: Request) {
             $switch: {
               branches: [
                 { case: { $lte: ["$available", 0] }, then: "out" },
-                { case: { $lte: ["$available", "$reorderLevel"] }, then: "low" },
               ],
               default: "in",
             },
@@ -147,7 +145,7 @@ export async function GET(request: Request) {
         ],
       });
     }
-    if (status === "in" || status === "low" || status === "out") {
+    if (status === "in" || status === "out") {
       conditions.push({ status });
     }
     if (conditions.length > 0) base.push({ $match: { $and: conditions } });
@@ -160,7 +158,6 @@ export async function GET(request: Request) {
           total: { $sum: 1 },
           totalOnHand: { $sum: "$onHand" },
           totalAvailable: { $sum: "$available" },
-          low: { $sum: { $cond: [{ $eq: ["$status", "low"] }, 1, 0] } },
           out: { $sum: { $cond: [{ $eq: ["$status", "out"] }, 1, 0] } },
         },
       },
@@ -181,6 +178,9 @@ export async function GET(request: Request) {
     const items = rows.map((row) => ({
       _id: row._id.toString(),
       productId: row.product.toString(),
+      variations: (row.variations ?? []).map((variation) =>
+        variation.toString()
+      ),
       productName: row.productName,
       sku: row.sku,
       variantLabel: variantLabel(row.variations, row.variationDocs),
@@ -190,7 +190,6 @@ export async function GET(request: Request) {
       onHand: row.onHand,
       reserved: row.reserved,
       available: row.available,
-      reorderLevel: row.reorderLevel,
       binLocation: row.binLocation ?? "",
       status: row.status,
       updatedAt: row.updatedAt ?? null,
@@ -394,11 +393,10 @@ export async function POST(request: Request) {
 
 const patchSchema = z.object({
   id: objectId,
-  reorderLevel: z.number().min(0).max(1_000_000_000).optional(),
   binLocation: z.string().trim().max(50).optional(),
 }).refine(
-  (data) => data.reorderLevel !== undefined || data.binLocation !== undefined,
-  { message: "Provide a reorder level or bin location to update" }
+  (data) => data.binLocation !== undefined,
+  { message: "Provide a bin location to update" }
 );
 
 export async function PATCH(request: Request) {
@@ -420,10 +418,7 @@ export async function PATCH(request: Request) {
 
   try {
     await connectDB();
-    const updates: { reorderLevel?: number; binLocation?: string } = {};
-    if (parsed.data.reorderLevel !== undefined) {
-      updates.reorderLevel = parsed.data.reorderLevel;
-    }
+    const updates: { binLocation?: string } = {};
     if (parsed.data.binLocation !== undefined) {
       updates.binLocation = parsed.data.binLocation;
     }
@@ -434,7 +429,6 @@ export async function PATCH(request: Request) {
     ).lean();
     if (!level) return errorResponse("Stock record not found", 404);
     return NextResponse.json({
-      reorderLevel: level.reorderLevel,
       binLocation: level.binLocation ?? "",
     });
   } catch (error) {

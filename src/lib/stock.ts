@@ -469,7 +469,7 @@ export async function applyStockChange(
     filter,
     {
       $inc: { onHand: delta },
-      $setOnInsert: { variations, reserved: 0, reorderLevel: 0 },
+      $setOnInsert: { variations, reserved: 0 },
     },
     { new: true, upsert: !guarded, session }
   );

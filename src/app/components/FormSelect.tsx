@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FaChevronDown } from "react-icons/fa";
 
 type FormSelectProps = {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
@@ -14,6 +15,7 @@ type FormSelectProps = {
 };
 
 export default function FormSelect({
+  id,
   value,
   onChange,
   options,
@@ -48,6 +50,7 @@ export default function FormSelect({
   return (
     <div ref={ref} className={compact ? "relative inline-block" : "relative"}>
       <button
+        id={id}
         type="button"
         disabled={disabled}
         onClick={() => setOpen((current) => !current)}

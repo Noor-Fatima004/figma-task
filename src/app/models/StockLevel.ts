@@ -24,8 +24,6 @@ const StockLevelSchema = new Schema(
     },
     onHand: { type: Number, default: 0 },
     reserved: { type: Number, default: 0, min: 0 },
-    // Alert threshold: available <= reorderLevel (and > 0) => "Low stock".
-    reorderLevel: { type: Number, default: 0, min: 0 },
     binLocation: { type: String, trim: true, maxlength: 50, default: "" },
   },
   { timestamps: true }

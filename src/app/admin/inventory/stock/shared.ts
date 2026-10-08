@@ -1,8 +1,9 @@
-export type StockStatus = "in" | "low" | "out";
+export type StockStatus = "in" | "out";
 
 export type StockRow = {
   _id: string;
   productId: string;
+  variations: string[];
   productName: string;
   sku: string;
   variantLabel: string;
@@ -12,7 +13,7 @@ export type StockRow = {
   onHand: number;
   reserved: number;
   available: number;
-  reorderLevel: number;
+  binLocation: string;
   status: StockStatus;
 };
 
@@ -20,7 +21,6 @@ export type StockSummary = {
   lines: number;
   totalOnHand: number;
   totalAvailable: number;
-  low: number;
   out: number;
 };
 
