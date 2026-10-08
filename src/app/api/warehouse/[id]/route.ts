@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import Warehouse from "@/app/models/Warehouse";
+import StockLevel from "@/app/models/StockLevel";
 import User from "@/app/models/User";
 import connectDB from "@/lib/mongodb";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { warehouseSchema } from "@/app/admin/warehouse/add/schemas";
+import { hasStockForWarehouse } from "@/lib/stock";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -98,6 +100,18 @@ export async function PUT(request: Request, { params }: Context) {
     await connectDB();
     const warehouse = await Warehouse.findById(id);
     if (!warehouse) return errorResponse("Warehouse not found", 404);
+    if (!parsed.data.isActive) {
+      const reserved = await StockLevel.exists({
+        warehouse: id,
+        reserved: { $gt: 0 },
+      });
+      if (reserved) {
+        return errorResponse(
+          "Cannot deactivate this warehouse while stock is reserved for open orders.",
+          409
+        );
+      }
+    }
     if (parsed.data.manager && !(await User.exists({ _id: parsed.data.manager }))) {
       return errorResponse("Selected manager was not found", 400);
     }
@@ -149,6 +163,18 @@ export async function DELETE(_request: Request, { params }: Context) {
 
   try {
     await connectDB();
+    const existing = await Warehouse.findById(id).select("isDefault").lean();
+    if (!existing) return errorResponse("Warehouse not found", 404);
+    if (existing.isDefault) {
+      return errorResponse("Cannot delete the default warehouse", 409);
+    }
+    if (await hasStockForWarehouse(id)) {
+      return errorResponse(
+        "This warehouse has stock or stock history. Deactivate it instead.",
+        409
+      );
+    }
+
     const warehouse = await Warehouse.findOneAndDelete({
       _id: id,
       isDefault: { $ne: true },

@@ -18,6 +18,7 @@ type RawMovement = {
   type: "in" | "out" | "adjustment";
   quantity: number;
   balanceAfter: number;
+  reversalOf?: mongoose.Types.ObjectId;
   reason: string;
   reference: string;
   note: string;
@@ -153,6 +154,16 @@ export async function GET(request: Request) {
       { $skip: (page - 1) * limit },
       { $limit: limit },
     ]);
+    const reversedMovements = rows.length
+      ? await StockMovement.find({
+          reversalOf: { $in: rows.map((row) => row._id) },
+        })
+          .select("reversalOf")
+          .lean()
+      : [];
+    const reversedIds = new Set(
+      reversedMovements.map((movement) => movement.reversalOf?.toString())
+    );
 
     const items = rows.map((row) => ({
       _id: row._id.toString(),
@@ -160,6 +171,8 @@ export async function GET(request: Request) {
       type: row.type,
       quantity: row.quantity,
       balanceAfter: row.balanceAfter,
+      reversalOf: row.reversalOf?.toString() ?? null,
+      isReversed: reversedIds.has(row._id.toString()),
       reason: row.reason,
       reference: row.reference,
       note: row.note,

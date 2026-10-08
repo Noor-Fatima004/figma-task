@@ -13,6 +13,7 @@ export const stockReasons = [
   "lost",
   "internal_use",
   "stock_count",
+  "reversal",
   "other",
 ] as const;
 export type StockReason = (typeof stockReasons)[number];
@@ -119,7 +120,91 @@ export type StockChange = {
   userId: string | null;
   /** Used in error messages, e.g. "T-shirt (Red / M)". */
   label: string;
+  /** Set only when creating the compensating entry for a reversal. */
+  reversalOf?: string;
 };
+
+export type StockDeleteLevel = {
+  _id: mongoose.Types.ObjectId;
+  onHand: number;
+  reserved: number;
+};
+
+/**
+ * Empty by default. Future modules can register batched checks for open
+ * orders, purchase orders, or transfers that reference stock levels.
+ */
+export const stockReferenceChecks: Array<
+  (levels: StockDeleteLevel[]) => Promise<Map<string, string>>
+> = [];
+
+/** Returns each stock row's on-hand, reserved, and registered blockers. */
+export async function getStockDeleteBlockers(
+  levels: StockDeleteLevel[]
+): Promise<Map<string, string[]>> {
+  const blockers = new Map<string, string[]>();
+  const add = (id: string, reason: string) => {
+    const reasons = blockers.get(id) ?? [];
+    reasons.push(reason);
+    blockers.set(id, reasons);
+  };
+
+  for (const level of levels) {
+    const id = level._id.toString();
+    if (level.onHand !== 0) {
+      add(
+        id,
+        `${level.onHand} ${Math.abs(level.onHand) === 1 ? "unit is" : "units are"} on hand`
+      );
+    }
+    if (level.reserved !== 0) {
+      add(
+        id,
+        `${level.reserved} ${level.reserved === 1 ? "unit is" : "units are"} reserved for open orders`
+      );
+    }
+  }
+
+  const registered = await Promise.all(
+    stockReferenceChecks.map((check) => check(levels))
+  );
+  for (const checkResult of registered) {
+    for (const [id, reason] of checkResult) {
+      add(id, reason);
+    }
+  }
+  return blockers;
+}
+
+async function hasStockFor(
+  levelFilter: Record<string, unknown>,
+  movementFilter: Record<string, unknown>
+) {
+  const levels = await StockLevel.exists({
+    ...levelFilter,
+    $or: [{ onHand: { $ne: 0 } }, { reserved: { $ne: 0 } }],
+  });
+  if (levels) return true;
+  return Boolean(await StockMovement.exists(movementFilter));
+}
+
+export function hasStockForWarehouse(id: string) {
+  const warehouse = new mongoose.Types.ObjectId(id);
+  return hasStockFor({ warehouse }, { warehouse });
+}
+
+export function hasStockForProduct(id: string) {
+  const product = new mongoose.Types.ObjectId(id);
+  return hasStockFor({ product }, { product });
+}
+
+export function hasStockForVariation(id: string) {
+  const variation = new mongoose.Types.ObjectId(id);
+  return hasStockFor(
+    { variations: variation },
+    { variations: variation }
+  );
+}
 
 /**
  * The ONLY place that changes stock. Must run inside a transaction
@@ -178,6 +263,9 @@ export async function applyStockChange(
     [
       {
         product,
+        ...(change.reversalOf
+          ? { reversalOf: new mongoose.Types.ObjectId(change.reversalOf) }
+          : {}),
         variantKey,
         variations,
         warehouse,

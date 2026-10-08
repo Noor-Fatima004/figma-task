@@ -9,6 +9,11 @@ import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
 const StockMovementSchema = new Schema(
   {
     product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+    reversalOf: {
+      type: Schema.Types.ObjectId,
+      ref: "StockMovement",
+      default: undefined,
+    },
     variantKey: { type: String, default: "" },
     variations: [{ type: Schema.Types.ObjectId, ref: "ProductVariation" }],
     warehouse: {
@@ -30,6 +35,7 @@ const StockMovementSchema = new Schema(
 StockMovementSchema.index({ createdAt: -1 });
 StockMovementSchema.index({ warehouse: 1, createdAt: -1 });
 StockMovementSchema.index({ product: 1, variantKey: 1, createdAt: -1 });
+StockMovementSchema.index({ reversalOf: 1 }, { unique: true, sparse: true });
 
 // Ledger rows are immutable.
 StockMovementSchema.pre(

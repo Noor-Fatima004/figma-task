@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import ProductAttribute from "@/app/models/ProductAttribute";
+import ProductVariation from "@/app/models/ProductVariation";
+import StockLevel from "@/app/models/StockLevel";
+import StockMovement from "@/app/models/StockMovement";
 import { safeDelete, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -48,6 +51,22 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     }
 
     await connectDB();
+    const variations = await ProductVariation.find({ attribute: id })
+      .select("_id")
+      .lean();
+    const variationIds = variations.map((variation) => variation._id);
+    if (variationIds.length > 0) {
+      const [stockLevel, movement] = await Promise.all([
+        StockLevel.exists({ variations: { $in: variationIds } }),
+        StockMovement.exists({ variations: { $in: variationIds } }),
+      ]);
+      if (stockLevel || movement) {
+        return NextResponse.json(
+          { error: "This attribute has stock or stock history and cannot be deleted." },
+          { status: 409 }
+        );
+      }
+    }
     const { deleted, usage } = await safeDelete("attribute", id, (session) =>
       ProductAttribute.findByIdAndDelete(id).session(session)
     );

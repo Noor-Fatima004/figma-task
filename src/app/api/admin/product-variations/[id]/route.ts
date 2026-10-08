@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import ProductVariation from "@/app/models/ProductVariation";
 import ProductAttribute from "@/app/models/ProductAttribute";
+import StockLevel from "@/app/models/StockLevel";
+import StockMovement from "@/app/models/StockMovement";
 import { safeDelete, usageError } from "@/lib/safeDelete";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -71,6 +73,14 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     }
 
     await connectDB();
+    const stockLevel = await StockLevel.exists({ variations: id });
+    const movement = await StockMovement.exists({ variations: id });
+    if (stockLevel || movement) {
+      return NextResponse.json(
+        { error: "This variation has stock or stock history and cannot be deleted." },
+        { status: 409 }
+      );
+    }
     const { deleted, usage } = await safeDelete("variation", id, (session) =>
       ProductVariation.findByIdAndDelete(id).session(session)
     );

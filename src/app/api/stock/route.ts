@@ -11,6 +11,7 @@ import {
   applyStockChange,
   buildVariantKey,
   escapeRegex,
+  getStockDeleteBlockers,
   isObjectId,
   productDisplayName,
   readUserId,
@@ -31,6 +32,7 @@ type RawRow = {
   onHand: number;
   reserved: number;
   reorderLevel: number;
+  binLocation: string;
   available: number;
   status: "in" | "low" | "out";
   productName: string;
@@ -173,6 +175,7 @@ export async function GET(request: Request) {
       { $limit: limit },
       { $project: { productDoc: 0, warehouseDoc: 0 } },
     ]);
+    const deleteBlockers = await getStockDeleteBlockers(rows);
 
     const items = rows.map((row) => ({
       _id: row._id.toString(),
@@ -187,8 +190,12 @@ export async function GET(request: Request) {
       reserved: row.reserved,
       available: row.available,
       reorderLevel: row.reorderLevel,
+      binLocation: row.binLocation ?? "",
       status: row.status,
       updatedAt: row.updatedAt ?? null,
+      canDelete: !deleteBlockers.has(row._id.toString()),
+      deleteBlockedReason:
+        deleteBlockers.get(row._id.toString())?.join("; ") ?? "",
     }));
 
     return NextResponse.json({
@@ -236,7 +243,11 @@ const bodySchema = z
     (data) =>
       data.mode === "set" || data.items.every((item) => item.quantity > 0),
     { message: "Quantity must be greater than zero", path: ["items"] }
-  );
+  )
+  .refine((data) => data.reason !== "reversal", {
+    message: "Reversal reason is reserved for reversing a movement",
+    path: ["reason"],
+  });
 
 export async function POST(request: Request) {
   const admin: unknown = await requireAdmin();
@@ -378,12 +389,16 @@ export async function POST(request: Request) {
   }
 }
 
-/* ───────────────────────── PATCH: reorder level ───────────────────────── */
+/* ───────────────────────── PATCH: stock row settings ───────────────────────── */
 
 const patchSchema = z.object({
   id: objectId,
-  reorderLevel: z.number().min(0).max(1_000_000_000),
-});
+  reorderLevel: z.number().min(0).max(1_000_000_000).optional(),
+  binLocation: z.string().trim().max(50).optional(),
+}).refine(
+  (data) => data.reorderLevel !== undefined || data.binLocation !== undefined,
+  { message: "Provide a reorder level or bin location to update" }
+);
 
 export async function PATCH(request: Request) {
   if (!(await requireAdmin())) return errorResponse("Unauthorized", 401);
@@ -404,15 +419,67 @@ export async function PATCH(request: Request) {
 
   try {
     await connectDB();
+    const updates: { reorderLevel?: number; binLocation?: string } = {};
+    if (parsed.data.reorderLevel !== undefined) {
+      updates.reorderLevel = parsed.data.reorderLevel;
+    }
+    if (parsed.data.binLocation !== undefined) {
+      updates.binLocation = parsed.data.binLocation;
+    }
     const level = await StockLevel.findByIdAndUpdate(
       parsed.data.id,
-      { $set: { reorderLevel: parsed.data.reorderLevel } },
+      { $set: updates },
       { new: true }
     ).lean();
     if (!level) return errorResponse("Stock record not found", 404);
-    return NextResponse.json({ reorderLevel: level.reorderLevel });
+    return NextResponse.json({
+      reorderLevel: level.reorderLevel,
+      binLocation: level.binLocation ?? "",
+    });
   } catch (error) {
-    console.error("Update reorder level failed:", error);
-    return errorResponse("Failed to update reorder level", 500);
+    console.error("Update stock settings failed:", error);
+    return errorResponse("Failed to update stock settings", 500);
+  }
+}
+
+const deleteSchema = z.object({ id: objectId });
+
+export async function DELETE(request: Request) {
+  if (!(await requireAdmin())) return errorResponse("Unauthorized", 401);
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse("Invalid JSON body", 400);
+  }
+  const parsed = deleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return errorResponse(parsed.error.issues[0]?.message ?? "Invalid stock id", 400);
+  }
+
+  try {
+    await connectDB();
+    const level = await StockLevel.findById(parsed.data.id)
+      .select("_id onHand reserved")
+      .lean();
+    if (!level) return errorResponse("Stock record not found", 404);
+
+    const blockers = await getStockDeleteBlockers([level]);
+    const reasons = blockers.get(level._id.toString());
+    if (reasons?.length) return errorResponse(reasons.join("; "), 409);
+
+    const result = await StockLevel.deleteOne({
+      _id: level._id,
+      onHand: 0,
+      reserved: 0,
+    });
+    if (result.deletedCount === 0) {
+      return errorResponse("Stock changed before it could be deleted", 409);
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete stock record failed:", error);
+    return errorResponse("Failed to delete stock record", 500);
   }
 }
