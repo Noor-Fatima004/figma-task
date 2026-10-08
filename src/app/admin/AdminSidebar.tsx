@@ -21,6 +21,9 @@ import {
   FaExchangeAlt,
   FaStar,
   FaWarehouse,
+  FaBoxOpen,
+  FaClipboardList,
+  FaHistory,
 } from "react-icons/fa";
 import LogoutButton from "@/app/components/LogoutButton";
 
@@ -52,6 +55,11 @@ const reviewsLink: NavLink = {
 const warehouseLinks: NavLink[] = [
   { label: "List Warehouses", href: "/admin/warehouse", icon: FaWarehouse },
   { label: "Add Warehouse", href: "/admin/warehouse/add", icon: FaPlusSquare },
+];
+const inventoryLinks: NavLink[] = [
+  { label: "Stock List", href: "/admin/inventory/stock", icon: FaClipboardList },
+  { label: "Add Stock", href: "/admin/inventory/stock/add", icon: FaPlusSquare },
+  { label: "Stock Movements", href: "/admin/inventory/stock/movements", icon: FaHistory },
 ];
 
 function SubLink({
@@ -113,21 +121,24 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   const inCatalog = pathname.startsWith("/admin/catalog");
   const inProducts = pathname.startsWith("/admin/catalog/products");
   const inWarehouse = pathname.startsWith("/admin/warehouse");
+  const inInventory = pathname.startsWith("/admin/inventory");
 
   // md+ : sidebar ke andar khulne wala menu
   const [catalogOpen, setCatalogOpen] = useState(inCatalog);
   const [productsOpen, setProductsOpen] = useState(inProducts);
   const [warehouseOpen, setWarehouseOpen] = useState(inWarehouse);
+  const [inventoryOpen, setInventoryOpen] = useState(inInventory);
 
   // mobile : sidebar ke right side me khulne wala icon panel
   const [flyOpen, setFlyOpen] = useState<{
-    key: "catalog" | "warehouse";
+    key: "catalog" | "warehouse" | "inventory";
     pathname: string;
   } | null>(null);
   const activeFlyout = flyOpen?.pathname === pathname ? flyOpen.key : null;
   const [flyTop, setFlyTop] = useState(0);
   const catalogBtnRef = useRef<HTMLButtonElement>(null);
   const warehouseBtnRef = useRef<HTMLButtonElement>(null);
+  const inventoryBtnRef = useRef<HTMLButtonElement>(null);
   const asideRef = useRef<HTMLElement>(null);
   const [flyLeft, setFlyLeft] = useState(64);
   const flyRef = useRef<HTMLDivElement>(null);
@@ -137,7 +148,9 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
     const trigger =
       activeFlyout === "warehouse"
         ? warehouseBtnRef.current
-        : catalogBtnRef.current;
+        : activeFlyout === "inventory"
+          ? inventoryBtnRef.current
+          : catalogBtnRef.current;
     const r = trigger?.getBoundingClientRect();
     if (r) setFlyTop(r.top);
     const a = asideRef.current?.getBoundingClientRect();
@@ -162,6 +175,15 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
     );
   };
 
+  const toggleInventory = () => {
+    setInventoryOpen((v) => !v);
+    setFlyOpen((v) =>
+      v?.key === "inventory" && v.pathname === pathname
+        ? null
+        : { key: "inventory", pathname }
+    );
+  };
+
   // panel ke bahar click/tap karne par band
   useEffect(() => {
     if (!activeFlyout) return;
@@ -170,7 +192,8 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
       if (
         flyRef.current?.contains(t) ||
         catalogBtnRef.current?.contains(t) ||
-        warehouseBtnRef.current?.contains(t)
+        warehouseBtnRef.current?.contains(t) ||
+        inventoryBtnRef.current?.contains(t)
       ) {
         return;
       }
@@ -408,6 +431,58 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
               className="md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {warehouseLinks.map((link) => (
+                <FlyIcon
+                  key={link.href}
+                  {...link}
+                  pathname={pathname}
+                  onNavigate={() => setFlyOpen(null)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        {/* ───────── Inventory dropdown ───────── */}
+        <div>
+          <button
+            ref={inventoryBtnRef}
+            type="button"
+            title="Inventory"
+            onClick={toggleInventory}
+            aria-expanded={inventoryOpen}
+            className={`w-full flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              inventoryOpen || inInventory
+                ? "bg-white/10 text-white"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <FaBoxOpen className="w-4 h-4 shrink-0" />
+            <span className="hidden md:inline flex-1 text-left">Inventory</span>
+            <FaChevronDown
+              className={`hidden md:inline w-3 h-3 transition-transform duration-200 ${
+                inventoryOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {inventoryOpen && (
+            <div className="hidden md:block mt-1 space-y-0.5">
+              {inventoryLinks.map((link) => (
+                <SubLink key={link.href} {...link} pathname={pathname} />
+              ))}
+            </div>
+          )}
+
+          {activeFlyout === "inventory" && (
+            <div
+              ref={flyRef}
+              style={{
+                top: flyTop,
+                left: flyLeft - 1,
+                maxHeight: `calc(100vh - ${flyTop}px - 8px)`,
+              }}
+              className="md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {inventoryLinks.map((link) => (
                 <FlyIcon
                   key={link.href}
                   {...link}
