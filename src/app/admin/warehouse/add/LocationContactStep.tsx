@@ -1,0 +1,310 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import FormSelect from "@/app/components/FormSelect";
+import type { FieldErrors, LocationContactData } from "./schemas";
+
+const inputCls =
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:ring-2 focus:ring-primary/30";
+const labelCls = "mb-1 block text-xs font-medium text-text sm:text-sm";
+const noOptions: string[] = [];
+
+interface Props {
+  data: LocationContactData;
+  onChange: (data: LocationContactData) => void;
+  onBack: () => void;
+  onContinue: () => void;
+  errors: FieldErrors;
+}
+
+export default function LocationContactStep({
+  data,
+  onChange,
+  onBack,
+  onContinue,
+  errors,
+}: Props) {
+  const [countries, setCountries] = useState<string[]>([]);
+  const [stateOptions, setStateOptions] = useState<{
+    country: string;
+    items: string[];
+  } | null>(null);
+  const [cityOptions, setCityOptions] = useState<{
+    country: string;
+    state: string;
+    items: string[];
+  } | null>(null);
+  const stateList =
+    stateOptions?.country === data.country ? stateOptions.items : null;
+  const states = stateList ?? noOptions;
+  const statesLoading =
+    Boolean(data.country) && stateList === null;
+  const cities =
+    cityOptions?.country === data.country &&
+    cityOptions.state === data.state
+      ? cityOptions.items
+      : [];
+
+  useEffect(() => {
+    let active = true;
+    const loadCountries = async () => {
+      try {
+        const response = await fetch(
+          "/api/warehouse/locations?level=countries",
+          { cache: "force-cache" }
+        );
+        const body: unknown = await response.json();
+        if (!response.ok || !isOptionsResponse(body)) {
+          throw new Error(readLocationError(body, "Failed to load countries."));
+        }
+        if (active) setCountries(body.items);
+      } catch (error) {
+        console.error("Failed to load warehouse countries:", error);
+        if (active) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to load countries."
+          );
+        }
+      }
+    };
+    void loadCountries();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!data.country) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const loadStates = async () => {
+      try {
+        const params = new URLSearchParams({
+          level: "states",
+          country: data.country,
+        });
+        const response = await fetch(`/api/warehouse/locations?${params}`, {
+          cache: "force-cache",
+        });
+        const body: unknown = await response.json();
+        if (!response.ok || !isOptionsResponse(body)) {
+          throw new Error(readLocationError(body, "Failed to load states."));
+        }
+        if (active) {
+          setStateOptions({ country: data.country, items: body.items });
+        }
+      } catch (error) {
+        console.error("Failed to load warehouse states:", error);
+        if (active) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to load states."
+          );
+        }
+      }
+    };
+    void loadStates();
+    return () => {
+      active = false;
+    };
+  }, [data.country]);
+
+  useEffect(() => {
+    let active = true;
+    if (
+      !data.country ||
+      stateList === null ||
+      (stateList.length > 0 && !data.state)
+    ) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const loadCities = async () => {
+      try {
+        const params = new URLSearchParams({
+          level: "cities",
+          country: data.country,
+          ...(data.state ? { state: data.state } : {}),
+        });
+        const response = await fetch(`/api/warehouse/locations?${params}`, {
+          cache: "force-cache",
+        });
+        const body: unknown = await response.json();
+        if (!response.ok || !isOptionsResponse(body)) {
+          throw new Error(readLocationError(body, "Failed to load cities."));
+        }
+        if (active) {
+          setCityOptions({
+            country: data.country,
+            state: data.state,
+            items: body.items,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load warehouse cities:", error);
+        if (active) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to load cities."
+          );
+        }
+      }
+    };
+    void loadCities();
+    return () => {
+      active = false;
+    };
+  }, [
+    data.country,
+    data.state,
+    stateList,
+  ]);
+
+  const err = (key: string) =>
+    errors[key] ? (
+      <p className="mt-1 text-xs text-red-500">{errors[key]}</p>
+    ) : null;
+
+  const textField = (
+    key: Exclude<keyof LocationContactData, "country" | "state" | "city">,
+    label: string,
+    required = false,
+    type = "text"
+  ) => (
+    <div key={key}>
+      <label className={labelCls}>
+        {label}
+        {required ? " *" : ""}
+      </label>
+      <input
+        type={type}
+        value={data[key]}
+        onChange={(event) => onChange({ ...data, [key]: event.target.value })}
+        className={inputCls}
+      />
+      {err(key)}
+    </div>
+  );
+
+  const selectField = (
+  key: "country" | "state" | "city",
+  label: string,
+  options: string[],
+  placeholder: string,
+  disabled = false
+) => (
+  <div key={key}>
+    <label className={labelCls}>{label}</label>
+    <FormSelect
+      value={data[key]}
+      disabled={disabled}
+      onChange={(value) => {
+        if (key === "country") {
+          onChange({ ...data, country: value, state: "", city: "", area: "" });
+        } else if (key === "state") {
+          onChange({ ...data, state: value, city: "", area: "" });
+        } else {
+          onChange({ ...data, city: value, area: "" });
+        }
+      }}
+      placeholder={placeholder}
+      options={[
+        ...(data[key] && !options.includes(data[key])
+          ? [{ value: data[key], label: data[key] }]
+          : []),
+        ...options.map((option) => ({ value: option, label: option })),
+      ]}
+    />
+    {err(key)}
+  </div>
+);
+  return (
+    <>
+      <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+        <h2 className="text-base font-semibold text-text sm:text-lg">
+          Location &amp; Contact
+        </h2>
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {selectField("country", "Country", countries, "Select a country")}
+          {selectField(
+            "state",
+            "State / Province",
+            states,
+            !data.country
+              ? "Select a country first"
+              : statesLoading
+                ? "Loading states..."
+                : "Select a state / province",
+            !data.country || statesLoading
+          )}
+          {selectField(
+            "city",
+            "City",
+            cities,
+            !data.country
+              ? "Select a country first"
+              : statesLoading
+                ? "Loading states..."
+                : states.length > 0 && !data.state
+                  ? "Select a state first"
+                  : "Select a city",
+            !data.country ||
+              statesLoading ||
+              (states.length > 0 && !data.state)
+          )}
+          {textField("area", "Area")}
+          <div className="sm:col-span-2">
+            {textField("address", "Address", true)}
+          </div>
+          {textField("postalCode", "Postal Code")}
+          {textField("latitude", "Latitude", false, "number")}
+          {textField("longitude", "Longitude", false, "number")}
+          {textField("contactPerson", "Contact Person", true)}
+          {textField("phone", "Phone", true, "tel")}
+          {textField("alternatePhone", "Alternate Phone", false, "tel")}
+          {textField("email", "Email", true, "email")}
+        </div>
+      </section>
+      <div className="mt-5 flex flex-col-reverse justify-end gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full rounded-lg border border-border px-5 py-2 text-sm font-semibold text-text transition-colors hover:bg-surface-hover sm:w-auto"
+        >
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover sm:w-auto"
+        >
+          Continue
+        </button>
+      </div>
+    </>
+  );
+}
+
+function isOptionsResponse(value: unknown): value is { items: string[] } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "items" in value &&
+    Array.isArray(value.items) &&
+    value.items.every((item) => typeof item === "string")
+  );
+}
+
+function readLocationError(value: unknown, fallback: string) {
+  return typeof value === "object" &&
+    value !== null &&
+    "error" in value &&
+    typeof value.error === "string"
+    ? value.error
+    : fallback;
+}

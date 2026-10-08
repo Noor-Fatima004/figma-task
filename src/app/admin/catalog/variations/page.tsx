@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   FaPlus,
@@ -9,8 +9,8 @@ import {
   FaSort,
   FaSortUp,
   FaSortDown,
-  FaChevronDown,
 } from "react-icons/fa";
+import FormSelect from "@/app/components/FormSelect";
 
 type Variation = {
   _id: string;
@@ -74,8 +74,10 @@ export default function ProductVariationsPage() {
       setTotal(data.total);
       setTotalPages(data.totalPages);
       if (data.page !== page) setPage(data.page);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to load variations");
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load variations"
+      );
     } finally {
       setLoading(false);
     }
@@ -101,8 +103,10 @@ export default function ProductVariationsPage() {
       if (!res.ok) throw new Error(data.error || "Delete failed");
       toast.success("Variation deleted");
       load();
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete variation"
+      );
     }
   };
 
@@ -305,7 +309,6 @@ export default function ProductVariationsPage() {
     </div>
   );
 }
-
 function VariationModal({
   state,
   onClose,
@@ -333,8 +336,12 @@ function VariationModal({
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to load attributes");
         setAttributes(data.items);
-      } catch (e: any) {
-        toast.error(e.message);
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to load attributes"
+        );
       } finally {
         setLoadingAttrs(false);
       }
@@ -361,8 +368,10 @@ function VariationModal({
       if (!res.ok) throw new Error(data.error || "Save failed");
       toast.success(editing ? "Variation updated" : "Variation added");
       onSaved();
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save variation"
+      );
     } finally {
       setSaving(false);
     }
@@ -435,111 +444,5 @@ function VariationModal({
         </div>
       </div>
     </>
-  );
-}
-
-/* ───────────────────────── Responsive custom select ───────────────────────── */
-
-function FormSelect({
-  value,
-  onChange,
-  options,
-  placeholder = "Select",
-  disabled = false,
-  inline = false, // true: list neeche content ko dhakel kar khulti hai (scroll area me clip nahi hoti)
-  compact = false, // true: chhota trigger (Show entries wale dropdown ke liye)
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-  placeholder?: string;
-  disabled?: boolean;
-  inline?: boolean;
-  compact?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  // bahar click ya Escape par band
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const selected = options.find((o) => o.value === value);
-
-  return (
-    <div ref={ref} className={compact ? "relative inline-block" : "relative"}>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        className={`flex items-center justify-between gap-2 border border-border bg-surface text-text text-left focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
-          compact
-            ? "rounded-md px-2 py-1 text-xs sm:text-sm min-w-[3.5rem]"
-            : "w-full rounded-lg px-3 py-2 text-sm"
-        }`}
-      >
-        <span className={`truncate ${selected ? "text-text" : "text-muted"}`}>
-          {selected ? selected.label : placeholder}
-        </span>
-        <FaChevronDown
-          className={`w-3 h-3 shrink-0 text-muted transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {open && (
-        <ul
-          role="listbox"
-          className={`${
-            inline
-              ? "mt-1"
-              : `absolute top-full mt-1 z-[60] left-0 ${
-                  compact ? "min-w-full" : "right-0"
-                }`
-          } max-h-44 sm:max-h-52 overflow-y-auto bg-surface border border-border rounded-lg shadow-lg py-1`}
-        >
-          {options.length === 0 ? (
-            <li className="px-3 py-2 text-xs sm:text-sm text-muted">
-              No options
-            </li>
-          ) : (
-            options.map((o) => (
-              <li
-                key={o.value}
-                role="option"
-                aria-selected={o.value === value}
-                onClick={() => {
-                  onChange(o.value);
-                  setOpen(false);
-                }}
-                className={`px-3 py-2 text-xs sm:text-sm cursor-pointer truncate transition-colors ${
-                  o.value === value
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-text hover:bg-surface-hover hover:text-text-hover"
-                }`}
-              >
-                {o.label}
-              </li>
-            ))
-          )}
-        </ul>
-      )}
-    </div>
   );
 }

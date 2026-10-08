@@ -20,6 +20,7 @@ import {
   FaPlusSquare,
   FaExchangeAlt,
   FaStar,
+  FaWarehouse,
 } from "react-icons/fa";
 import LogoutButton from "@/app/components/LogoutButton";
 
@@ -48,6 +49,59 @@ const reviewsLink: NavLink = {
   href: "/admin/catalog/reviews",
   icon: FaStar,
 };
+const warehouseLinks: NavLink[] = [
+  { label: "List Warehouses", href: "/admin/warehouse", icon: FaWarehouse },
+  { label: "Add Warehouse", href: "/admin/warehouse/add", icon: FaPlusSquare },
+];
+
+function SubLink({
+  label,
+  href,
+  pathname,
+}: NavLink & { pathname: string }) {
+  const active = pathname === href;
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-3 pl-4 pr-3 py-2 rounded-lg text-sm transition-colors ${
+        active
+          ? "text-white font-medium"
+          : "text-white/70 hover:text-white hover:bg-white/10"
+      }`}
+    >
+      <span
+        className={`w-2.5 h-2.5 rounded-full border shrink-0 ${
+          active ? "border-secondary" : "border-white/30"
+        }`}
+      />
+      {label}
+    </Link>
+  );
+}
+
+function FlyIcon({
+  label,
+  href,
+  icon: Icon,
+  pathname,
+  onNavigate,
+}: NavLink & { pathname: string; onNavigate: () => void }) {
+  const active = pathname === href;
+  return (
+    <Link
+      href={href}
+      title={label}
+      onClick={onNavigate}
+      className={`flex items-center justify-center h-10 rounded-lg transition-colors ${
+        active
+          ? "text-white bg-white/10"
+          : "text-white/70 hover:text-white hover:bg-white/10"
+      }`}
+    >
+      <Icon className="w-4 h-4" />
+    </Link>
+  );
+}
 
 interface AdminSidebarProps {
   open: boolean;
@@ -58,45 +112,69 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
 
   const inCatalog = pathname.startsWith("/admin/catalog");
   const inProducts = pathname.startsWith("/admin/catalog/products");
+  const inWarehouse = pathname.startsWith("/admin/warehouse");
 
   // md+ : sidebar ke andar khulne wala menu
   const [catalogOpen, setCatalogOpen] = useState(inCatalog);
   const [productsOpen, setProductsOpen] = useState(inProducts);
+  const [warehouseOpen, setWarehouseOpen] = useState(inWarehouse);
 
   // mobile : sidebar ke right side me khulne wala icon panel
-  const [flyOpen, setFlyOpen] = useState(false);
+  const [flyOpen, setFlyOpen] = useState<{
+    key: "catalog" | "warehouse";
+    pathname: string;
+  } | null>(null);
+  const activeFlyout = flyOpen?.pathname === pathname ? flyOpen.key : null;
   const [flyTop, setFlyTop] = useState(0);
   const catalogBtnRef = useRef<HTMLButtonElement>(null);
+  const warehouseBtnRef = useRef<HTMLButtonElement>(null);
   const asideRef = useRef<HTMLElement>(null);
   const [flyLeft, setFlyLeft] = useState(64);
   const flyRef = useRef<HTMLDivElement>(null);
 
-  // panel ko Catalog button ke barabar me rakhne ke liye
+  // Position the active fly-out next to its trigger.
   const updateFlyTop = useCallback(() => {
-    const r = catalogBtnRef.current?.getBoundingClientRect();
+    const trigger =
+      activeFlyout === "warehouse"
+        ? warehouseBtnRef.current
+        : catalogBtnRef.current;
+    const r = trigger?.getBoundingClientRect();
     if (r) setFlyTop(r.top);
     const a = asideRef.current?.getBoundingClientRect();
     if (a) setFlyLeft(a.right);
-  }, []);
+  }, [activeFlyout]);
 
   const toggleCatalog = () => {
     setCatalogOpen((v) => !v);
-    setFlyOpen((v) => !v);
-    updateFlyTop();
+    setFlyOpen((v) =>
+      v?.key === "catalog" && v.pathname === pathname
+        ? null
+        : { key: "catalog", pathname }
+    );
   };
 
-  // page badalne par mobile panel band
-  useEffect(() => {
-    setFlyOpen(false);
-  }, [pathname]);
+  const toggleWarehouse = () => {
+    setWarehouseOpen((v) => !v);
+    setFlyOpen((v) =>
+      v?.key === "warehouse" && v.pathname === pathname
+        ? null
+        : { key: "warehouse", pathname }
+    );
+  };
 
   // panel ke bahar click/tap karne par band
   useEffect(() => {
-    if (!flyOpen) return;
+    if (!activeFlyout) return;
     const handler = (e: MouseEvent | TouchEvent) => {
       const t = e.target as Node;
-      if (flyRef.current?.contains(t) || catalogBtnRef.current?.contains(t)) return;
-      setFlyOpen(false);
+      if (
+        flyRef.current?.contains(t) ||
+        catalogBtnRef.current?.contains(t) ||
+        warehouseBtnRef.current?.contains(t)
+      ) {
+        return;
+      }
+      setFlyOpen(null);
     };
     document.addEventListener("mousedown", handler);
     document.addEventListener("touchstart", handler);
@@ -104,54 +182,15 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("touchstart", handler);
     };
-  }, [flyOpen]);
+  }, [activeFlyout]);
 
   // screen resize par position dobara set
   useEffect(() => {
-    if (!flyOpen) return;
+    if (!activeFlyout) return;
+    updateFlyTop();
     window.addEventListener("resize", updateFlyTop);
     return () => window.removeEventListener("resize", updateFlyTop);
-  }, [flyOpen, updateFlyTop]);
-
-  // md+ : bullet + text sub-link
-  const SubLink = ({ label, href }: NavLink) => {
-    const active = pathname === href;
-    return (
-      <Link
-        href={href}
-        className={`flex items-center gap-3 pl-4 pr-3 py-2 rounded-lg text-sm transition-colors ${
-          active
-            ? "text-white font-medium"
-            : "text-white/70 hover:text-white hover:bg-white/10"
-        }`}
-      >
-        <span
-          className={`w-2.5 h-2.5 rounded-full border shrink-0 ${
-            active ? "border-secondary" : "border-white/30"
-          }`}
-        />
-        {label}
-      </Link>
-    );
-  };
-
-  // mobile panel : sirf icon
-  const FlyIcon = ({ label, href, icon: Icon }: NavLink) => {
-    const active = pathname === href;
-    return (
-      <Link
-        href={href}
-        title={label}
-        className={`flex items-center justify-center h-10 rounded-lg transition-colors ${
-          active
-            ? "text-white bg-white/10"
-            : "text-white/70 hover:text-white hover:bg-white/10"
-        }`}
-      >
-        <Icon className="w-4 h-4" />
-      </Link>
-    );
-  };
+  }, [activeFlyout, updateFlyTop]);
 
   return (
     <aside
@@ -169,7 +208,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
       </div>
 
       <nav
-        onScroll={() => flyOpen && updateFlyTop()}
+        onScroll={() => activeFlyout && updateFlyTop()}
         className="flex-1 overflow-y-auto px-2 md:px-3 py-4 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {menuItems.map((item) => {
@@ -217,7 +256,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
           {catalogOpen && (
             <div className="hidden md:block mt-1 space-y-0.5">
               {catalogLinks.map((l) => (
-                <SubLink key={l.href} {...l} />
+                <SubLink key={l.href} {...l} pathname={pathname} />
               ))}
 
               <div>
@@ -266,10 +305,10 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
                 )}
               </div>
 
-              <SubLink {...reviewsLink} />
+              <SubLink {...reviewsLink} pathname={pathname} />
             </div>
           )}
-          {flyOpen && (
+          {activeFlyout === "catalog" && (
             <div
               ref={flyRef}
               style={{ 
@@ -279,7 +318,12 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
               className="md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {catalogLinks.map((l) => (
-                <FlyIcon key={l.href} {...l} />
+                <FlyIcon
+                  key={l.href}
+                  {...l}
+                  pathname={pathname}
+                  onNavigate={() => setFlyOpen(null)}
+                />
               ))}
 
               {/* Products: icon dabane par uske 3 icons khulte hain */}
@@ -300,12 +344,77 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
               {productsOpen && (
                 <div className="space-y-1 border-y border-white/10 py-1">
                   {productsLinks.map((l) => (
-                    <FlyIcon key={l.href} {...l} />
+                    <FlyIcon
+                      key={l.href}
+                      {...l}
+                      pathname={pathname}
+                      onNavigate={() => setFlyOpen(null)}
+                    />
                   ))}
                 </div>
               )}
 
-              <FlyIcon {...reviewsLink} />
+              <FlyIcon
+                {...reviewsLink}
+                pathname={pathname}
+                onNavigate={() => setFlyOpen(null)}
+              />
+            </div>
+          )}
+        </div>
+        {/* ───────── Warehouse dropdown ───────── */}
+        <div>
+          <button
+            ref={warehouseBtnRef}
+            type="button"
+            title="Warehouse"
+            onClick={toggleWarehouse}
+            aria-expanded={warehouseOpen}
+            className={`w-full flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              warehouseOpen || inWarehouse
+                ? "bg-white/10 text-white"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <FaWarehouse className="w-4 h-4 shrink-0" />
+            <span className="hidden md:inline flex-1 text-left">Warehouse</span>
+            <FaChevronDown
+              className={`hidden md:inline w-3 h-3 transition-transform duration-200 ${
+                warehouseOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {warehouseOpen && (
+            <div className="hidden md:block mt-1 space-y-0.5">
+              {warehouseLinks.map((link) => (
+                <SubLink
+                  key={link.href}
+                  {...link}
+                  pathname={pathname}
+                />
+              ))}
+            </div>
+          )}
+
+          {activeFlyout === "warehouse" && (
+            <div
+              ref={flyRef}
+              style={{
+                top: flyTop,
+                left: flyLeft - 1,
+                maxHeight: `calc(100vh - ${flyTop}px - 8px)`,
+              }}
+              className="md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {warehouseLinks.map((link) => (
+                <FlyIcon
+                  key={link.href}
+                  {...link}
+                  pathname={pathname}
+                  onNavigate={() => setFlyOpen(null)}
+                />
+              ))}
             </div>
           )}
         </div>

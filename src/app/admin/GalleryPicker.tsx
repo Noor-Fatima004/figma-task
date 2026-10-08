@@ -106,8 +106,10 @@ export default function GalleryPicker({
         const selectedImage = data.find((image: GalleryImage) => image.url === selectedId);
         setPicked(selectedImage?._id ?? "");
       }
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load gallery images"
+      );
     } finally {
       setLoading(false);
     }
@@ -124,11 +126,11 @@ export default function GalleryPicker({
   // Portal: sirf content area me (sidebar aur topbar ke upar nahi)
   return createPortal(
     <div
-      className="fixed top-16 right-0 bottom-0 left-0 lg:left-64 z-[60] bg-black/40 flex items-center justify-center p-2 sm:p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-0 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-surface text-text rounded-xl shadow-2xl border border-border w-full max-w-5xl max-h-full flex flex-col overflow-hidden"
+        className="flex h-full max-h-full w-full flex-col overflow-hidden border border-border bg-surface text-text shadow-2xl sm:h-auto sm:max-w-5xl sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* top bar */}
@@ -195,7 +197,7 @@ export default function GalleryPicker({
           ) : images.length === 0 ? (
             <p className="text-sm text-muted py-8 text-center">No images found.</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4">
               {images.map((img) => (
                 <button
                   key={img._id}
