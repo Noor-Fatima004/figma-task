@@ -24,6 +24,7 @@ import {
   FaBoxOpen,
   FaClipboardList,
   FaHistory,
+  FaShoppingCart,
 } from "react-icons/fa";
 import LogoutButton from "@/app/components/LogoutButton";
 
@@ -35,6 +36,11 @@ const menuItems: NavLink[] = [
   { label: "Users", href: "/admin/users", icon: FaUsers },
   { label: "Gallery", href: "/admin/gallery", icon: FaImages },
 ];
+const ordersLink: NavLink = {
+  label: "Orders",
+  href: "/admin/orders",
+  icon: FaShoppingCart,
+};
 const catalogLinks: NavLink[] = [
   { label: "Product Units", href: "/admin/catalog/units", icon: FaBalanceScale },
   { label: "Product Attributes", href: "/admin/catalog/attributes", icon: FaSlidersH },
@@ -493,6 +499,19 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
             </div>
           )}
         </div>
+        {/* ───────── Orders (sabse last) ───────── */}
+        <Link
+          href={ordersLink.href}
+          title={ordersLink.label}
+          className={`flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            pathname.startsWith(ordersLink.href)
+              ? "bg-white/10 text-white"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <ordersLink.icon className="w-4 h-4 shrink-0" />
+          <span className="hidden md:inline">{ordersLink.label}</span>
+        </Link>
       </nav>
 
       <div className="p-2 md:p-3 border-t border-white/10">

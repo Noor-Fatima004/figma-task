@@ -126,7 +126,7 @@ export default function GalleryPicker({
   // Portal: sirf content area me (sidebar aur topbar ke upar nahi)
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-0 sm:p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-0 sm:p-4 lg:pl-64"
       onClick={onClose}
     >
       <div

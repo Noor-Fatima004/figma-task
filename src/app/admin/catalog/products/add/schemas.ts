@@ -240,5 +240,96 @@ export const productSchema = z
         : [];
     return { ...d, media: [...new Set(d.media)], attributes };
   });
+  const phoneField = (label: string, required: boolean) =>
+  z
+    .string()
+    .trim()
+    .superRefine((value, ctx) => {
+      if (!value) {
+        if (required) {
+          ctx.addIssue({ code: "custom", message: `${label} is required` });
+        }
+        return;
+      }
+      const digits = value.replace(/\D/g, "");
+      if (
+        !/^[+\d\s().-]+$/.test(value) ||
+        digits.length < 7 ||
+        digits.length > 15
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Enter a valid ${label.toLowerCase()} (7 to 15 digits)`,
+        });
+      }
+    });
+
+const coordinateField = (label: string, min: number, max: number) =>
+  z
+    .union([z.string(), z.number(), z.null()])
+    .optional()
+    .superRefine((value, ctx) => {
+      if (value === "" || value === null || value === undefined) return;
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < min || n > max) {
+        ctx.addIssue({
+          code: "custom",
+          message: `${label} must be between ${min} and ${max}`,
+        });
+      }
+    });
+
+export const locationContactSchema = z
+  .object({
+    country: z.string().trim().min(1, "Country is required"),
+    state: z.string().trim().max(100, "Max 100 characters"),
+    city: z.string().trim().max(100, "Max 100 characters"),
+    area: z.string().trim().max(100, "Max 100 characters"),
+    address: z
+      .string()
+      .trim()
+      .min(1, "Address is required")
+      .min(5, "Address must be at least 5 characters")
+      .max(200, "Address must be at most 200 characters"),
+    postalCode: z
+      .string()
+      .trim()
+      .max(12, "Postal code must be at most 12 characters")
+      .regex(/^[A-Za-z0-9\s-]*$/, "Only letters, numbers, spaces and - allowed"),
+    latitude: coordinateField("Latitude", -90, 90),
+    longitude: coordinateField("Longitude", -180, 180),
+    contactPerson: z
+      .string()
+      .trim()
+      .min(1, "Contact person is required")
+      .min(2, "Name must be at least 2 characters")
+      .max(100, "Name must be at most 100 characters"),
+    phone: phoneField("Phone", true),
+    alternatePhone: phoneField("Alternate phone", false),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email("Enter a valid email address")
+      .max(254, "Email is too long"),
+  })
+  .superRefine((value, ctx) => {
+    const hasLat = value.latitude !== "" && value.latitude != null;
+    const hasLng = value.longitude !== "" && value.longitude != null;
+    if (hasLat && !hasLng) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["longitude"],
+        message: "Longitude is required when latitude is set",
+      });
+    }
+    if (hasLng && !hasLat) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["latitude"],
+        message: "Latitude is required when longitude is set",
+      });
+    }
+  });
 
 export type ProductInput = z.output<typeof productSchema>;
