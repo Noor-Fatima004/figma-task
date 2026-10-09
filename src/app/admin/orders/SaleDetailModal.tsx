@@ -103,7 +103,7 @@ export default function SaleDetailModal({
   return (
     <div
       id={printable ? "order-invoice-print" : undefined}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-0 sm:p-4 lg:pl-64"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-3 sm:p-4 lg:pl-[17rem]"
       onClick={onClose}
     >
       {printable && (
@@ -124,23 +124,24 @@ export default function SaleDetailModal({
               max-height: none !important;
               overflow: visible !important;
               box-shadow: none !important;
+              border-radius: 0 !important;
             }
           }
         `}</style>
       )}
       <div
-        className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-lg bg-white shadow-xl"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-xl sm:max-h-[calc(100dvh-2rem)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">Order Detail</h2>
-          <div className="flex items-center gap-2 print:hidden">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4">
+          <h2 className="text-sm font-semibold text-gray-900 sm:text-base">Order Detail</h2>
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
             {printable && (
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 sm:px-4"
               >
                 <FaPrint className="h-3 w-3" />
                 Print / Save PDF
@@ -149,7 +150,7 @@ export default function SaleDetailModal({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 sm:px-4"
             >
               <FaArrowLeft className="h-3 w-3" />
               Back to Orders
@@ -158,22 +159,22 @@ export default function SaleDetailModal({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-6 sm:py-5 [&::-webkit-scrollbar]:hidden">
           {!data && !error && <p className="py-10 text-center text-gray-500">Loading...</p>}
           {error && <p className="py-10 text-center text-rose-600">{error}</p>}
 
           {data && addr && (
             <>
-              <div className="grid gap-6 text-sm sm:grid-cols-3">
-                <div>
+              <div className="grid gap-5 text-sm sm:grid-cols-3 sm:gap-6">
+                <div className="min-w-0">
                   <p className="mb-2 text-xs font-semibold text-gray-800">Customer Info</p>
                   <p className="text-base font-medium text-gray-900">{data.customer.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="break-words text-xs text-gray-500">
                     {addr.line1}
                     {addr.line2 ? `, ${addr.line2}` : ""}, {addr.city}, {addr.state} {addr.postalCode},{" "}
                     {addr.country}
                   </p>
-                  <p className="text-xs text-gray-500">Email: {data.customer.email}</p>
+                  <p className="break-all text-xs text-gray-500">Email: {data.customer.email}</p>
                   <p className="text-xs text-gray-500">Phone: {data.customer.phone}</p>
                 </div>
 
@@ -217,20 +218,20 @@ export default function SaleDetailModal({
 
               <p className="mb-2 mt-6 text-xs font-semibold text-gray-800">Order Summary</p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[520px] text-sm">
                   <thead className="bg-gray-100">
                     <tr className="text-left text-xs font-semibold text-gray-700">
-                      <th className="px-4 py-3">Product</th>
-                      <th className="px-4 py-3">Variant</th>
-                      <th className="px-4 py-3">Unit Price($)</th>
-                      <th className="px-4 py-3">Qty</th>
-                      <th className="px-4 py-3">Total($)</th>
+                      <th className="px-3 py-3 sm:px-4">Product</th>
+                      <th className="px-3 py-3 sm:px-4">Variant</th>
+                      <th className="px-3 py-3 sm:px-4">Unit Price($)</th>
+                      <th className="px-3 py-3 sm:px-4">Qty</th>
+                      <th className="px-3 py-3 sm:px-4">Total($)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.items.map((it, idx) => (
                       <tr key={idx} className="border-b border-gray-100 last:border-0">
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3 sm:px-4">
                           <div className="flex items-center gap-3">
                             {it.image ? (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -246,10 +247,10 @@ export default function SaleDetailModal({
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">{it.variantLabel || "-"}</td>
-                        <td className="px-4 py-3 text-gray-600">{it.unitPrice.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-gray-600">{it.quantity}</td>
-                        <td className="px-4 py-3 text-gray-600">{it.lineTotal.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-gray-600 sm:px-4">{it.variantLabel || "-"}</td>
+                        <td className="px-3 py-3 text-gray-600 sm:px-4">{it.unitPrice.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-gray-600 sm:px-4">{it.quantity}</td>
+                        <td className="px-3 py-3 text-gray-600 sm:px-4">{it.lineTotal.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -279,7 +280,7 @@ export default function SaleDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end border-t border-gray-200 px-6 py-4 print:hidden">
+        <div className="flex shrink-0 justify-end border-t border-gray-200 px-4 py-3 sm:px-6 sm:py-4 print:hidden">
           <button
             type="button"
             onClick={onClose}

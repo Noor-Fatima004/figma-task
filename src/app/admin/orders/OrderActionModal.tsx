@@ -257,9 +257,9 @@ export default function OrderActionModal({
     </label>
   );
 
-   return (
+  return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:p-4 lg:pl-64"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 lg:pl-[17rem]"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !saving) onClose();
       }}
@@ -268,7 +268,7 @@ export default function OrderActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="order-action-title"
-        className="flex h-full max-h-full w-full flex-col overflow-hidden bg-surface shadow-xl sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-xl sm:border sm:border-border"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl sm:max-h-[calc(100dvh-2rem)]"
       >
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5 sm:py-4">
           <div className="min-w-0">
@@ -293,7 +293,7 @@ export default function OrderActionModal({
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 [-ms-overflow-style:none] [scrollbar-width:none] sm:p-5 [&::-webkit-scrollbar]:hidden">
           {loading ? (
             <p className="py-8 text-center text-sm text-muted">
               Loading order...

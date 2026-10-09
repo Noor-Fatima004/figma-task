@@ -81,7 +81,7 @@ export default function FormSelect({
               : `absolute left-0 top-full z-[60] mt-1 ${
                   compact ? "min-w-full" : "right-0"
                 }`
-          } max-h-44 overflow-y-auto rounded-lg border border-border bg-surface py-1 shadow-lg sm:max-h-52`}
+          } max-h-44 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-lg border border-border bg-surface py-1 shadow-lg sm:max-h-52`}
         >
           {options.length === 0 ? (
             <li className="px-3 py-2 text-xs text-muted sm:text-sm">

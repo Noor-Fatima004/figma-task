@@ -11,6 +11,7 @@ import {
   FaRegEdit,
   FaTrash,
 } from "react-icons/fa";
+import FormSelect from "@/app/components/FormSelect";
 import OrderActionModal from "./OrderActionModal";
 import SaleDetailModal from "./SaleDetailModal";
 
@@ -228,7 +229,7 @@ export default function OrdersTable() {
       </div>
 
       <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-       <div className="flex items-center justify-between gap-2 border-b border-border p-3 sm:gap-3 sm:p-4">
+       <div className="flex items-center justify-between gap-2 border-b border-border p-3 text-xs text-text sm:gap-3 sm:p-4 sm:text-sm">
   <label className="sr-only" htmlFor="order-search">
     Search orders
   </label>
@@ -238,26 +239,22 @@ export default function OrdersTable() {
     value={search}
     onChange={(event) => setSearch(event.target.value)}
     placeholder="Search order, customer, or email..."
-    className="min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-text outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-sm sm:px-3 sm:py-2 sm:text-sm"
+    className="min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs text-text outline-none focus:ring-2 focus:ring-primary sm:max-w-sm sm:px-3 sm:py-1.5 sm:text-sm"
   />
-  <label className="flex shrink-0 items-center gap-2 text-sm text-muted">
-    <span className="hidden sm:inline">Status</span>
-    <select
-      aria-label="Status"
+
+  <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+    <span className="hidden sm:inline">Status:</span>
+    <FormSelect
+      compact
       value={status}
-      onChange={(event) => {
-        setStatus(event.target.value);
+      placeholder="All statuses"
+      onChange={(value) => {
+        setStatus(value);
         setPage(1);
       }}
-      className="w-28 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-text sm:w-auto sm:px-3 sm:py-2 sm:text-sm"
-    >
-      {statuses.map(([value, label]) => (
-        <option key={value || "all"} value={value}>
-          {label}
-        </option>
-      ))}
-    </select>
-  </label>
+      options={statuses.map(([value, label]) => ({ value, label }))}
+    />
+  </div>
 </div>
 
         {error && (
