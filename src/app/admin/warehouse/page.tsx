@@ -11,10 +11,21 @@ import {
   FaSortUp,
   FaTrash,
 } from "react-icons/fa";
+import { z } from "zod";
 import FormSelect from "@/app/components/FormSelect";
-import { warehouseSchema, type WarehouseInput } from "./add/schemas";
+import { warehouseSchema } from "./add/schemas";
 
-type WarehouseRow = WarehouseInput & { _id: string };
+const warehouseListSchema = warehouseSchema.extend({
+  email: z
+    .union([z.string().trim().email().max(254), z.literal("")])
+    .default(""),
+  managerInfo: z
+    .object({ name: z.string(), email: z.string() })
+    .nullable()
+    .default(null),
+});
+
+type WarehouseRow = z.output<typeof warehouseListSchema> & { _id: string };
 type ListResponse = {
   items: WarehouseRow[];
   total: number;
@@ -51,7 +62,7 @@ function parseWarehouse(value: unknown): WarehouseRow {
   if (!isRecord(value) || typeof value._id !== "string") {
     throw new Error("Invalid warehouse returned by the API.");
   }
-  const parsed = warehouseSchema.safeParse({
+  const parsed = warehouseListSchema.safeParse({
     ...value,
     manager: value.manager === "" ? null : value.manager,
   });
@@ -117,6 +128,11 @@ function formatCapacity(warehouse: WarehouseRow) {
   }
   const unit = unitLabels[warehouse.capacityUnit] ?? warehouse.capacityUnit;
   return `${Number(warehouse.capacity).toLocaleString()} ${unit}`;
+}
+
+function isPhoneLike(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 7 && /^[+\d\s().-]+$/.test(value);
 }
 
 export default function WarehouseListPage() {
@@ -274,9 +290,9 @@ export default function WarehouseListPage() {
   const to = Math.min(page * limit, total);
   const hasFilters = Boolean(debounced || status || type);
 
-  const sortableHeader = (label: string, key: SortKey, className = "") => (
+    const sortableHeader = (label: string, key: SortKey, className = "") => (
     <th
-      className={`select-none px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4 ${className}`}
+      className={`select-none whitespace-nowrap px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4 ${className}`}
       onClick={() => toggleSort(key)}
     >
       <span className="inline-flex cursor-pointer items-center gap-1.5">
@@ -383,22 +399,23 @@ export default function WarehouseListPage() {
             </div>
           </div>
         </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-text sm:text-sm md:min-w-[860px]">
+        <div className="w-full max-w-full overflow-x-auto">
+          <table className="w-max min-w-full text-left text-xs text-text sm:text-sm">
             <thead className="bg-background">
               <tr className="border-b border-border">
-                <th className="hidden w-12 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted md:table-cell">
+                <th className="whitespace-nowrap px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4">
                   #
                 </th>
                 {sortableHeader("Warehouse", "name")}
-                {sortableHeader("Type", "type", "hidden md:table-cell")}
+                {sortableHeader("Type", "type")}
                 {sortableHeader("Location", "city")}
-                {sortableHeader("Capacity", "capacity", "hidden lg:table-cell")}
-                {sortableHeader("Contact", "contact", "hidden md:table-cell")}
+                {sortableHeader("Capacity", "capacity")}
+                {sortableHeader("Contact", "contact")}
+                <th className="whitespace-nowrap px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4">
+                  Manager
+                </th>
                 {sortableHeader("Status", "status")}
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4">
+                <th className="whitespace-nowrap px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4">
                   Actions
                 </th>
               </tr>
@@ -407,27 +424,16 @@ export default function WarehouseListPage() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, row) => (
                   <tr key={row} className="border-b border-border">
-                    {Array.from({ length: 8 }).map((__, cell) => (
-                      <td
-                        key={cell}
-                        className={`px-3 py-4 sm:px-4 ${
-                          cell === 0
-                            ? "hidden md:table-cell"
-                            : cell === 2 || cell === 5
-                              ? "hidden md:table-cell"
-                              : cell === 4
-                                ? "hidden lg:table-cell"
-                                : ""
-                        }`}
-                      >
-                        <div className="h-3.5 w-full max-w-[120px] animate-pulse rounded bg-background" />
+                    {Array.from({ length: 10 }).map((__, cell) => (
+                      <td key={cell} className="px-3 py-4 sm:px-4">
+                        <div className="h-3.5 w-20 animate-pulse rounded bg-background" />
                       </td>
                     ))}
                   </tr>
                 ))
               ) : sortedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
+                  <td colSpan={10} className="px-4 py-12 text-center">
                     <p className="text-sm font-medium text-text">
                       {hasFilters
                         ? "No warehouses match your filters"
@@ -455,13 +461,13 @@ export default function WarehouseListPage() {
                     key={warehouse._id}
                     className="border-b border-border transition-colors hover:bg-surface-hover"
                   >
-                    <td className="hidden px-4 py-3 text-muted md:table-cell">
+                    <td className="whitespace-nowrap px-3 py-3 text-muted sm:px-4">
                       {(page - 1) * limit + index + 1}
                     </td>
 
                     {/* Name + code + default badge */}
-                    <td className="px-3 py-3 sm:px-4">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
+                      <div className="flex items-center gap-x-2">
                         <span className="font-medium text-text">
                           {warehouse.name}
                         </span>
@@ -476,14 +482,14 @@ export default function WarehouseListPage() {
                       </span>
                     </td>
 
-                    <td className="hidden px-3 py-3 sm:px-4 md:table-cell">
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                       {warehouseTypes.find(
                         ([value]) => value === warehouse.type
                       )?.[1] ?? warehouse.type}
                     </td>
 
                     {/* City + country */}
-                    <td className="px-3 py-3 sm:px-4">
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                       <span className="block">{warehouse.city || "—"}</span>
                       {warehouse.country && (
                         <span className="block text-[11px] text-muted sm:text-xs">
@@ -492,19 +498,44 @@ export default function WarehouseListPage() {
                       )}
                     </td>
 
-                    <td className="hidden px-3 py-3 sm:px-4 lg:table-cell">
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                       {formatCapacity(warehouse)}
                     </td>
 
                     {/* Contact person + phone */}
-                    <td className="hidden px-3 py-3 sm:px-4 md:table-cell">
-                      <span className="block">{warehouse.contactPerson}</span>
-                      <span className="block text-xs text-muted">
-                        {warehouse.phone}
-                      </span>
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
+                      {warehouse.contactPerson.trim() &&
+                        !isPhoneLike(warehouse.contactPerson) && (
+                          <span className="block">
+                            {warehouse.contactPerson}
+                          </span>
+                        )}
+                      {warehouse.phone.trim() && (
+                        <span className="block text-xs text-muted">
+                          {warehouse.phone}
+                        </span>
+                      )}
+                    </td>
+                    {/* Manager */}
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
+                      {warehouse.managerInfo ? (
+                        <>
+                          <span className="block">
+                            {warehouse.managerInfo.name}
+                          </span>
+                          <a
+                            href={`mailto:${warehouse.managerInfo.email}`}
+                            className="block text-xs text-muted no-underline hover:text-primary"
+                          >
+                            {warehouse.managerInfo.email}
+                          </a>
+                        </>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
                     </td>
 
-                    <td className="px-3 py-3 sm:px-4">
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                       <button
                         type="button"
                         role="switch"
@@ -530,7 +561,7 @@ export default function WarehouseListPage() {
                       </button>
                     </td>
 
-                    <td className="px-3 py-3 sm:px-4">
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                       <div className="flex items-center justify-end gap-1">
                         <Link
                           href={`/admin/warehouse/${encodeURIComponent(

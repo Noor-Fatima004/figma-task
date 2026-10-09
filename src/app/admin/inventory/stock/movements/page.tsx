@@ -111,10 +111,10 @@ export default function StockMovementsPage() {
   const hasFilters = Boolean(debounced || warehouse || type || from || to);
 
   const th =
-    "px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4";
+    "whitespace-nowrap px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4";
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
+    <div className="w-full min-w-0 max-w-full space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border pb-3 sm:items-center sm:pb-4">
         <div>
@@ -143,7 +143,7 @@ export default function StockMovementsPage() {
       </div>
 
       {/* Card */}
-      <div className="rounded-2xl border border-border bg-surface p-3 shadow-sm sm:p-5">
+      <div className="w-full min-w-0 rounded-2xl border border-border bg-surface p-3 shadow-sm sm:p-5">
         {/* Toolbar */}
         <div className="mb-4 space-y-2 text-xs text-text sm:space-y-3 sm:text-sm">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -236,21 +236,19 @@ export default function StockMovementsPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-text sm:text-sm md:min-w-[900px]">
+        {/* Table (single scroll wrapper) */}
+        <div className="w-full max-w-full overflow-x-auto">
+          <table className="w-max min-w-full text-left text-xs text-text sm:text-sm">
             <thead className="bg-background">
               <tr className="border-b border-border">
                 <th className={th}>Date</th>
                 <th className={th}>Product</th>
-                <th className={`${th} hidden sm:table-cell`}>Warehouse</th>
+                <th className={th}>Warehouse</th>
                 <th className={th}>Type</th>
                 <th className={`${th} text-right`}>Qty</th>
-                <th className={`${th} hidden text-right md:table-cell`}>
-                  Balance
-                </th>
-                <th className={`${th} hidden lg:table-cell`}>Reason</th>
-                <th className={`${th} hidden lg:table-cell`}>Reference / By</th>
+                <th className={`${th} text-right`}>Balance</th>
+                <th className={th}>Reason</th>
+                <th className={th}>Reference / By</th>
               </tr>
             </thead>
             <tbody>
@@ -258,19 +256,8 @@ export default function StockMovementsPage() {
                 Array.from({ length: 5 }).map((_, row) => (
                   <tr key={row} className="border-b border-border">
                     {Array.from({ length: 8 }).map((__, cell) => (
-                      <td
-                        key={cell}
-                        className={`px-3 py-4 sm:px-4 ${
-                          cell === 2
-                            ? "hidden sm:table-cell"
-                            : cell === 5
-                              ? "hidden md:table-cell"
-                              : cell >= 6
-                                ? "hidden lg:table-cell"
-                                : ""
-                        }`}
-                      >
-                        <div className="h-3.5 w-full max-w-[100px] animate-pulse rounded bg-background" />
+                      <td key={cell} className="px-3 py-4 sm:px-4">
+                        <div className="h-3.5 w-20 animate-pulse rounded bg-background" />
                       </td>
                     ))}
                   </tr>
@@ -302,57 +289,54 @@ export default function StockMovementsPage() {
                       <td className="whitespace-nowrap px-3 py-3 text-muted sm:px-4">
                         {formatDateTime(row.createdAt)}
                       </td>
-                      <td className="px-3 py-3 sm:px-4">
-                        <span className="block font-medium text-text">
+                      <td className="min-w-max whitespace-nowrap px-3 py-3 sm:px-4">
+                        <span className="block whitespace-nowrap font-medium text-text">
                           {row.productName}
                         </span>
                         {row.variantLabel && (
-                          <span className="mt-0.5 inline-block rounded bg-background px-1.5 py-0.5 text-[11px] text-text">
+                          <span className="mt-0.5 inline-block whitespace-nowrap rounded bg-background px-1.5 py-0.5 text-[11px] text-text">
                             {row.variantLabel}
                           </span>
                         )}
                         {row.sku && (
-                          <span className="mt-0.5 block text-[11px] text-muted sm:text-xs">
+                          <span className="mt-0.5 block whitespace-nowrap text-[11px] text-muted sm:text-xs">
                             SKU: {row.sku}
                           </span>
                         )}
                       </td>
-                      <td className="hidden px-3 py-3 sm:table-cell sm:px-4">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                         <span className="block">{row.warehouseName}</span>
                         <span className="block text-xs text-muted">
                           {row.warehouseCode}
                         </span>
                       </td>
-                      <td className="px-3 py-3 sm:px-4">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                         <span
-                          className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-medium sm:text-xs ${style.cls}`}
+                          className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-medium sm:text-xs ${style.cls}`}
                         >
                           {style.label}
                         </span>
                       </td>
                       <td
-                        className={`px-3 py-3 text-right font-semibold tabular-nums sm:px-4 ${
+                        className={`whitespace-nowrap px-3 py-3 text-right font-semibold tabular-nums sm:px-4 ${
                           positive ? "text-green-700" : "text-red-600"
                         }`}
                       >
                         {positive ? "+" : ""}
                         {formatQty(row.quantity)}
                       </td>
-                      <td className="hidden px-3 py-3 text-right tabular-nums sm:px-4 md:table-cell">
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums sm:px-4">
                         {formatQty(row.balanceAfter)}
                       </td>
-                      <td className="hidden px-3 py-3 sm:px-4 lg:table-cell">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                         {reasonLabels[row.reason] ?? row.reason}
                         {row.note && (
-                          <span
-                            className="mt-0.5 block max-w-[200px] truncate text-xs text-muted"
-                            title={row.note}
-                          >
+                          <span className="mt-0.5 block text-xs text-muted">
                             {row.note}
                           </span>
                         )}
                       </td>
-                      <td className="hidden px-3 py-3 sm:px-4 lg:table-cell">
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                         <span className="block">{row.reference || "—"}</span>
                         <span className="block text-xs text-muted">
                           {row.createdByName}

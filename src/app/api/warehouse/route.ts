@@ -104,10 +104,26 @@ export async function GET(request: Request) {
       .limit(limit)
       .lean();
 
+    const managerIds = warehouses.flatMap((warehouse) =>
+      warehouse.manager ? [warehouse.manager] : []
+    );
+    const managers = await User.find({ _id: { $in: managerIds } })
+      .select("name email")
+      .lean();
+    const managersById = new Map(
+      managers.map((manager) => [
+        manager._id.toString(),
+        { name: manager.name, email: manager.email },
+      ])
+    );
+
     const items = warehouses.map((warehouse) => ({
       ...warehouse,
       _id: warehouse._id.toString(),
       manager: warehouse.manager?.toString() ?? "",
+      managerInfo: warehouse.manager
+        ? (managersById.get(warehouse.manager.toString()) ?? null)
+        : null,
     }));
     return NextResponse.json({ items, total, page, totalPages });
   } catch (error) {
