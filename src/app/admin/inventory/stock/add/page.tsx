@@ -288,22 +288,23 @@ export default function AddStockPage() {
         </div>
 
         <div className="mt-4 space-y-3">
-          {lines.map((line, index) => {
+         {lines.map((line, index) => {
             const product = productById.get(line.product);
             const variants = product?.variants ?? [];
             return (
               <div
                 key={line.id}
-                className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-background/50 p-3 sm:grid-cols-12 sm:items-end"
+                className="grid grid-cols-12 items-end gap-2 rounded-xl border border-border bg-background/50 p-3 sm:gap-3"
               >
-                <div className="sm:col-span-5">
+                {/* Product */}
+                <div className="col-span-12 min-w-0 sm:col-span-5 [&_button]:px-2.5 [&_button]:py-1.5 [&_button]:text-xs sm:[&_button]:px-3 sm:[&_button]:py-2 sm:[&_button]:text-sm [&_li]:text-xs sm:[&_li]:text-sm">
                   <label className={labelCls}>Product {index + 1} *</label>
                   <FormSelect
                     value={line.product}
                     onChange={(value) =>
                       updateLine(line.id, { product: value, variant: "" })
                     }
-                    placeholder={loadingOptions ? "Loading..." : "Select a product"}
+                    placeholder={loadingOptions ? "Loading..." : "Select product"}
                     options={products.map((option) => ({
                       value: option._id,
                       label: option.sku
@@ -312,7 +313,9 @@ export default function AddStockPage() {
                     }))}
                   />
                 </div>
-                <div className="sm:col-span-4">
+
+                {/* Variant */}
+                <div className="col-span-12 min-w-0 sm:col-span-4 [&_button]:px-2.5 [&_button]:py-1.5 [&_button]:text-xs sm:[&_button]:px-3 sm:[&_button]:py-2 sm:[&_button]:text-sm [&_li]:text-xs sm:[&_li]:text-sm">
                   <label className={labelCls}>Variant</label>
                   <FormSelect
                     value={line.variant}
@@ -320,10 +323,10 @@ export default function AddStockPage() {
                     onChange={(value) => updateLine(line.id, { variant: value })}
                     placeholder={
                       !product
-                        ? "Select a product first"
+                        ? "Select product first"
                         : variants.length === 0
                           ? "No variants"
-                          : "Select a variant"
+                          : "Select variant"
                     }
                     options={variants.map((variant) => ({
                       value: variant.variations.join(","),
@@ -331,7 +334,9 @@ export default function AddStockPage() {
                     }))}
                   />
                 </div>
-                <div className="sm:col-span-2">
+
+                {/* Quantity */}
+                <div className="col-span-10 min-w-0 sm:col-span-2">
                   <label className={labelCls}>{quantityLabel} *</label>
                   <input
                     type="number"
@@ -341,17 +346,19 @@ export default function AddStockPage() {
                     onChange={(event) =>
                       updateLine(line.id, { quantity: event.target.value })
                     }
-                    className={inputCls}
+                    className="w-full min-w-0 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-text outline-none focus:ring-2 focus:ring-primary/30 sm:px-3 sm:py-2 sm:text-sm"
                   />
                 </div>
-                <div className="flex sm:col-span-1 sm:justify-end">
+
+                {/* Delete */}
+                <div className="col-span-2 flex justify-end sm:col-span-1">
                   <button
                     type="button"
                     onClick={() => removeLine(line.id)}
                     disabled={saving || lines.length === 1}
                     aria-label={`Remove item ${index + 1}`}
                     title="Remove"
-                    className="flex h-10 w-10 items-center justify-center rounded-md text-muted transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted sm:h-10 sm:w-10"
                   >
                     <FaTrash className="h-3.5 w-3.5" />
                   </button>

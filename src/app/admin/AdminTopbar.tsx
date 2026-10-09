@@ -10,6 +10,8 @@ interface AdminTopbarProps {
   onMenuClick: () => void;
 }
 
+const USERS_PATH = "/admin/users";
+
 export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -17,6 +19,8 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
+
+  const showSearch = pathname === USERS_PATH;
 
   const initials = name
     .split(" ")
@@ -42,21 +46,26 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
     };
   }, []);
 
+  // Users page se bahar jaate hi search text clear
   useEffect(() => {
+    if (!showSearch) setQuery("");
+  }, [showSearch]);
+
+  // Search sirf users page pe URL update kare
+  useEffect(() => {
+    if (!showSearch) return;
     const t = setTimeout(() => {
       const current = searchParams.get("q") ?? "";
       const normalizedQuery = query.trim();
-      if (!normalizedQuery && !current) return;
-      const targetPath = "/admin/users";
-      if (pathname === targetPath && current === normalizedQuery) return;
+      if (current === normalizedQuery) return;
       const params = new URLSearchParams(searchParams.toString());
       if (normalizedQuery) params.set("q", normalizedQuery);
       else params.delete("q");
       const qs = params.toString();
-      router.replace(qs ? `${targetPath}?${qs}` : targetPath, { scroll: false });
+      router.replace(qs ? `${USERS_PATH}?${qs}` : USERS_PATH, { scroll: false });
     }, 300);
     return () => clearTimeout(t);
-  }, [query, pathname, router, searchParams]);
+  }, [query, showSearch, router, searchParams]);
 
   const handleLogout = async () => {
     try {
@@ -80,13 +89,18 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
           <FaBars className="w-4 h-4" />
         </button>
 
-        <h1 className="hidden sm:block text-base lg:text-lg font-semibold text-text">
+        <h1
+          className={`${
+            showSearch ? "hidden sm:block" : "block"
+          } text-base lg:text-lg font-semibold text-text`}
+        >
           Dashboard
         </h1>
       </div>
 
-      {/* Center: user search */}
+      {/* Center: search (sirf users page) ya khali space */}
       <div className="flex-1 min-w-0 flex justify-center">
+            {showSearch && (
         <div className="relative w-full max-w-2xl">
           <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
           <input
@@ -108,6 +122,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
             </button>
           )}
         </div>
+      )}
       </div>
 
       {/* Right: profile dropdown */}
