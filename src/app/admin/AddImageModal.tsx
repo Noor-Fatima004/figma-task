@@ -26,8 +26,8 @@ export default function AddImageModal({ categories, onClose, onDone }: Props) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (files.length === 0) return toast.error("Image select karo");
-    if (!tag.trim()) return toast.error("Tag / category likho");
+    if (files.length === 0) return toast.error("Please select at least one image");
+    if (!tag.trim()) return toast.error("Please enter a tag / category");
 
     setLoading(true);
     try {
