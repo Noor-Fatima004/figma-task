@@ -1,4 +1,4 @@
-import mongoose, { Schema, models, model } from "mongoose";
+import mongoose, { Schema, models, model, type ClientSession } from "mongoose";
 
 // Reference number (SL001, SL002...) ke liye atomic counter
 const CounterSchema = new Schema({
@@ -8,14 +8,18 @@ const CounterSchema = new Schema({
 
 export default models.Counter || model("Counter", CounterSchema);
 
-export async function nextSequence(name: string): Promise<number> {
+export async function nextSequence(
+  name: string,
+  session?: ClientSession
+): Promise<number> {
   const Counter = models.Counter || model("Counter", CounterSchema);
   const doc = await Counter.findOneAndUpdate(
     { _id: name },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { new: true, upsert: true, ...(session ? { session } : {}) }
   );
-  return doc.seq as number;
+  if (!doc) throw new Error(`Unable to increment counter "${name}".`);
+  return doc.seq;
 }
 
 export { mongoose };

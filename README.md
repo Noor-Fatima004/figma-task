@@ -32,6 +32,12 @@ All uploaded gallery images and profile avatars use Cloudinary. Product media re
 
 The site uses `CLOUDINARY_CLOUD_NAME` in the client only to construct delivery URLs for bundled public artwork. Cloud name is public information; the API key and API secret are never exposed to client code. Do not commit `.env.local`.
 
+## Admin invoices
+
+Invoices are generated for new orders and synchronized when an order is paid, refunded, or cancelled. Existing orders can be backfilled with `npm run backfill:invoices`; the script skips orders that already have an invoice, so it is safe to rerun. Configure `MONGODB_URI` in `.env.local` and back up production data before running the backfill.
+
+Invoice email delivery requires an SMTP account. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM` in `.env.local`; PDF downloads and print views do not require SMTP. Invoice and counter indexes are managed by the Mongoose models.
+
 ### Cloudinary acceptance checks
 
 After setting credentials and starting the app:

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import connectDB from "@/lib/mongodb";
 import Order from "@/app/models/Order";
+import { createInvoiceForOrder } from "@/lib/invoices";
 
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
       createdAt,
       updatedAt: createdAt,
     });
+    await createInvoiceForOrder(order);
 
     created.push(order.orderNumber);
   }

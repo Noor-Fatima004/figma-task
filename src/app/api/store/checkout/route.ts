@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import Order from "@/app/models/Order";
+import { createInvoiceForOrder } from "@/lib/invoices";
 import Product from "@/app/models/Product";
 import ProductVariation from "@/app/models/ProductVariation";
 import Warehouse from "@/app/models/Warehouse";
@@ -240,7 +241,7 @@ export async function POST(request: Request) {
           });
         }
         createdOrderNumber = orderNumber();
-        await Order.create(
+        const [createdOrder] = await Order.create(
           [
             {
               orderNumber: createdOrderNumber,
@@ -259,6 +260,7 @@ export async function POST(request: Request) {
           ],
           { session }
         );
+        await createInvoiceForOrder(createdOrder, { session });
       });
     } finally {
       await session.endSession();

@@ -5,6 +5,11 @@ import connectDB from "@/lib/mongodb";
 import Order from "@/app/models/Order";
 import { releaseStock, StockError } from "@/lib/stock";
 import { requireAdmin } from "@/lib/requireAdmin";
+import {
+  createInvoiceForOrder,
+  syncInvoicePaymentFromOrder,
+} from "@/lib/invoices";
+import { getAdminActorId } from "@/lib/adminActor";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -140,6 +145,32 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   }
 
   await order.save();
+  try {
+    const actor = await getAdminActorId();
+    const invoice = await createInvoiceForOrder(order, { performedBy: actor });
+    await syncInvoicePaymentFromOrder(
+      order._id,
+      order.paymentStatus,
+      order.status,
+      undefined,
+      actor
+    );
+    if (
+      parsed.data.customer ||
+      parsed.data.shippingAddress
+    ) {
+      invoice.set("customer", {
+        ...invoice.customer,
+        ...order.customerSnapshot,
+        user: order.customer,
+      });
+      invoice.set("billingAddress", order.shippingAddress);
+      invoice.set("shippingAddress", order.shippingAddress);
+      await invoice.save();
+    }
+  } catch (error) {
+    console.error("Failed to synchronize order invoice:", error);
+  }
   return NextResponse.json({ ok: true, status: order.status, paymentStatus: order.paymentStatus });
 }
 

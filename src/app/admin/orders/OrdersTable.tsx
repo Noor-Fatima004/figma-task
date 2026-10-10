@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { z } from "zod";
 import {
   FaDollarSign,
@@ -19,6 +22,7 @@ const orderListSchema = z.object({
   items: z.array(
     z.object({
       _id: z.string(),
+      invoiceId: z.string().nullable(),
       reference: z.string(),
       customerName: z.string(),
       customerEmail: z.string(),
@@ -123,13 +127,16 @@ function paymentClass(status: OrderRow["paymentStatus"]) {
 }
 
 export default function OrdersTable() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const initialSearch = searchParams.get("search") ?? "";
   const menuRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<OrderRow[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  const [query, setQuery] = useState(initialSearch);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -431,6 +438,43 @@ export default function OrdersTable() {
               {label}
             </button>
           ))}
+          {items.find((item) => item._id === openMenu)?.invoiceId ? (
+            <Link
+              href={`/admin/invoices/${items.find((item) => item._id === openMenu)?.invoiceId}`}
+              onClick={() => setOpenMenu(null)}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-text hover:bg-background"
+            >
+              View Invoice
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={async () => {
+                const orderId = openMenu;
+                setOpenMenu(null);
+                if (!orderId) return;
+                try {
+                  const response = await fetch("/api/admin/invoices", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ orderId }),
+                  });
+                  const body: unknown = await response.json();
+                  if (!response.ok || typeof body !== "object" || body === null || !("data" in body)) {
+                    throw new Error(responseError(body, "Failed to create invoice."));
+                  }
+                  const invoiceId = (body as { data: { _id: string } }).data._id;
+                  router.push(`/admin/invoices/${invoiceId}`);
+                } catch (cause) {
+                  console.error("Failed to open order invoice:", cause);
+                  toast.error(cause instanceof Error ? cause.message : "Failed to create invoice.");
+                }
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-text hover:bg-background"
+            >
+              Create Invoice
+            </button>
+          )}
         </div>
       )}
 

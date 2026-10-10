@@ -5,6 +5,11 @@ import Order from "@/app/models/Order";
 import connectDB from "@/lib/mongodb";
 import { fulfillStock, releaseStock, StockError } from "@/lib/stock";
 import { requireAdmin } from "@/lib/requireAdmin";
+import {
+  createInvoiceForOrder,
+  syncInvoicePaymentFromOrder,
+} from "@/lib/invoices";
+import { getAdminActorId } from "@/lib/adminActor";
 
 const errorResponse = (error: string, status: number) =>
   NextResponse.json({ error }, { status });
@@ -54,6 +59,7 @@ export async function PATCH(request: Request, { params }: Context) {
   try {
     await connectDB();
     const session = await mongoose.startSession();
+    const actor = await getAdminActorId();
     let responseOrder: Record<string, unknown> | null = null;
     try {
       await session.withTransaction(async () => {
@@ -90,6 +96,14 @@ export async function PATCH(request: Request, { params }: Context) {
           changedAt: new Date(),
         });
         await order.save({ session });
+        await createInvoiceForOrder(order, { session, performedBy: actor });
+        await syncInvoicePaymentFromOrder(
+          order._id,
+          order.paymentStatus,
+          order.status,
+          session,
+          actor
+        );
         responseOrder = {
           _id: order._id.toString(),
           orderNumber: order.orderNumber,

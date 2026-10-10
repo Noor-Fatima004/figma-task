@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import  connectDB  from "@/lib/mongodb";
 import Order from "@/app/models/Order";
+import Invoice from "@/app/models/Invoice";
 import { requireAdmin } from "@/lib/requireAdmin";
 
 const SORT_MAP: Record<string, string> = {
@@ -61,12 +62,28 @@ export async function GET(req: NextRequest) {
     Order.countDocuments(filter as never),
     Order.distinct("customerSnapshot.name"),
   ]);
+  const invoices = docs.length
+    ? await Invoice.find({
+        order: { $in: docs.map((order) => order._id) },
+        isDeleted: false,
+      })
+        .select("_id order")
+        .lean()
+    : [];
+  const invoiceByOrder = new Map(
+    invoices.flatMap((invoice) =>
+      invoice.order
+        ? [[invoice.order.toString(), invoice._id.toString()] as const]
+        : []
+    )
+  );
 
   const items = docs.map((o) => {
     const paid = o.paymentStatus === "paid" ? o.total : 0;
     const due = o.paymentStatus === "unpaid" ? o.total : 0;
     return {
       _id: String(o._id),
+      invoiceId: invoiceByOrder.get(o._id.toString()) ?? null,
       reference: o.orderNumber,
       customerName: o.customerSnapshot?.name ?? "",
       customerEmail: o.customerSnapshot?.email ?? "",
