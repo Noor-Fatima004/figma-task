@@ -29,7 +29,8 @@ function cellXml(value: CellValue, reference: string) {
 
 export async function createInvoiceExcel(
   headers: string[],
-  rows: CellValue[][]
+  rows: CellValue[][],
+  sheetName = "Invoices"
 ): Promise<Buffer> {
   const allRows = [headers, ...rows];
   const sheetRows = allRows
@@ -59,7 +60,7 @@ export async function createInvoiceExcel(
     { name: "_rels/.rels" }
   );
   archive.append(
-    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Invoices" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${escapeXml(sheetName.slice(0, 31))}" sheetId="1" r:id="rId1"/></sheets></workbook>`,
     { name: "xl/workbook.xml" }
   );
   archive.append(

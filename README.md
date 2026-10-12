@@ -38,6 +38,14 @@ Invoices are generated for new orders and synchronized when an order is paid, re
 
 Invoice email delivery requires an SMTP account. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM` in `.env.local`; PDF downloads and print views do not require SMTP. Invoice and counter indexes are managed by the Mongoose models.
 
+## Admin vendors and purchase orders
+
+The Vendors module is available at `/admin/vendors`. Vendor, vendor-product, purchase-order, payment, and activity data are stored in Mongoose collections; their indexes are created from the model definitions. No SQL migration or additional npm dependency is required. Back up MongoDB before deploying schema/index changes.
+
+Vendor links on a product are available from that product's Edit page. Category rows link to their filtered supplier list. Create purchase orders from a vendor detail page; receiving stock writes through the existing stock-level and stock-movement helper. Stock receipt uses an active default warehouse, or an active warehouse ID supplied in the receiving dialog. Configure a default warehouse in the warehouse admin before receiving stock.
+
+The vendor export supports CSV and Excel-compatible `.xlsx`. Vendor bank details are excluded from normal list/detail responses and are returned only from the authenticated vendor detail API when `includeBankDetails=1` is explicitly requested. No new environment variables are needed.
+
 ### Cloudinary acceptance checks
 
 After setting credentials and starting the app:

@@ -26,10 +26,12 @@ import {
   FaHistory,
   FaShoppingCart,
   FaFileAlt,
+  FaTruck,
 } from "react-icons/fa";
 import LogoutButton from "@/app/components/LogoutButton";
 
 type NavLink = { label: string; href: string; icon: IconType };
+type FlyKey = "catalog" | "warehouse" | "inventory" | "vendors";
 
 // Simple top-level links
 const menuItems: NavLink[] = [
@@ -72,6 +74,10 @@ const inventoryLinks: NavLink[] = [
   { label: "Stock List", href: "/admin/inventory/stock", icon: FaClipboardList },
   { label: "Add Stock", href: "/admin/inventory/stock/add", icon: FaPlusSquare },
   { label: "Stock Movements", href: "/admin/inventory/stock/movements", icon: FaHistory },
+];
+const vendorsLinks: NavLink[] = [
+  { label: "List Vendors", href: "/admin/vendors", icon: FaListUl },
+  { label: "Add Vendor", href: "/admin/vendors/add", icon: FaPlusSquare },
 ];
 
 function SubLink({
@@ -134,16 +140,18 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   const inProducts = pathname.startsWith("/admin/catalog/products");
   const inWarehouse = pathname.startsWith("/admin/warehouse");
   const inInventory = pathname.startsWith("/admin/inventory");
+  const inVendors = pathname.startsWith("/admin/vendors");
 
   // md+ : sidebar ke andar khulne wala menu
   const [catalogOpen, setCatalogOpen] = useState(inCatalog);
   const [productsOpen, setProductsOpen] = useState(inProducts);
   const [warehouseOpen, setWarehouseOpen] = useState(inWarehouse);
   const [inventoryOpen, setInventoryOpen] = useState(inInventory);
+  const [vendorsOpen, setVendorsOpen] = useState(inVendors);
 
   // mobile : sidebar ke right side me khulne wala icon panel
   const [flyOpen, setFlyOpen] = useState<{
-    key: "catalog" | "warehouse" | "inventory";
+    key: FlyKey;
     pathname: string;
   } | null>(null);
   const activeFlyout = flyOpen?.pathname === pathname ? flyOpen.key : null;
@@ -151,6 +159,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   const catalogBtnRef = useRef<HTMLButtonElement>(null);
   const warehouseBtnRef = useRef<HTMLButtonElement>(null);
   const inventoryBtnRef = useRef<HTMLButtonElement>(null);
+  const vendorsBtnRef = useRef<HTMLButtonElement>(null);
   const asideRef = useRef<HTMLElement>(null);
   const [flyLeft, setFlyLeft] = useState(64);
   const flyRef = useRef<HTMLDivElement>(null);
@@ -162,38 +171,38 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
         ? warehouseBtnRef.current
         : activeFlyout === "inventory"
           ? inventoryBtnRef.current
-          : catalogBtnRef.current;
+          : activeFlyout === "vendors"
+            ? vendorsBtnRef.current
+            : catalogBtnRef.current;
     const r = trigger?.getBoundingClientRect();
     if (r) setFlyTop(r.top);
     const a = asideRef.current?.getBoundingClientRect();
     if (a) setFlyLeft(a.right);
   }, [activeFlyout]);
 
+  const toggleFly = (key: FlyKey) =>
+    setFlyOpen((v) =>
+      v?.key === key && v.pathname === pathname ? null : { key, pathname }
+    );
+
   const toggleCatalog = () => {
     setCatalogOpen((v) => !v);
-    setFlyOpen((v) =>
-      v?.key === "catalog" && v.pathname === pathname
-        ? null
-        : { key: "catalog", pathname }
-    );
+    toggleFly("catalog");
   };
 
   const toggleWarehouse = () => {
     setWarehouseOpen((v) => !v);
-    setFlyOpen((v) =>
-      v?.key === "warehouse" && v.pathname === pathname
-        ? null
-        : { key: "warehouse", pathname }
-    );
+    toggleFly("warehouse");
   };
 
   const toggleInventory = () => {
     setInventoryOpen((v) => !v);
-    setFlyOpen((v) =>
-      v?.key === "inventory" && v.pathname === pathname
-        ? null
-        : { key: "inventory", pathname }
-    );
+    toggleFly("inventory");
+  };
+
+  const toggleVendors = () => {
+    setVendorsOpen((v) => !v);
+    toggleFly("vendors");
   };
 
   // panel ke bahar click/tap karne par band
@@ -205,7 +214,8 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
         flyRef.current?.contains(t) ||
         catalogBtnRef.current?.contains(t) ||
         warehouseBtnRef.current?.contains(t) ||
-        inventoryBtnRef.current?.contains(t)
+        inventoryBtnRef.current?.contains(t) ||
+        vendorsBtnRef.current?.contains(t)
       ) {
         return;
       }
@@ -226,6 +236,14 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
     window.addEventListener("resize", updateFlyTop);
     return () => window.removeEventListener("resize", updateFlyTop);
   }, [activeFlyout, updateFlyTop]);
+
+  const flyStyle = {
+    top: flyTop,
+    left: flyLeft - 1,
+    maxHeight: `calc(100vh - ${flyTop}px - 8px)`,
+  };
+  const flyClass =
+    "md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
   return (
     <aside
@@ -265,6 +283,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
             </Link>
           );
         })}
+
         {/* ───────── Catalog dropdown ───────── */}
         <div>
           <button
@@ -344,14 +363,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
             </div>
           )}
           {activeFlyout === "catalog" && (
-            <div
-              ref={flyRef}
-              style={{ 
-              top: flyTop,
-              left: flyLeft-1,
-               maxHeight: `calc(100vh - ${flyTop}px - 8px)` }}
-              className="md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
+            <div ref={flyRef} style={flyStyle} className={flyClass}>
               {catalogLinks.map((l) => (
                 <FlyIcon
                   key={l.href}
@@ -397,6 +409,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
             </div>
           )}
         </div>
+
         {/* ───────── Warehouse dropdown ───────── */}
         <div>
           <button
@@ -423,25 +436,13 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
           {warehouseOpen && (
             <div className="hidden md:block mt-1 space-y-0.5">
               {warehouseLinks.map((link) => (
-                <SubLink
-                  key={link.href}
-                  {...link}
-                  pathname={pathname}
-                />
+                <SubLink key={link.href} {...link} pathname={pathname} />
               ))}
             </div>
           )}
 
           {activeFlyout === "warehouse" && (
-            <div
-              ref={flyRef}
-              style={{
-                top: flyTop,
-                left: flyLeft - 1,
-                maxHeight: `calc(100vh - ${flyTop}px - 8px)`,
-              }}
-              className="md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
+            <div ref={flyRef} style={flyStyle} className={flyClass}>
               {warehouseLinks.map((link) => (
                 <FlyIcon
                   key={link.href}
@@ -453,6 +454,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
             </div>
           )}
         </div>
+
         {/* ───────── Inventory dropdown ───────── */}
         <div>
           <button
@@ -485,15 +487,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
           )}
 
           {activeFlyout === "inventory" && (
-            <div
-              ref={flyRef}
-              style={{
-                top: flyTop,
-                left: flyLeft - 1,
-                maxHeight: `calc(100vh - ${flyTop}px - 8px)`,
-              }}
-              className="md:hidden fixed left-16 z-50 w-14 overflow-y-auto rounded-r-xl bg-primary border-l border-white/10 shadow-xl px-1.5 py-2 space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
+            <div ref={flyRef} style={flyStyle} className={flyClass}>
               {inventoryLinks.map((link) => (
                 <FlyIcon
                   key={link.href}
@@ -505,7 +499,53 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
             </div>
           )}
         </div>
-        {/* ───────── Orders (sabse last) ───────── */}
+
+        {/* ───────── Vendors dropdown ───────── */}
+        <div>
+          <button
+            ref={vendorsBtnRef}
+            type="button"
+            title="Vendors"
+            onClick={toggleVendors}
+            aria-expanded={vendorsOpen}
+            className={`w-full flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              vendorsOpen || inVendors
+                ? "bg-white/10 text-white"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <FaTruck className="w-4 h-4 shrink-0" />
+            <span className="hidden md:inline flex-1 text-left">Vendors</span>
+            <FaChevronDown
+              className={`hidden md:inline w-3 h-3 transition-transform duration-200 ${
+                vendorsOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {vendorsOpen && (
+            <div className="hidden md:block mt-1 space-y-0.5">
+              {vendorsLinks.map((link) => (
+                <SubLink key={link.href} {...link} pathname={pathname} />
+              ))}
+            </div>
+          )}
+
+          {activeFlyout === "vendors" && (
+            <div ref={flyRef} style={flyStyle} className={flyClass}>
+              {vendorsLinks.map((link) => (
+                <FlyIcon
+                  key={link.href}
+                  {...link}
+                  pathname={pathname}
+                  onNavigate={() => setFlyOpen(null)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ───────── Orders ───────── */}
         <Link
           href={ordersLink.href}
           title={ordersLink.label}
@@ -518,6 +558,8 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
           <ordersLink.icon className="w-4 h-4 shrink-0" />
           <span className="hidden md:inline">{ordersLink.label}</span>
         </Link>
+
+        {/* ───────── Invoices ───────── */}
         <Link
           href={invoicesLink.href}
           title={invoicesLink.label}

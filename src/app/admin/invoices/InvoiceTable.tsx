@@ -82,6 +82,16 @@ const actionEntries: { action: InvoiceAction; label: string; icon?: typeof FaEye
   { action: "delete", label: "Delete" },
 ];
 
+// Action menu geometry (10 items: 8 actions + Download PDF + Print)
+const MENU_WIDTH = 192;
+const MENU_ITEM_HEIGHT = 36;
+const MENU_HEIGHT = (actionEntries.length + 2) * MENU_ITEM_HEIGHT + 8;
+const VIEWPORT_GAP = 8;
+
+// Shared responsive control styles. text-base on mobile avoids iOS zoom on focus.
+const controlClass =
+  "block w-full min-w-0 rounded-md border border-border bg-background px-2.5 py-2 text-base text-text outline-none focus:ring-2 focus:ring-primary sm:text-sm";
+
 function responseError(value: unknown, fallback: string) {
   return typeof value === "object" && value !== null && "error" in value && typeof value.error === "string"
     ? value.error
@@ -111,7 +121,12 @@ export default function InvoiceTable() {
   const [selectedAction, setSelectedAction] = useState<{ id: string; action: InvoiceAction } | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
+  const [menuPosition, setMenuPosition] = useState({
+    top: VIEWPORT_GAP,
+    left: VIEWPORT_GAP,
+    width: MENU_WIDTH,
+    maxHeight: MENU_HEIGHT,
+  });
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -167,17 +182,25 @@ export default function InvoiceTable() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  // Close the action menu on outside click, scroll, resize, or Escape
   useEffect(() => {
     if (!openMenu) return;
     const close = (event: PointerEvent) => {
       if (event.target instanceof Node && !actionMenuRef.current?.contains(event.target)) setOpenMenu(null);
     };
-    const closeOnScroll = () => setOpenMenu(null);
+    const closeMenu = () => setOpenMenu(null);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenMenu(null);
+    };
     document.addEventListener("pointerdown", close);
-    window.addEventListener("scroll", closeOnScroll, true);
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("resize", closeMenu);
     return () => {
       document.removeEventListener("pointerdown", close);
-      window.removeEventListener("scroll", closeOnScroll, true);
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("resize", closeMenu);
     };
   }, [openMenu]);
 
@@ -281,61 +304,163 @@ export default function InvoiceTable() {
     setOpenMenu(null);
     setSelectedAction({ id, action });
   };
+
+  // Position the menu so it always stays fully inside the viewport:
+  // - width shrinks on very narrow screens
+  // - horizontally clamped so it never crosses the left/right edge
+  // - opens upward when there isn't enough room below
+  const placeMenu = (bounds: DOMRect) => {
+    const width = Math.min(MENU_WIDTH, window.innerWidth - VIEWPORT_GAP * 2);
+    const left = Math.min(
+      Math.max(VIEWPORT_GAP, bounds.right - width),
+      window.innerWidth - width - VIEWPORT_GAP
+    );
+    const spaceBelow = window.innerHeight - bounds.bottom - VIEWPORT_GAP - 4;
+    const spaceAbove = bounds.top - VIEWPORT_GAP - 4;
+    const openUp = spaceBelow < MENU_HEIGHT && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(120, Math.min(MENU_HEIGHT, openUp ? spaceAbove : spaceBelow));
+    const top = openUp ? Math.max(VIEWPORT_GAP, bounds.top - 4 - maxHeight) : bounds.bottom + 4;
+    setMenuPosition({ top, left, width, maxHeight });
+  };
+
   const actionMenu = (invoice: InvoiceRow) => (
-    <div className="relative inline-block text-left">
-      <button type="button" aria-label={`Actions for ${invoice.invoiceNumber}`} aria-expanded={openMenu === invoice._id} onClick={(event) => {
-        if (openMenu === invoice._id) {
-          setOpenMenu(null);
-          return;
-        }
-        const bounds = event.currentTarget.getBoundingClientRect();
-        setMenuPosition({
-          top: Math.min(bounds.bottom + 4, window.innerHeight - 330),
-          right: Math.max(8, window.innerWidth - bounds.right),
-        });
-        setOpenMenu(invoice._id);
-      }} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted hover:bg-background hover:text-text">
+    <div className="relative inline-block shrink-0 text-left">
+      <button
+        type="button"
+        aria-label={`Actions for ${invoice.invoiceNumber}`}
+        aria-haspopup="menu"
+        aria-expanded={openMenu === invoice._id}
+        onClick={(event) => {
+          if (openMenu === invoice._id) {
+            setOpenMenu(null);
+            return;
+          }
+          placeMenu(event.currentTarget.getBoundingClientRect());
+          setOpenMenu(invoice._id);
+        }}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted hover:bg-background hover:text-text"
+      >
         <FaEllipsisV className="h-3.5 w-3.5" />
       </button>
     </div>
   );
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5">
+    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3 sm:pb-4">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-lg font-semibold text-text sm:text-2xl">Invoices</h1>
           <p className="mt-1 text-xs text-muted sm:text-sm">Manage billing, payments, and customer invoices.</p>
         </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => void exportInvoices("csv")} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium text-text hover:bg-background sm:text-sm"><FaFileExport />Export CSV</button>
-          <button type="button" onClick={() => void exportInvoices("xlsx")} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium text-text hover:bg-background sm:text-sm">Export Excel</button>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <button type="button" onClick={() => void exportInvoices("csv")} className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium text-text hover:bg-background sm:flex-none sm:text-sm"><FaFileExport />Export CSV</button>
+          <button type="button" onClick={() => void exportInvoices("xlsx")} className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium text-text hover:bg-background sm:flex-none sm:text-sm">Export Excel</button>
         </div>
       </div>
 
       <InvoiceSummaryCards summary={summary} />
 
       <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 border-b border-border p-3 text-xs text-text sm:gap-3 sm:p-4 sm:text-sm">
-          <label htmlFor="invoice-search" className="sr-only">Search invoices</label>
-          <input id="invoice-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search invoice, order, customer, email..." className="min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 py-2 text-xs outline-none focus:ring-2 focus:ring-primary sm:max-w-sm sm:text-sm" />
-          <FormSelect compact value={status} placeholder="All statuses" onChange={(value) => { setStatus(value); setPage(1); }} options={statusOptions.map(([value, label]) => ({ value, label }))} />
-          <input aria-label="Issue date from" type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="min-w-0 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-text" />
-          <input aria-label="Issue date to" type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="min-w-0 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-text" />
-          <select aria-label="Payment method" value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(1); }} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-text"><option value="">All methods</option><option value="cash">Cash</option><option value="card">Card</option><option value="bank_transfer">Bank transfer</option><option value="cod">COD</option><option value="manual">Manual</option></select>
-          <input aria-label="Minimum invoice total" type="number" min="0" step="0.01" value={minAmount} onChange={(e) => { setMinAmount(e.target.value); setPage(1); }} placeholder="Min total" className="w-24 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-text" />
-          <input aria-label="Maximum invoice total" type="number" min="0" step="0.01" value={maxAmount} onChange={(e) => { setMaxAmount(e.target.value); setPage(1); }} placeholder="Max total" className="w-24 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-text" />
+        {/* Filters: 1 col on mobile, 2 on small, 3 on md, 6 on xl. Nothing can overflow the screen. */}
+        <div className="grid grid-cols-1 gap-2 border-b border-border p-3 text-text sm:grid-cols-2 sm:gap-3 sm:p-4 md:grid-cols-3 xl:grid-cols-6">
+          <div className="min-w-0 sm:col-span-2 md:col-span-3 xl:col-span-2">
+            <label htmlFor="invoice-search" className="sr-only">Search invoices</label>
+            <input
+              id="invoice-search"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search invoice, order, customer, email..."
+              className={controlClass}
+            />
+          </div>
+
+          <div className="min-w-0 [&>*]:w-full [&>*]:max-w-full">
+            <FormSelect
+              compact
+              value={status}
+              placeholder="All statuses"
+              onChange={(value) => { setStatus(value); setPage(1); }}
+              options={statusOptions.map(([value, label]) => ({ value, label }))}
+            />
+          </div>
+
+          <select
+            aria-label="Payment method"
+            value={paymentMethod}
+            onChange={(e) => { setPaymentMethod(e.target.value); setPage(1); }}
+            className={`${controlClass} cursor-pointer truncate`}
+          >
+            <option value="">All methods</option>
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="bank_transfer">Bank transfer</option>
+            <option value="cod">COD</option>
+            <option value="manual">Manual</option>
+          </select>
+
+          <input
+            aria-label="Issue date from"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+            className={controlClass}
+          />
+          <input
+            aria-label="Issue date to"
+            type="date"
+            value={dateTo}
+            onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+            className={controlClass}
+          />
+
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:col-span-2 md:col-span-3 xl:col-span-2">
+            <input
+              aria-label="Minimum invoice total"
+              type="number"
+              min="0"
+              step="0.01"
+              value={minAmount}
+              onChange={(e) => { setMinAmount(e.target.value); setPage(1); }}
+              placeholder="Min total"
+              className={controlClass}
+            />
+            <input
+              aria-label="Maximum invoice total"
+              type="number"
+              min="0"
+              step="0.01"
+              value={maxAmount}
+              onChange={(e) => { setMaxAmount(e.target.value); setPage(1); }}
+              placeholder="Max total"
+              className={controlClass}
+            />
+          </div>
         </div>
 
-        {selectedIds.length > 0 && <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/60 px-3 py-2 sm:px-4">
-          <span className="mr-auto text-xs text-muted">{selectedIds.length} selected</span>
-          {([
-            ["mark_paid", "Mark paid"],
-            ["send_email", "Send email"],
-            ["download_pdf", "Download PDFs"],
-            ["delete", "Delete"],
-          ] as const).map(([action, label]) => <button key={action} disabled={bulkBusy} type="button" onClick={() => void runBulk(action)} className={`rounded-md border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface disabled:opacity-50 ${action === "delete" ? "text-red-600" : "text-text"}`}>{bulkBusy ? "Working..." : label}</button>)}
-        </div>}
+        {selectedIds.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/60 px-3 py-2 sm:px-4">
+            <span className="w-full text-xs text-muted sm:mr-auto sm:w-auto">{selectedIds.length} selected</span>
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+              {([
+                ["mark_paid", "Mark paid"],
+                ["send_email", "Send email"],
+                ["download_pdf", "Download PDFs"],
+                ["delete", "Delete"],
+              ] as const).map(([action, label]) => (
+                <button
+                  key={action}
+                  disabled={bulkBusy}
+                  type="button"
+                  onClick={() => void runBulk(action)}
+                  className={`rounded-md border border-border px-2.5 py-2 text-xs font-medium hover:bg-surface disabled:opacity-50 sm:py-1.5 ${action === "delete" ? "text-red-600" : "text-text"}`}
+                >
+                  {bulkBusy ? "Working..." : label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && <p role="alert" className="border-b border-border px-4 py-3 text-sm text-red-600">{error} <button type="button" onClick={() => void load()} className="ml-2 underline">Retry</button></p>}
 
@@ -381,13 +506,17 @@ export default function InvoiceTable() {
             : rows.length === 0 ? <p className="px-4 py-12 text-center text-sm text-muted">{error ? "Invoices could not be loaded." : "No invoices found."}</p>
               : rows.map((invoice) => <article key={invoice._id} className="space-y-3 p-4">
                 <div className="flex items-start gap-3">
-                  <input aria-label={`Select ${invoice.invoiceNumber}`} type="checkbox" className="mt-1" checked={selectedIds.includes(invoice._id)} onChange={() => toggleSelected(invoice._id)} />
-                  <div className="min-w-0 flex-1"><Link href={`/admin/invoices/${invoice._id}`} className="font-semibold text-primary">{invoice.invoiceNumber}</Link><p className="mt-0.5 truncate text-sm font-medium text-text">{invoice.customer.name}</p><p className="truncate text-xs text-muted">{invoice.customer.email}</p></div>
-                  <span className={`rounded-full px-2 py-1 text-[11px] font-medium capitalize ${statusClass[invoice.paymentStatus]}`}>{invoice.paymentStatus.replaceAll("_", " ")}</span>
+                  <input aria-label={`Select ${invoice.invoiceNumber}`} type="checkbox" className="mt-1 shrink-0" checked={selectedIds.includes(invoice._id)} onChange={() => toggleSelected(invoice._id)} />
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/admin/invoices/${invoice._id}`} className="block truncate font-semibold text-primary">{invoice.invoiceNumber}</Link>
+                    <p className="mt-0.5 truncate text-sm font-medium text-text">{invoice.customer.name}</p>
+                    <p className="truncate text-xs text-muted">{invoice.customer.email}</p>
+                    <span className={`mt-2 inline-block rounded-full px-2 py-1 text-[11px] font-medium capitalize ${statusClass[invoice.paymentStatus]}`}>{invoice.paymentStatus.replaceAll("_", " ")}</span>
+                  </div>
                   {actionMenu(invoice)}
                 </div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-lg bg-background p-3 text-xs">
-                  <span className="text-muted">Order</span><span className="text-right">{invoice.order ? `#${invoice.order.orderNumber}` : "—"}</span>
+                  <span className="text-muted">Order</span><span className="truncate text-right">{invoice.order ? `#${invoice.order.orderNumber}` : "—"}</span>
                   <span className="text-muted">Issue date</span><span className="text-right">{formatDate(invoice.issueDate)}</span>
                   <span className="text-muted">Due date</span><span className="text-right">{formatDate(invoice.dueDate)}</span>
                   <span className="text-muted">Total</span><span className="text-right font-semibold">{money(invoice.grandTotal, invoice.currency)}</span>
@@ -398,13 +527,13 @@ export default function InvoiceTable() {
         </div>
 
         <footer className="flex flex-col gap-3 border-t border-border px-4 py-3 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <p>Showing {from} to {to} of {total} invoices</p>
             <label className="flex items-center gap-2">Rows
-              <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }} className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-text">{pageSizes.map((size) => <option key={size} value={size}>{size}</option>)}</select>
+              <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }} className="rounded-md border border-border bg-surface px-2 py-1.5 text-base text-text sm:py-1 sm:text-xs">{pageSizes.map((size) => <option key={size} value={size}>{size}</option>)}</select>
             </label>
           </div>
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
             <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded-md border border-border px-3 py-1.5 text-text hover:bg-background disabled:opacity-40">Previous</button>
             <span className="px-1">{page} / {pages}</span>
             <button type="button" disabled={page >= pages || loading} onClick={() => setPage((value) => Math.min(pages, value + 1))} className="rounded-md border border-border px-3 py-1.5 text-text hover:bg-background disabled:opacity-40">Next</button>
@@ -415,23 +544,62 @@ export default function InvoiceTable() {
       {openMenu && (() => {
         const invoice = rows.find((item) => item._id === openMenu);
         if (!invoice) return null;
-        return <div ref={actionMenuRef} className="fixed z-[60] max-h-[calc(100dvh-16px)] w-48 overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-lg" style={{ top: Math.max(8, menuPosition.top), right: menuPosition.right }}>
-          {actionEntries.map(({ action, label, icon: Icon }) => <button key={action} type="button" onClick={() => openAction(invoice._id, action)} className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-background ${action === "delete" ? "text-red-600" : "text-text"}`}>{Icon && <Icon className="h-3.5 w-3.5" />}{label}</button>)}
-          <button type="button" onClick={async () => {
-            setOpenMenu(null);
-            try {
-              await download(`/api/admin/invoices/${invoice._id}/pdf`, `${invoice.invoiceNumber}.pdf`);
-              toast.success("Invoice PDF downloaded.");
-            } catch (cause) {
-              toast.error(cause instanceof Error ? cause.message : "PDF download failed.");
-            }
-          }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-text hover:bg-background"><FaDownload className="h-3.5 w-3.5" />Download PDF</button>
-          <button type="button" onClick={() => {
-            setOpenMenu(null);
-            window.open(`/admin/invoices/${invoice._id}?print=1`, "_blank", "noopener,noreferrer");
-            toast.success("Print view opened.");
-          }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-text hover:bg-background"><FaPrint className="h-3.5 w-3.5" />Print</button>
-        </div>;
+        return (
+          <div
+            ref={actionMenuRef}
+            role="menu"
+            className="fixed z-[60] overflow-y-auto overscroll-contain rounded-lg border border-border bg-surface p-1 shadow-lg"
+            style={{
+              top: menuPosition.top,
+              left: menuPosition.left,
+              width: menuPosition.width,
+              maxHeight: menuPosition.maxHeight,
+            }}
+          >
+            {actionEntries.map(({ action, label, icon: Icon }) => (
+              <button
+                key={action}
+                type="button"
+                role="menuitem"
+                onClick={() => openAction(invoice._id, action)}
+                className={`flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-sm hover:bg-background ${action === "delete" ? "text-red-600" : "text-text"}`}
+              >
+                {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
+                <span className="truncate">{label}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={async () => {
+                setOpenMenu(null);
+                try {
+                  await download(`/api/admin/invoices/${invoice._id}/pdf`, `${invoice.invoiceNumber}.pdf`);
+                  toast.success("Invoice PDF downloaded.");
+                } catch (cause) {
+                  toast.error(cause instanceof Error ? cause.message : "PDF download failed.");
+                }
+              }}
+              className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-text hover:bg-background"
+            >
+              <FaDownload className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Download PDF</span>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpenMenu(null);
+                window.open(`/admin/invoices/${invoice._id}?print=1`, "_blank", "noopener,noreferrer");
+                toast.success("Print view opened.");
+              }}
+              className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-text hover:bg-background"
+            >
+              <FaPrint className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Print</span>
+            </button>
+          </div>
+        );
       })()}
 
       {selectedAction && <InvoiceActionModal id={selectedAction.id} action={selectedAction.action} onClose={() => setSelectedAction(null)} onDone={() => { setSelectedAction(null); void load(); }} onActionChange={(action) => setSelectedAction({ id: selectedAction.id, action })} />}

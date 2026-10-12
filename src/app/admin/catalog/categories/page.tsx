@@ -205,7 +205,7 @@ export default function ProductCategoriesPage() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] table-fixed text-xs sm:text-sm text-left">
+          <table className="w-full min-w-[760px] table-fixed text-xs sm:text-sm text-left">
             <thead>
               <tr className="text-text border-b border-border">
                 <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
@@ -230,6 +230,9 @@ export default function ProductCategoriesPage() {
                     Slug <SortIcon k="slug" />
                   </span>
                 </th>
+                <th className="w-1/6 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
+                  Suppliers
+                </th>
                 <th className="w-1/5 px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">
                   Action
                 </th>
@@ -239,7 +242,7 @@ export default function ProductCategoriesPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-muted"
                   >
                     Loading...
@@ -248,7 +251,7 @@ export default function ProductCategoriesPage() {
               ) : items.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-muted"
                   >
                     No categories found
@@ -291,6 +294,11 @@ export default function ProductCategoriesPage() {
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3 break-words">
                       {c.slug}
+                    </td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
+                      <a href={`/admin/vendors?category=${encodeURIComponent(c._id)}`} className="text-primary hover:underline">
+                        View suppliers
+                      </a>
                     </td>
                     <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <div className="flex items-center gap-3 text-text">

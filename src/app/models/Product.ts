@@ -58,6 +58,8 @@ const ProductSchema = new Schema(
     isFeature: { type: Boolean, default: true },
     unit: { type: Schema.Types.ObjectId, ref: "ProductUnit", required: true },
     brand: { type: Schema.Types.ObjectId, ref: "ProductBrand", default: null },
+    preferredVendor: { type: Schema.Types.ObjectId, ref: "Vendor", default: null, index: true },
+    costPrice: { type: Number, min: 0, default: null },
     weight: { type: Number, min: 0, default: null },
     price: { type: Number, required: true, min: 0 },
     discountPrice: { type: Number, min: 0, default: null },

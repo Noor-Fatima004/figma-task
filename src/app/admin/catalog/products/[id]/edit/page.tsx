@@ -16,6 +16,7 @@ import SeoStep, {
   emptySeo,
   type SeoData,
 } from "@/app/admin/catalog/products/add/SeoStep";
+import SupplierPanel from "./SupplierPanel";
 import {
   advanceSchema,
   basicSchema,
@@ -401,6 +402,7 @@ export default function EditProductPage() {
           onSave={handleSave}
         />
       )}
+      <SupplierPanel productId={id} />
     </div>
   );
 }
