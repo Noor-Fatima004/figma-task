@@ -5,7 +5,16 @@ import mongoose from "mongoose";
 import  connectDB  from "@/lib/mongodb";
 import { slugify } from "@/lib/slugify";
 import Product from "@/app/models/Product";
+import "@/app/models/ProductCategory";   // populate se pehle model register hona zaroori hai
+import "@/app/models/GalleryImage";
+import "@/app/models/ProductUnit";       // path apne project ke hisaab se
+import "@/app/models/ProductBrand";      // path apne project ke hisaab se
 import { isCloudinaryImageUrl, resolveMediaPublicIds } from "@/lib/galleryMedia";
+import {
+  buildMediaUrlMap,
+  mediaToUrls,
+  getEnTranslation,
+} from "@/lib/storefrontProduct";
 // NOTE: path apne schemas.ts ke asli location ke hisaab se rakho
 import { productSchema } from "@/app/admin/catalog/products/add/schemas";
 
@@ -109,7 +118,7 @@ export async function POST(req: Request) {
   }
 }
 
-/* ───────────────────────── GET: product list (baad ke page ke liye) ───────────────────────── */
+/* ───────────────────────── GET: admin product list ───────────────────────── */
 
 const SORT_FIELDS: Record<string, string> = {
   createdAt: "createdAt",
@@ -118,7 +127,20 @@ const SORT_FIELDS: Record<string, string> = {
   slug: "slug",
 };
 
+type NamedRef = { _id: unknown; name?: string; slug?: string } | null;
+type AdminLean = {
+  _id: unknown;
+  slug: string;
+  media?: string[];
+  translations?: unknown;
+  category?: NamedRef;
+  unit?: NamedRef;
+  brand?: NamedRef;
+  [key: string]: unknown;
+};
+
 export async function GET(req: Request) {
+  // TODO: yahan bhi wahi admin auth check lagao.
   const { searchParams } = new URL(req.url);
 
   const q = (searchParams.get("q") ?? "").trim();
@@ -147,11 +169,30 @@ export async function GET(req: Request) {
     const totalPages = Math.max(1, Math.ceil(total / limit));
     if (page > totalPages) page = totalPages;
 
-    const items = await Product.find(filter)
-      .sort({ [sortField]: order })
+    const docs = (await Product.find(filter)
+      .populate("category", "name slug")
+      .populate("unit", "name")
+      .populate("brand", "name")
+      .sort({ [sortField]: order, _id: 1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .lean();
+      .lean()) as unknown as AdminLean[];
+
+    const urlMap = await buildMediaUrlMap(docs.flatMap((d) => d.media ?? []));
+
+    const items = docs.map((d) => {
+      const imageUrls = mediaToUrls(d.media, urlMap);
+      return {
+        ...d,
+        _id: String(d._id),
+        name: getEnTranslation(d.translations).name,
+        imageUrl: imageUrls[0] ?? "",
+        imageUrls,
+        categoryName: d.category?.name ?? "",
+        unitName: d.unit?.name ?? "",
+        brandName: d.brand?.name ?? "",
+      };
+    });
 
     return NextResponse.json({ items, total, page, totalPages });
   } catch (e) {

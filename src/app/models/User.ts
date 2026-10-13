@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin"],
+      enum: ["user", "admin","guest"],
       default: "user",     // every signup is a normal user by default
     },
     image: { type: String, default: "" },

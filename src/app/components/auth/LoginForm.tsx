@@ -8,6 +8,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
 import { toast } from "sonner";
+import { endGuestSession, startGuest } from "@/lib/guest";
+
+// ?redirect= sirf apni site ke path par jaane do (//evil.com jaisa nahi)
+const getSafeRedirect = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const r = new URLSearchParams(window.location.search).get("redirect");
+  return r && r.startsWith("/") && !r.startsWith("//") ? r : null;
+};
 
 export default function LoginForm() {
   const router = useRouter();
@@ -29,62 +37,68 @@ export default function LoginForm() {
     mode: "onBlur",
   });
 
- const onSubmit = async (data: LoginFormValues): Promise<void> => {
-  setServerError(null);
-  setIsLoading(true);
-  try {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: data.email,
-        password: data.password,
-        rememberMe: data.remember,
-      }),
-    });
+  const onSubmit = async (data: LoginFormValues): Promise<void> => {
+    setServerError(null);
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          rememberMe: data.remember,
+        }),
+      });
 
-    const result = await res.json();
+      const result = await res.json();
 
-    if (!res.ok) {
-      const msg = result.error || "Invalid email or password";
+      if (!res.ok) {
+        const msg = result.error || "Invalid email or password";
+        setServerError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      toast.success("Login successful");
+
+      // Guest mode khatam (guest ka saved data merge ke liye bacha rehta hai)
+      endGuestSession();
+
+      // Guest order ke liye bheja gaya tha to wapas wahin (?redirect=), warna role ke hisab se
+      const safeRedirect = getSafeRedirect();
+
+      if (result.user?.role === "admin") {
+        router.replace("/admin/dashboard");
+      } else {
+        router.replace(safeRedirect ?? "/home");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
       setServerError(msg);
       toast.error(msg);
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success("Login successful");
-
-    // Role-based redirect: admin goes to the dashboard, everyone else goes home
-    if (result.user?.role === "admin") {
-      router.replace("/admin/dashboard");
-    } else {
-      router.replace("/");
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Something went wrong";
-    setServerError(msg);
-    toast.error(msg);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const inputClass = (hasError: boolean): string =>
-    `w-full px-3.5 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 rounded-lg sm:rounded-xl border bg-[#F9FAFB] text-sm sm:text-[15px] md:text-base text-[#263238] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 transition ${
+    `w-full px-3.5 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 rounded-sm border bg-[#F9FAFB] text-sm sm:text-[15px] md:text-base text-[#263238] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 transition ${
       hasError
-        ? "border-red-400 focus:ring-red-400"
-        : "border-gray-200 focus:ring-[#4CAF4F] focus:border-transparent"
+        ? "border-red-300 focus:ring-red-400"
+        : "border-gray-200 focus:ring-[#a17d62] focus:border-transparent"
     }`;
 
   return (
     <>
       {/* HEADER */}
       <div className="mb-6 sm:mb-8 md:mb-10">
-        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-[32px] font-semibold text-[#263238] leading-tight">
-          Welcome back
+        <p className="text-[#7f756c]">Welcome Back</p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-[32px] font-bold text-[#263238] leading-tight">
+          Sign in to your account
         </h1>
-        <p className="text-xs sm:text-sm md:text-base text-[#717171] mt-1.5 sm:mt-2 leading-relaxed">
-          Login to your Nextcent account to continue.
+        <p className="text-xs sm:text-sm md:text-base text-[#7f756c] mt-1.5 sm:mt-2 leading-relaxed">
+          Access your orders, saved pieces, and personal preferences.
         </p>
       </div>
 
@@ -96,7 +110,7 @@ export default function LoginForm() {
       >
         {/* Server error banner */}
         {serverError && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm px-3.5 sm:px-4 py-3 rounded-lg">
+          <div className="bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm px-3.5 sm:px-4 py-3 rounded-sm">
             {serverError}
           </div>
         )}
@@ -107,7 +121,7 @@ export default function LoginForm() {
             htmlFor="email"
             className="block text-xs sm:text-sm md:text-[15px] font-medium text-[#263238] mb-1.5 sm:mb-2"
           >
-            Email address
+            Email address <span className="text-red-600">*</span>
           </label>
           <input
             id="email"
@@ -115,7 +129,7 @@ export default function LoginForm() {
             autoComplete="email"
             placeholder="you@example.com"
             {...register("email")}
-            className={inputClass(!!errors.email)}
+            className={`${inputClass(!!errors.email)} text-[#7f756c]`}
           />
           {errors.email && (
             <p className="text-[11px] sm:text-xs md:text-sm text-red-500 mt-1.5 sm:mt-2 leading-snug">
@@ -139,13 +153,13 @@ export default function LoginForm() {
               autoComplete="current-password"
               placeholder="••••••••"
               {...register("password")}
-              className={inputClass(!!errors.password) + " pr-14 sm:pr-16"}
+              className={`${inputClass(!!errors.password)} pr-14 sm:pr-16 text-[#7f756c]`}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               tabIndex={-1}
-              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[11px] sm:text-xs md:text-sm font-medium text-primary hover:text-[#388E3C] transition-colors"
+              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[11px] sm:text-xs md:text-sm font-medium text-[#896142] hover:text-[#a17d62] transition-colors"
             >
               {showPassword ? "Hide" : "Show"}
             </button>
@@ -167,14 +181,14 @@ export default function LoginForm() {
             />
             <span>
               Remember me
-              <span className="block text-[10px] sm:text-xs text-[#717171]">
+              <span className="block text-[10px] sm:text-xs text-[#896142]">
                 Unchecked sessions end when all browser windows close, not when one tab closes.
               </span>
             </span>
           </label>
           <a
             href="#"
-            className="text-primary hover:underline font-medium w-fit"
+            className="text-[#896142] hover:underline font-medium w-fit"
           >
             Forgot password?
           </a>
@@ -184,7 +198,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-primary hover:bg-[#388E3C] active:scale-[0.99] disabled:bg-[#9CA3AF] disabled:cursor-not-allowed text-white font-medium text-sm sm:text-[15px] md:text-base py-3 sm:py-3.5 md:py-4 px-4 rounded-lg sm:rounded-xl transition-all duration-300 shadow-md shadow-[#4CAF4F]/20"
+          className="w-full bg-[#896142] hover:bg-[#915e37] active:scale-[0.99] disabled:bg-[#9CA3AF] disabled:cursor-not-allowed text-white font-medium text-sm sm:text-[15px] md:text-base py-3 sm:py-3.5 md:py-4 px-4 rounded-lg sm:rounded-xl transition-all duration-300 shadow-md shadow-[#4CAF4F]/20"
         >
           {isLoading ? (
             <span className="inline-flex items-center justify-center gap-2">
@@ -208,10 +222,10 @@ export default function LoginForm() {
                   d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                 />
               </svg>
-              Logging in...
+              SIGNING IN...
             </span>
           ) : (
-            "Login"
+            "SIGN IN"
           )}
         </button>
 
@@ -220,10 +234,24 @@ export default function LoginForm() {
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"
-            className="text-primary font-semibold hover:underline whitespace-nowrap"
+            className="text-[#896142] font-semibold hover:underline whitespace-nowrap"
           >
             Sign up
           </Link>
+        </p>
+
+        {/* Continue as guest */}
+        <p className="text-center text-xs sm:text-sm md:text-[15px]">
+          <button
+            type="button"
+            onClick={() => {
+              startGuest();
+              router.replace(getSafeRedirect() ?? "/home");
+            }}
+            className="cursor-pointer font-medium text-[#7f756c] underline underline-offset-4 transition-colors hover:text-[#896142]"
+          >
+            Continue as a guest
+          </button>
         </p>
       </form>
     </>
