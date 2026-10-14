@@ -17,6 +17,12 @@ const getSafeRedirect = (): string | null => {
   return r && r.startsWith("/") && !r.startsWith("//") ? r : null;
 };
 
+// / aur khaali redirect ko /home bana do
+const resolveTarget = (): string => {
+  const safe = getSafeRedirect();
+  return safe && safe !== "/" && safe !== "" ? safe : "/home";
+};
+
 export default function LoginForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -65,13 +71,11 @@ export default function LoginForm() {
       // Guest mode khatam (guest ka saved data merge ke liye bacha rehta hai)
       endGuestSession();
 
-      // Guest order ke liye bheja gaya tha to wapas wahin (?redirect=), warna role ke hisab se
-      const safeRedirect = getSafeRedirect();
-
+      // Guest order ke liye bheja gaya tha to wapas wahin (?redirect=), warna /home
       if (result.user?.role === "admin") {
         router.replace("/admin/dashboard");
       } else {
-        router.replace(safeRedirect ?? "/home");
+        router.replace(resolveTarget());
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
@@ -246,7 +250,7 @@ export default function LoginForm() {
             type="button"
             onClick={() => {
               startGuest();
-              router.replace(getSafeRedirect() ?? "/home");
+              router.replace(resolveTarget());
             }}
             className="cursor-pointer font-medium text-[#7f756c] underline underline-offset-4 transition-colors hover:text-[#896142]"
           >
