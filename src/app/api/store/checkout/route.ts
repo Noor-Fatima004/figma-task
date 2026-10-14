@@ -9,6 +9,7 @@ import ProductVariation from "@/app/models/ProductVariation";
 import Warehouse from "@/app/models/Warehouse";
 import connectDB from "@/lib/mongodb";
 import { getAuthenticatedCustomer, resolveMediaUrlLists } from "@/lib/storefront";
+import { computeTotals, TAX_RATE } from "@/lib/tax";
 import {
   buildVariantKey,
   productDisplayName,
@@ -21,11 +22,14 @@ const errorResponse = (error: string, status: number) =>
   NextResponse.json({ error }, { status });
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid product id");
+
+// name/email optional: logged-in user ke liye server apne user se leta hai
 const contactSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-  email: z.string().trim().email().max(254),
+  name: z.string().trim().max(120).optional(),
+  email: z.string().trim().email().max(254).optional(),
   phone: z.string().trim().min(3).max(40),
 });
+
 const addressSchema = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().trim().min(3).max(40),
@@ -36,6 +40,20 @@ const addressSchema = z.object({
   postalCode: z.string().trim().min(1).max(30),
   country: z.string().trim().min(1).max(100),
 });
+
+// Card optional: poora number / CVC kabhi nahi, sirf safe fields
+const paymentSchema = z
+  .object({
+    method: z.enum(["cod", "card"]).default("cod"),
+    cardHolder: z.string().trim().max(120).optional(),
+    cardBrand: z.string().trim().max(30).optional(),
+    cardLast4: z
+      .string()
+      .regex(/^\d{4}$/)
+      .optional(),
+  })
+  .default({ method: "cod" });
+
 const checkoutSchema = z.object({
   items: z
     .array(
@@ -49,6 +67,7 @@ const checkoutSchema = z.object({
     .max(50),
   customer: contactSchema,
   address: addressSchema,
+  payment: paymentSchema,
 });
 
 type CheckoutLine = {
@@ -188,20 +207,29 @@ export async function POST(request: Request) {
       line.image = imageByProduct.get(line.productId) ?? "";
     }
 
-    const customer = {
-      name: user?.name ?? parsed.data.customer.name,
-      email: (user?.email ?? parsed.data.customer.email).trim().toLowerCase(),
-      phone: parsed.data.customer.phone,
-    };
+    // Login user ko priority, guest ke liye form ki values
+    const name = user?.name ?? parsed.data.customer.name;
+    const email = (user?.email ?? parsed.data.customer.email)
+      ?.trim()
+      .toLowerCase();
+    if (!name || !email) {
+      return errorResponse("Name and email are required", 400);
+    }
+    const customer = { name, email, phone: parsed.data.customer.phone };
+
     const shippingAddress = {
       ...parsed.data.address,
       phone: parsed.data.address.phone || customer.phone,
     };
-    const subtotal = money(
-      lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0)
+
+    // Totals hamesha server par calculate hote hain
+    const rawSubtotal = lines.reduce(
+      (sum, line) => sum + line.unitPrice * line.quantity,
+      0
     );
-    const shippingFee = 0;
-    const total = money(subtotal + shippingFee);
+    const { subtotal, shippingFee, taxAmount, total } =
+      computeTotals(rawSubtotal);
+
     const session = await mongoose.startSession();
     let createdOrderNumber = "";
     try {
@@ -251,10 +279,17 @@ export async function POST(request: Request) {
               items: orderItems,
               subtotal,
               shippingFee,
+              taxRate: TAX_RATE,
+              taxAmount,
               total,
               status: "pending",
-              paymentMethod: "cod",
+              paymentMethod: parsed.data.payment.method,
               paymentStatus: "unpaid",
+              paymentDetails: {
+                cardHolder: parsed.data.payment.cardHolder ?? "",
+                cardBrand: parsed.data.payment.cardBrand ?? "",
+                cardLast4: parsed.data.payment.cardLast4 ?? "",
+              },
               statusHistory: [{ status: "pending", note: "Order placed" }],
             },
           ],

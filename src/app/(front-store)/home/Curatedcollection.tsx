@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import QuickViewModal, {
+  type SelectedVariation,
+} from "@/app/components/storefront/QuickViewModal";
 import {
   FiArrowRight,
   FiChevronLeft,
@@ -17,7 +20,8 @@ import {
 } from "@/store/storefrontApi";
 import type { StorefrontProduct } from "@/store/storefrontTypes";
 import { useWishlist } from "@/app/components/storefront/wishlistStore";
-import QuickViewModal from "@/app/components/storefront/QuickViewModal";
+import { useCompare } from "@/app/components/storefront/compareStore";
+import { useCart } from "@/app/components/storefront/cartStore";
 
 // Price format: server aur browser dono par same rahe
 const formatPrice = (n: number) => `Rs. ${n.toLocaleString("en-US")}`;
@@ -34,15 +38,23 @@ const arrowBtn =
 const cardWidth =
   "w-[calc((100%-1rem)/2)] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4.5rem)/4)] 2xl:w-[calc((100%-8rem)/5)]";
 
-// Round icons (wishlist / quick view / compare): mobile par thode chhote
-const hoverIcon =
-  "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/95 text-[#2a231f] shadow-sm transition hover:bg-[#8b5e3c] hover:text-white sm:h-10 sm:w-10";
+// Round icon base — hover colors yahan NAHI hain.
+// Har button apna hover conditionally lagayega (active hone par hover kaam na kare).
+const hoverIconBase =
+  "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/95 text-[#2a231f] shadow-sm transition sm:h-10 sm:w-10";
+
+// Active nahi hai to hi hover lagta hai
+const hoverIconIdle = "hover:bg-[#8b5e3c] hover:text-white";
 
 export default function CuratedCollection() {
   // null = abhi user ne koi tab nahi chuna, pehli category use hogi
   const [active, setActive] = useState<string | null>(null);
   // Wishlist: store se (/wishlist page isi ko dikhata hai)
   const { has, toggle } = useWishlist();
+  // Compare: store se (/compare page isi ko dikhata hai)
+  const { toggle: toggleCompare, has: hasCompare, isFull: compareFull } = useCompare();
+  // Cart: store se (CartDrawer isi ko dikhata hai)
+  const { addItem } = useCart();
   // Jis product ka quick view popup khula hai
   const [quickView, setQuickView] = useState<StorefrontProduct | null>(null);
   const closeQuickView = useCallback(() => setQuickView(null), []);
@@ -110,16 +122,24 @@ export default function CuratedCollection() {
     el.scrollBy({ left: dir * (el.clientWidth + gap), behavior: "smooth" });
   };
 
-  // TODO: apna compare logic yahan lagao (jaise compare list mein product add karna)
+  // Compare: list full ho aur product pehle se list mein na ho to kuch nahi hoga
   const handleCompare = (p: StorefrontProduct) => {
-    void p;
+    if (!hasCompare(p.id) && compareFull) return;
+    toggleCompare(p);
   };
 
-  // TODO: apna cart action yahan lagao
-  const handleAddToCart = (p: StorefrontProduct, qty: number) => {
-    void p;
-    void qty;
-  };
+  // Cart mein add karo (drawer khud khul jata hai). Quick view popup khula rehta hai,
+  // drawer band karne par wapas active ho jata hai.
+ const handleAddToCart = (
+  p: StorefrontProduct,
+  qty: number,
+  variation?: SelectedVariation
+) => {
+  addItem(p, qty, {
+    variations: variation?.ids ?? [],
+    variantLabel: variation?.label,
+  });
+};
 
   return (
     <section className="bg-[#fdfcfa] py-10 sm:py-14 lg:py-16 2xl:py-20">
@@ -218,6 +238,8 @@ export default function CuratedCollection() {
           {!productsLoading &&
             products.map((p, i) => {
               const isWished = has(p.id);
+              const isCompared = hasCompare(p.id);
+              const compareDisabled = !isCompared && compareFull;
               return (
                 <article key={p._id} className={`group relative ${cardWidth}`}>
                   <Link href={`/product/${p.id}`} className="block">
@@ -257,10 +279,6 @@ export default function CuratedCollection() {
                       </p>
                     </div>
                   </Link>
-
-                  {/* 3 icons: Link ke bahar (button ke andar link/button na ho).
-                      Sirf hover wali devices (mouse) par, bari screen (lg+) par hover/focus se dikhte hain.
-                      Touch devices (mobile / tablet / iPad Pro) par hamesha nazar aate hain. */}
                   <div className="absolute right-2 top-2 flex flex-col gap-1.5 transition duration-200 sm:right-3 sm:top-3 sm:gap-2 lg:[@media(hover:hover)]:translate-x-2 lg:[@media(hover:hover)]:opacity-0 lg:[@media(hover:hover)]:group-focus-within:translate-x-0 lg:[@media(hover:hover)]:group-focus-within:opacity-100 lg:[@media(hover:hover)]:group-hover:translate-x-0 lg:[@media(hover:hover)]:group-hover:opacity-100">
                     <button
                       type="button"
@@ -269,9 +287,13 @@ export default function CuratedCollection() {
                         isWished ? `Remove ${p.name} from wishlist` : `Add ${p.name} to wishlist`
                       }
                       aria-pressed={isWished}
-                      className={`${hoverIcon} ${isWished ? "!text-[#8b5e3c]" : ""}`}
+                      className={`${hoverIconBase} ${
+                        isWished ? "!text-[#8b5e3c]" : hoverIconIdle
+                      }`}
                     >
-                      <FiHeart className={`h-4 w-4 sm:h-[18px] sm:w-[18px] ${isWished ? "fill-current" : ""}`} />
+                      <FiHeart
+                        className={`h-4 w-4 sm:h-[18px] sm:w-[18px] ${isWished ? "fill-current" : ""}`}
+                      />
                     </button>
 
                     <button
@@ -279,7 +301,7 @@ export default function CuratedCollection() {
                       onClick={() => setQuickView(p)}
                       aria-label={`Quick view ${p.name}`}
                       aria-haspopup="dialog"
-                      className={hoverIcon}
+                      className={`${hoverIconBase} ${hoverIconIdle}`}
                     >
                       <FiEye className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
                     </button>
@@ -287,8 +309,22 @@ export default function CuratedCollection() {
                     <button
                       type="button"
                       onClick={() => handleCompare(p)}
-                      aria-label={`Compare ${p.name}`}
-                      className={hoverIcon}
+                      aria-label={
+                        isCompared
+                          ? `Remove ${p.name} from compare`
+                          : compareDisabled
+                            ? "Compare list full"
+                            : `Compare ${p.name}`
+                      }
+                      aria-pressed={isCompared}
+                      disabled={compareDisabled}
+                      className={`${hoverIconBase} ${
+                        isCompared
+                          ? "!bg-[#8b5e3c] !text-white"
+                          : compareDisabled
+                            ? "cursor-not-allowed opacity-50"
+                            : hoverIconIdle
+                      }`}
                     >
                       <FiShuffle className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
                     </button>
@@ -298,7 +334,6 @@ export default function CuratedCollection() {
             })}
         </div>
 
-        {/* Products load nahi hue */}
         {productsError && !productsLoading && (
           <div className="mt-6 flex items-center gap-4 text-sm text-[#6b625a]">
             <span>Products could not be loaded.</span>
@@ -312,7 +347,6 @@ export default function CuratedCollection() {
           </div>
         )}
 
-        {/* Is category me koi product nahi */}
         {!catsLoading &&
           !productsLoading &&
           !productsError &&
@@ -322,7 +356,6 @@ export default function CuratedCollection() {
             <p className="mt-6 text-sm text-[#6b625a]">No products in this category yet.</p>
           )}
 
-        {/* Prev / Next: sirf tab dikhte hain jab products screen par samane se zyada hon */}
         {hasOverflow && (
           <div className="mt-6 flex justify-end gap-3">
             <button
@@ -347,7 +380,6 @@ export default function CuratedCollection() {
         )}
       </div>
 
-      {/* Quick view popup: slider ke bahar render hota hai taake overflow se kat na jaye */}
       {quickView && (
         <QuickViewModal
           key={quickView.id}
@@ -356,7 +388,7 @@ export default function CuratedCollection() {
           wished={has(quickView.id)}
           onToggleWish={() => toggle(quickView)}
           onCompare={() => handleCompare(quickView)}
-          onAddToCart={(qty) => handleAddToCart(quickView, qty)}
+          onAddToCart={(qty, variation) => handleAddToCart(quickView, qty, variation)}
         />
       )}
     </section>

@@ -7,6 +7,9 @@ import { Toaster } from "sonner";
 import ReduxProvider from "@/store/Provider";
 import Navbar from "@/app/components/storefront/layout/Navbar";
 import Footer from "@/app/components/storefront/layout/Footer";
+import CompareBar from "@/app/components/storefront/CompareBar";
+import ClientOnly from "@/app/components/storefront/ClientOnly";
+import CartDrawer from "@/app/components/storefront/CartDrawer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,33 +22,32 @@ export const metadata: Metadata = {
   description: "Manage your entire community in a single system",
 };
 
-export default function RootLayout({
+export default function FrontStoreLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} min-h-screen bg-surface text-text font-sans`}
-        suppressHydrationWarning
+    <ReduxProvider>
+      <div
+        data-theme-scope="store"
+        data-store-theme="brown"
+        className="min-h-screen flex flex-col bg-surface text-text"
       >
-        <ReduxProvider>
-          <div
-            data-theme-scope="store"
-            data-store-theme="brown"
-            className="min-h-screen flex flex-col bg-surface text-text"
-          >
-            <Navbar />
+        <Navbar />
 
-            <main className="flex-1">{children}</main>
+        <main className="flex-1">{children}</main>
+        <CartDrawer />
 
-            <Footer />
-          </div>
+        <Footer />
+      </div>
 
-          <Toaster position="top-right" richColors />
-        </ReduxProvider>
-      </body>
-    </html>
+      {/* Compare bar: fixed bottom par */}
+      <ClientOnly>
+        <CompareBar />
+      </ClientOnly>
+
+      <Toaster position="top-right" richColors />
+    </ReduxProvider>
   );
 }

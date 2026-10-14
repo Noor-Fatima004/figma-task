@@ -65,6 +65,8 @@ const OrderSchema = new Schema(
     items: { type: [OrderItemSchema], required: true, minlength: 1 },
     subtotal: { type: Number, required: true, min: 0 },
     shippingFee: { type: Number, required: true, min: 0, default: 0 },
+    taxRate: { type: Number, default: 0, min: 0 },
+    taxAmount: { type: Number, default: 0, min: 0 },
     total: { type: Number, required: true, min: 0 },
     status: {
       type: String,
@@ -72,12 +74,23 @@ const OrderSchema = new Schema(
       default: "pending",
       index: true,
     },
-    paymentMethod: { type: String, enum: ["cod"], default: "cod", required: true },
+    paymentMethod: {
+      type: String,
+      enum: ["cod", "card"],
+      default: "cod",
+      required: true,
+    },
     paymentStatus: {
       type: String,
       enum: ["unpaid", "paid", "refunded"],
       default: "unpaid",
       required: true,
+    },
+    // Card ka sirf safe data. Poora number / CVC kabhi store nahi hota.
+    paymentDetails: {
+      cardHolder: { type: String, default: "", trim: true },
+      cardBrand: { type: String, default: "", trim: true },
+      cardLast4: { type: String, default: "", trim: true },
     },
     statusHistory: { type: [StatusHistorySchema], default: [] },
   },

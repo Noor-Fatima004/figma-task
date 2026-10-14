@@ -1,216 +1,325 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isValidObjectId } from "mongoose";
+import mongoose from "mongoose";
 import { z } from "zod";
 import connectDB from "@/lib/mongodb";
 import Order from "@/app/models/Order";
-import { releaseStock, StockError } from "@/lib/stock";
-import { requireAdmin } from "@/lib/requireAdmin";
+import Product from "@/app/models/Product";
+import ProductVariation from "@/app/models/ProductVariation";
 import {
-  createInvoiceForOrder,
-  syncInvoicePaymentFromOrder,
-} from "@/lib/invoices";
-import { getAdminActorId } from "@/lib/adminActor";
+  reserveStock,
+  StockError,
+  validateVariantSelection,
+  variantLabel,
+  buildVariantKey,
+  productDisplayName,
+} from "@/lib/stock";
+import { adjustSold } from "@/lib/sales";
+import { requireUser } from "@/lib/requireUser";
 
-type Ctx = { params: Promise<{ id: string }> };
+/* ────────────────────────── constants ────────────────────────── */
 
-const STATUSES = [
-  "pending",
-  "confirmed",
-  "shipped",
-  "delivered",
-  "cancelled",
-] as const;
-const PAYMENT_STATUSES = ["unpaid", "paid", "refunded"] as const;
+// Apne cartStore se match karo. Agar different hain to yahan update karo.
+const FREE_SHIPPING_THRESHOLD = 5000;
+const SHIPPING_FLAT = 250;
+const TAX_RATE = 0.05;
 
-// GET /api/admin/orders/:id
-export async function GET(_req: NextRequest, { params }: Ctx) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+const OBJECT_ID_RX = /^[a-f\d]{24}$/i;
+
+/* ────────────────────────── validation ────────────────────────── */
+
+const Body = z.object({
+  contact: z.object({
+    email: z.string().trim().email().max(254),
+    phone: z.string().trim().min(7).max(40),
+  }),
+  shipping: z.object({
+    firstName: z.string().trim().min(1).max(80),
+    lastName: z.string().trim().min(1).max(80),
+    address: z.string().trim().min(1).max(200),
+    apartment: z.string().trim().max(200).optional().default(""),
+    city: z.string().trim().min(1).max(100),
+    state: z.string().trim().min(1).max(100),
+    postalCode: z.string().trim().min(1).max(30),
+    country: z.string().trim().min(1).max(100),
+  }),
+  notes: z.string().trim().max(500).optional().default(""),
+  payment: z.enum(["cod", "card"]),
+  items: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        qty: z.number().int().min(1).max(999),
+        variations: z.array(z.string()).optional().default([]),
+      })
+    )
+    .min(1),
+});
+
+/* ────────────────────────── helpers ────────────────────────── */
+
+async function generateOrderNumber(): Promise<string> {
+  const now = new Date();
+  const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
+  for (let i = 0; i < 6; i++) {
+    const candidate = `NLT-${ymd}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const exists = await Order.exists({ orderNumber: candidate });
+    if (!exists) return candidate;
   }
-  const { id } = await params;
-  if (!isValidObjectId(id)) {
-    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-  }
-  await connectDB();
-
-  const o = await Order.findById(id).lean();
-  if (!o) return NextResponse.json({ error: "Order nahi mila" }, { status: 404 });
-
-  const paid = o.paymentStatus === "paid" ? o.total : 0;
-  const due = o.paymentStatus === "unpaid" ? o.total : 0;
-
-  return NextResponse.json({
-    _id: String(o._id),
-    reference: o.orderNumber,
-    createdAt: o.createdAt,
-    status: o.status,
-    paymentStatus: o.paymentStatus,
-    paymentMethod: o.paymentMethod,
-    customer: {
-      name: o.customerSnapshot?.name ?? "",
-      email: o.customerSnapshot?.email ?? "",
-      phone: o.customerSnapshot?.phone ?? "",
-    },
-    shippingAddress: o.shippingAddress,
-    items: (o.items ?? []).map((i) => ({
-      name: i.nameSnapshot,
-      sku: i.skuSnapshot ?? "",
-      image: i.imageSnapshot ?? "",
-      variantLabel: i.variantLabel ?? "",
-      unitPrice: i.unitPrice,
-      quantity: i.quantity,
-      lineTotal: i.lineTotal,
-    })),
-    subtotal: o.subtotal,
-    shippingFee: o.shippingFee,
-    total: o.total,
-    paid,
-    due,
-  });
+  return `NLT-${ymd}-${Date.now().toString().slice(-6)}`;
 }
 
-// PATCH /api/admin/orders/:id   body: { status?, paymentStatus?, note? }
-export async function PATCH(req: NextRequest, { params }: Ctx) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+/* ────────────────────────── POST ────────────────────────── */
+
+export async function POST(req: NextRequest) {
+  // 1. Auth
+  const user = await requireUser();
+  if (!user) {
+    return NextResponse.json({ error: "Please log in to place an order." }, { status: 401 });
   }
-  const { id } = await params;
-  if (!isValidObjectId(id)) {
-    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-  }
-  let body: unknown;
+
+  // 2. Body
+  let raw: unknown;
   try {
-    body = await req.json();
+    raw = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const parsed = z
-    .object({
-      status: z.enum(STATUSES).optional(),
-      paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
-      note: z.string().trim().max(500).optional(),
-      customer: z
-        .object({
-          name: z.string().trim().min(1).max(120),
-          email: z.string().trim().email().max(254),
-          phone: z.string().trim().min(1).max(40),
-        })
-        .optional(),
-      shippingAddress: z
-        .object({
-          name: z.string().trim().min(1).max(120),
-          phone: z.string().trim().min(1).max(40),
-          line1: z.string().trim().min(1).max(200),
-          line2: z.string().trim().max(200).default(""),
-          city: z.string().trim().min(1).max(100),
-          state: z.string().trim().min(1).max(100),
-          postalCode: z.string().trim().min(1).max(30),
-          country: z.string().trim().min(1).max(100),
-        })
-        .optional(),
-    })
-    .safeParse(body);
+  const parsed = Body.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "Invalid order data" },
       { status: 400 }
     );
   }
+  const body = parsed.data;
+
   await connectDB();
 
-  const order = await Order.findById(id);
-  if (!order) return NextResponse.json({ error: "Order nahi mila" }, { status: 404 });
+  // 3. Products lookup — ObjectId, slug, ya SKU se
+  const rawIds = [...new Set(body.items.map((i) => i.id))];
+  const asObjectIds = rawIds.filter((id) => OBJECT_ID_RX.test(id));
+  const asKeys = rawIds.filter((id) => !OBJECT_ID_RX.test(id));
 
-  if (parsed.data.customer) {
-    order.set("customerSnapshot", parsed.data.customer);
-  }
-  if (parsed.data.shippingAddress) {
-    order.set("shippingAddress", parsed.data.shippingAddress);
+  const or: Record<string, unknown>[] = [];
+  if (asObjectIds.length) or.push({ _id: { $in: asObjectIds } });
+  if (asKeys.length) {
+    or.push({ slug: { $in: asKeys } });
+    or.push({ sku: { $in: asKeys } });
   }
 
-  if (parsed.data.status !== undefined) {
-    if (parsed.data.status !== order.status) {
-      order.status = parsed.data.status;
-      order.statusHistory.push({
-        status: parsed.data.status,
-        note: parsed.data.note ?? "",
-        changedBy: null,
-        changedAt: new Date(),
-      });
+  const products = or.length
+    ? await Product.find({ isActive: true, $or: or }).lean()
+    : [];
+
+  // id (string), slug, sku — teeno se map karo
+  const productByKey = new Map<string, (typeof products)[number]>();
+  for (const p of products) {
+    productByKey.set(String(p._id), p);
+    if (p.slug) productByKey.set(String(p.slug), p);
+    if (p.sku) productByKey.set(String(p.sku), p);
+  }
+
+  for (const line of body.items) {
+    if (!productByKey.has(line.id)) {
+      return NextResponse.json(
+        { error: `Product not available: ${line.id}` },
+        { status: 400 }
+      );
     }
   }
 
-  if (parsed.data.paymentStatus !== undefined) {
-    order.paymentStatus = parsed.data.paymentStatus;
-  }
+  // 4. Build draft items with snapshots + server-side prices
+  type DraftItem = {
+    product: mongoose.Types.ObjectId;
+    nameSnapshot: string;
+    skuSnapshot: string;
+    imageSnapshot: string;
+    variations: mongoose.Types.ObjectId[];
+    variantKey: string;
+    variantLabel: string;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+  };
 
-  await order.save();
-  try {
-    const actor = await getAdminActorId();
-    const invoice = await createInvoiceForOrder(order, { performedBy: actor });
-    await syncInvoicePaymentFromOrder(
-      order._id,
-      order.paymentStatus,
-      order.status,
-      undefined,
-      actor
+  const draftItems: DraftItem[] = [];
+
+  for (const line of body.items) {
+    const p = productByKey.get(line.id)!;
+
+    const orderedVariations = validateVariantSelection(
+      {
+        productType: p.productType,
+        attributes: (p.attributes ?? []) as never,
+      },
+      line.variations ?? []
     );
-    if (
-      parsed.data.customer ||
-      parsed.data.shippingAddress
-    ) {
-      invoice.set("customer", {
-        ...invoice.customer,
-        ...order.customerSnapshot,
-        user: order.customer,
-      });
-      invoice.set("billingAddress", order.shippingAddress);
-      invoice.set("shippingAddress", order.shippingAddress);
-      await invoice.save();
+    if (orderedVariations === null) {
+      return NextResponse.json(
+        { error: `Invalid variation selection for ${productDisplayName(p)}` },
+        { status: 400 }
+      );
     }
-  } catch (error) {
-    console.error("Failed to synchronize order invoice:", error);
-  }
-  return NextResponse.json({ ok: true, status: order.status, paymentStatus: order.paymentStatus });
-}
 
-export async function DELETE(_request: NextRequest, { params }: Ctx) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    let unitPrice =
+      typeof p.discountPrice === "number" && p.discountPrice > 0
+        ? p.discountPrice
+        : p.price;
+
+    let variantLabelStr = "";
+
+    if (orderedVariations.length > 0) {
+      const varDocs = await ProductVariation.find({
+        _id: { $in: orderedVariations },
+        product: p._id,
+      })
+        .select("_id name price")
+        .lean();
+
+      if (varDocs.length !== orderedVariations.length) {
+        return NextResponse.json(
+          { error: `Invalid variation for ${productDisplayName(p)}` },
+          { status: 400 }
+        );
+      }
+
+      const variationPrice = (varDocs as { price?: number }[]).find(
+        (v) => typeof v.price === "number" && v.price > 0
+      )?.price;
+      if (typeof variationPrice === "number" && variationPrice > 0) {
+        unitPrice = variationPrice;
+      }
+
+      variantLabelStr = variantLabel(
+        orderedVariations.map((id) => new mongoose.Types.ObjectId(id)),
+        varDocs as { _id: mongoose.Types.ObjectId; name: string }[]
+      );
+    }
+
+    const qty = line.qty;
+    const lineTotal = round2(unitPrice * qty);
+
+    draftItems.push({
+      product: p._id as mongoose.Types.ObjectId,
+      nameSnapshot: productDisplayName(p),
+      skuSnapshot: (p.sku as string | undefined) ?? "",
+      imageSnapshot: (p.media as string[] | undefined)?.[0] ?? "",
+      variations: orderedVariations.map(
+        (id) => new mongoose.Types.ObjectId(id)
+      ),
+      variantKey: buildVariantKey(orderedVariations),
+      variantLabel: variantLabelStr,
+      unitPrice,
+      quantity: qty,
+      lineTotal,
+    });
   }
-  const { id } = await params;
-  if (!isValidObjectId(id)) {
-    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-  }
+
+  // 5. Server-side totals
+  const subtotal = round2(draftItems.reduce((s, i) => s + i.lineTotal, 0));
+  const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
+  const taxAmount = round2(subtotal * TAX_RATE);
+  const total = round2(subtotal + shippingFee + taxAmount);
+
+  // 6. Transaction: reserve stock → create order → update sold count
+  const session = await mongoose.startSession();
+  let createdOrderNumber: string | null = null;
+  let createdOrderId: string | null = null;
 
   try {
-    await connectDB();
-    const session = await Order.startSession();
-    try {
-      await session.withTransaction(async () => {
-        const order = await Order.findById(id).session(session);
-        if (!order) throw new StockError("Order not found", 404);
-        if (order.status === "shipped" || order.status === "delivered") {
-          throw new StockError(
-            "Shipped or delivered orders cannot be deleted.",
-            409
-          );
-        }
-        if (order.paymentStatus === "paid") {
-          throw new StockError("Paid orders cannot be deleted.", 409);
-        }
-        await releaseStock(order, session);
-        await order.deleteOne({ session });
-      });
-    } finally {
-      await session.endSession();
+    await session.withTransaction(async () => {
+      // 6a. Reserve stock for each line
+      const itemsWithAllocations = [];
+      for (const item of draftItems) {
+        const { allocations } = await reserveStock(
+          {
+            product: item.product.toString(),
+            variantKey: item.variantKey,
+            quantity: item.quantity,
+            label: item.variantLabel
+              ? `${item.nameSnapshot} (${item.variantLabel})`
+              : item.nameSnapshot,
+          },
+          session
+        );
+        itemsWithAllocations.push({ ...item, allocations });
+      }
+
+      // 6b. Create order
+      const orderNumber = await generateOrderNumber();
+      const fullName = `${body.shipping.firstName} ${body.shipping.lastName}`.trim();
+
+      const [doc] = await Order.create(
+        [
+          {
+            orderNumber,
+            customer: new mongoose.Types.ObjectId(user.userId),
+            customerSnapshot: {
+              name: fullName,
+              email: body.contact.email.toLowerCase(),
+              phone: body.contact.phone,
+            },
+            shippingAddress: {
+              name: fullName,
+              phone: body.contact.phone,
+              line1: body.shipping.address,
+              line2: body.shipping.apartment ?? "",
+              city: body.shipping.city,
+              state: body.shipping.state,
+              postalCode: body.shipping.postalCode,
+              country: body.shipping.country,
+            },
+            items: itemsWithAllocations,
+            subtotal,
+            shippingFee,
+            taxRate: TAX_RATE,
+            taxAmount,
+            total,
+            status: "pending",
+            paymentMethod: body.payment,
+            paymentStatus: "unpaid",
+            statusHistory: [
+              {
+                status: "pending",
+                note: body.notes || "Order placed by customer",
+                changedBy: null,
+                changedAt: new Date(),
+              },
+            ],
+          },
+        ],
+        { session }
+      );
+
+      // 6c. Update sold counts
+      await adjustSold(
+        draftItems.map((i) => ({ product: i.product, quantity: i.quantity })),
+        1,
+        session
+      );
+
+      createdOrderNumber = doc.orderNumber;
+      createdOrderId = String(doc._id);
+    });
+  } catch (err) {
+    if (err instanceof StockError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
     }
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    if (error instanceof StockError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("Delete order failed:", error);
-    return NextResponse.json({ error: "Failed to delete order" }, { status: 500 });
+    console.error("Order create failed:", err);
+    return NextResponse.json(
+      { error: "Failed to place order. Please try again." },
+      { status: 500 }
+    );
+  } finally {
+    await session.endSession();
   }
+
+  return NextResponse.json(
+    { orderNumber: createdOrderNumber, orderId: createdOrderId },
+    { status: 201 }
+  );
 }

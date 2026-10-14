@@ -1,4 +1,4 @@
-// src/app/api/products/route.ts  (PUBLIC, auth nahi)  <- purani file ko isse replace karein
+// src/app/api/products/route.ts  (PUBLIC, auth nahi)
 // GET /api/products
 //   ?category=slug1,slug2   (main category dene par uski sub-categories bhi aati hain)
 //   &brand=id1,id2
@@ -17,6 +17,7 @@ import "@/app/models/GalleryImage";
 import "@/app/models/ProductBrand";
 import {
   buildMediaUrlMap,
+  buildVariationNameMap,
   toStorefrontProduct,
   type ProductLean,
 } from "@/lib/storefrontProduct";
@@ -34,6 +35,7 @@ const SORTS: Record<string, Record<string, 1 | -1>> = {
   "price-asc": { price: 1, _id: 1 },
   "price-desc": { price: -1, _id: 1 },
   name: { "translations.en.name": 1, _id: 1 },
+  "best-selling": { soldCount: -1, _id: 1 },
 };
 
 // Discount valid ho (0 se bada aur price se kam) to wahi asli price hai
@@ -73,6 +75,7 @@ export async function GET(req: NextRequest) {
     // Brand
     const brandIds = csv(sp.get("brand")).filter((v) => mongoose.isValidObjectId(v));
     if (brandIds.length) filter.brand = { $in: brandIds };
+    if (sp.get("bestSeller") === "1") filter.isBestSeller = true;
 
     // Price range
     const minRaw = sp.get("minPrice");
@@ -115,7 +118,8 @@ export async function GET(req: NextRequest) {
       .lean()) as unknown as ProductLean[];
 
     const map = await buildMediaUrlMap(docs.flatMap((d) => d.media ?? []));
-    const items = docs.map((d) => toStorefrontProduct(d, map));
+    const names = await buildVariationNameMap(docs);
+    const items = docs.map((d) => toStorefrontProduct(d, map, names));
 
     return NextResponse.json({ items, total, page, totalPages });
   } catch (e) {

@@ -7,6 +7,11 @@ export type StorefrontCategory = {
   imageUrl: string;
 };
 
+/* ───── Variations (variable products) ───── */
+
+export type VariationOption = { id: string; name: string };
+export type VariationGroup = { id: string; name: string; options: VariationOption[] };
+
 export type StorefrontProduct = {
   id: string; // slug, /product/<id>
   _id: string;
@@ -21,6 +26,10 @@ export type StorefrontProduct = {
   badge?: string;
   description?: string;
   dimensions?: string;
+  productType?: "simple" | "variable";
+  variationGroups?: VariationGroup[];
+  soldCount?: number;
+isBestSeller?: boolean; // simple product mein [] hota hai
 };
 
 export type ProductsParams = {

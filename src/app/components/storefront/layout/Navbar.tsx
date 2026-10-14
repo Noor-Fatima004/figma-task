@@ -16,6 +16,8 @@ import {
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { useWishlist } from "@/app/components/storefront/wishlistStore";
+import { useCompare } from "@/app/components/storefront/compareStore";
+import { useCart } from "@/app/components/storefront/cartStore";
 
 // Brand ka naam yahan badlo
 const BRAND = "Naltar";
@@ -26,12 +28,8 @@ type NavItem = {
   children?: { label: string; href: string }[];
 };
 
-// Menu items + dropdown links yahan se badlo
 const NAV: NavItem[] = [
-  {
-    label:"Home",
-    href:"/home"
-  },
+  { label: "Home", href: "/home" },
   {
     label: "Shop",
     href: "/shop",
@@ -71,25 +69,34 @@ const TOP_LINKS = [
   { label: "Help", href: "/help" },
 ];
 
-// Wishlist ka number ab prop se nahi, seedha wishlist store se aata hai (real time)
-type NavbarProps = {
-  compareCount?: number;
-  cartCount?: number;
-};
-
-function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
+function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { count: wishlistCount } = useWishlist();
+  const { count: compareCount } = useCompare();
+  // Cart: count store se aata hai, click par drawer khulta hai
+  const { count: cartItemCount, openCart } = useCart();
+
+  // ✅ Hydration fix: pehle render par counts 0, mount hone ke baad real counts
+  const [mounted, setMounted] = useState(false);
+
   const [loggedIn, setLoggedIn] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
-  // Desktop dropdown: konsa menu khula hai (hover/focus se khulta, click par band hota hai)
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Safe values: hydration ke dauran 0, baad mein real
+  const safeWishlistCount = mounted ? wishlistCount : 0;
+  const safeCompareCount = mounted ? compareCount : 0;
+  const safeCartCount = mounted ? cartItemCount : 0;
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -99,14 +106,11 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
     setOpenAccordion(null);
   }, []);
 
-  // Desktop link/dropdown item par click: dropdown band + focus hata do taake dobara na khule
   const closeMenus = (e: React.MouseEvent<HTMLElement>) => {
     setOpenMenu(null);
     e.currentTarget.blur();
   };
 
-  // Guest bhi site dekh sakta hai, is liye Logout sirf tab dikhta hai jab user login ho.
-  // Login hone par route badalta hai (/home), to har route change par dobara check hota hai.
   useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/me", { cache: "no-store" })
@@ -126,7 +130,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
     setLoggingOut(true);
     try {
       let res = await fetch("/api/auth/logout", { method: "POST" });
-      // Agar tumhara logout route sirf GET leta ho to
       if (res.status === 405) res = await fetch("/api/auth/logout", { method: "GET" });
       if (!res.ok) throw new Error("Logout failed");
 
@@ -142,7 +145,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
     }
   };
 
-  // Drawer khula ho to: page scroll band, Escape se close, bari screen par jate hi close
   useEffect(() => {
     if (!mobileOpen) return;
 
@@ -207,7 +209,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
       {/* MAIN BAR */}
       <div className="border-b border-[#e9e4dd] bg-[#f6f2ed]">
         <div className="mx-auto grid h-16 max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6 lg:h-[72px] lg:px-8">
-          {/* LEFT: hamburger (mobile/tablet) / menu (desktop) */}
           <div className="flex items-center">
             <button
               ref={menuBtnRef}
@@ -237,7 +238,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
                       }
                     }}
                   >
-                    {/* Hover par neeche ki line left se right animate hoti hai + color change */}
                     <Link
                       href={item.href}
                       onClick={closeMenus}
@@ -282,7 +282,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
             </nav>
           </div>
 
-          {/* CENTER: logo */}
           <Link
             href="/"
             className="text-center text-xl font-semibold tracking-tight text-[#1f1a17] sm:text-2xl"
@@ -290,7 +289,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
             {BRAND}
           </Link>
 
-          {/* RIGHT: icons */}
           <div className="flex items-center justify-end gap-3 sm:gap-4 lg:gap-5">
             <button type="button" aria-label="Search" className={iconBtn}>
               <FiSearch className="h-[18px] w-[18px]" />
@@ -300,25 +298,37 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
             </Link>
             <Link
               href="/wishlist"
-              aria-label={`Wishlist (${wishlistCount})`}
+              aria-label={`Wishlist (${safeWishlistCount})`}
               className={`${iconBtn} hidden sm:inline-flex`}
             >
               <FiHeart className="h-[18px] w-[18px]" />
-              <span className={count}>{wishlistCount}</span>
+              <span className={count}>{safeWishlistCount}</span>
             </Link>
-            <Link href="/compare" aria-label="Compare" className={`${iconBtn} hidden md:inline-flex`}>
+            <Link
+              href="/compare"
+              aria-label={`Compare (${safeCompareCount})`}
+              className={`${iconBtn} hidden md:inline-flex`}
+            >
               <FiShuffle className="h-[18px] w-[18px]" />
-              <span className={count}>{compareCount}</span>
+              <span className={count}>{safeCompareCount}</span>
             </Link>
-            <Link href="/cart" aria-label="Cart" className={iconBtn}>
+
+            {/* CART: click par drawer khulta hai */}
+            <button
+              type="button"
+              onClick={openCart}
+              aria-label={`Open shopping bag (${safeCartCount})`}
+              aria-haspopup="dialog"
+              className={`${iconBtn} cursor-pointer`}
+            >
               <FiShoppingBag className="h-[18px] w-[18px]" />
-              <span className={count}>{cartCount}</span>
-            </Link>
+              <span className={count}>{safeCartCount}</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* MOBILE / TABLET MENU: left se slide hone wala drawer */}
+      {/* MOBILE / TABLET MENU */}
       <div
         id="mobile-menu"
         role="dialog"
@@ -328,7 +338,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
           mobileOpen ? "visible" : "invisible pointer-events-none"
         }`}
       >
-        {/* Overlay: click karne par menu band */}
         <button
           type="button"
           tabIndex={-1}
@@ -339,13 +348,11 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
           }`}
         />
 
-        {/* Panel */}
         <aside
           className={`absolute left-0 top-0 flex h-full w-[86%] max-w-[380px] flex-col bg-[#f6f2ed] shadow-2xl transition-transform duration-300 ease-out ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          {/* Panel header */}
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#e9e4dd] px-5 sm:px-6">
             <Link
               href="/"
@@ -365,7 +372,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
             </button>
           </div>
 
-          {/* Links */}
           <nav aria-label="Mobile" className="flex-1 overflow-y-auto px-5 py-2 sm:px-6">
             <ul className="divide-y divide-[#e9e4dd]">
               {NAV.map((item) => {
@@ -422,7 +428,6 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
             </ul>
           </nav>
 
-          {/* Chhoti screens par jo icons header mein hidden hain, wo yahan milte hain */}
           <div className="grid shrink-0 grid-cols-3 gap-3 border-t border-[#e9e4dd] bg-[#faf9f7] p-5 sm:p-6">
             <Link href="/account" onClick={closeMobile} className={tile}>
               <FiUser className="h-5 w-5" />
@@ -430,11 +435,11 @@ function Navbar({ compareCount = 0, cartCount = 0 }: NavbarProps) {
             </Link>
             <Link href="/wishlist" onClick={closeMobile} className={tile}>
               <FiHeart className="h-5 w-5" />
-              Wishlist ({wishlistCount})
+              Wishlist ({safeWishlistCount})
             </Link>
             <Link href="/compare" onClick={closeMobile} className={tile}>
               <FiShuffle className="h-5 w-5" />
-              Compare ({compareCount})
+              Compare ({safeCompareCount})
             </Link>
 
             {loggedIn && (

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FaBars, FaSignOutAlt, FaSearch, FaTimes } from "react-icons/fa";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-
+import LowStockBell from "@/app/components/LowStockBell";
 interface AdminTopbarProps {
   name: string;
   email: string;
@@ -81,6 +81,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
     <header className="h-16 bg-surface border-b border-border flex items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-10">
       {/* Left: hamburger + title */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+         <LowStockBell />
         <button
           onClick={onMenuClick}
           aria-label="Toggle sidebar"

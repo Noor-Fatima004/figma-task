@@ -4,15 +4,19 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCompare } from "@/app/components/storefront/compareStore";
 import {
   FiArrowRight,
   FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
+  FiEye,
   FiFilter,
   FiGrid,
+  FiHeart,
   FiList,
   FiShoppingBag,
+  FiShuffle,
 } from "react-icons/fi";
 import {
   useGetStoreBrandsQuery,
@@ -20,8 +24,12 @@ import {
   useGetStoreProductsQuery,
 } from "@/store/storefrontApi";
 import type { ProductsParams, StorefrontProduct } from "@/store/storefrontTypes";
+import { useWishlist } from "@/app/components/storefront/wishlistStore";
+import { useCart } from "@/app/components/storefront/cartStore";
+import QuickViewModal, {
+  type SelectedVariation,
+} from "@/app/components/storefront/QuickViewModal";
 
-// Price format: server aur browser dono par same rahe
 const formatPrice = (n: number) => `Rs. ${n.toLocaleString("en-US")}`;
 
 const LIMITS = [12, 24, 36];
@@ -37,17 +45,23 @@ const SORTS: { value: SortValue; label: string }[] = [
   { value: "name", label: "A – Z" },
 ];
 
-// Show / Sort inputs: white background. Mobile par chhote (text-xs) aur min-w-0 taake screen se bahar na jayen
 const selectCls =
   "min-w-0 max-w-full w-full cursor-pointer truncate rounded-lg border border-[#e6e0d8] bg-white px-2 py-1.5 text-[11px] text-[#2a231f] shadow-sm outline-none focus:border-[#8b5e3c] sm:w-auto sm:px-3 sm:py-2 sm:text-xs";
 
-// Sidebar scroll: moti brown scrollbar
 const brownScroll =
   "[scrollbar-width:auto] [scrollbar-color:#8b5e3c_#efe9e1] " +
   "[&::-webkit-scrollbar]:w-3 " +
   "[&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#efe9e1] " +
   "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#8b5e3c] " +
   "[&::-webkit-scrollbar-thumb:hover]:bg-[#6f4a2e]";
+
+// Round icon base — hover colors yahan NAHI hain.
+// Har button apna hover conditionally lagayega (active hone par hover kaam na kare).
+const hoverIconBase =
+  "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/95 text-[#2a231f] shadow-sm transition sm:h-10 sm:w-10";
+
+// Active nahi hai to hi hover lagta hai
+const hoverIconIdle = "hover:bg-[#8b5e3c] hover:text-white";
 
 /* ───────────── chhote components ───────────── */
 
@@ -94,7 +108,6 @@ function CheckRow({
   );
 }
 
-// Min/Max inputs. Parent key badalta hai (filters clear hon to) tab ye dobara shuru se banta hai.
 function PriceFilter({
   min,
   max,
@@ -163,12 +176,30 @@ function Price({ p, className = "" }: { p: StorefrontProduct; className?: string
   );
 }
 
-// GRID card (image upar, text neeche). Tablet (md) par image ki height kam (square).
-function ShopCard({ p, priority }: { p: StorefrontProduct; priority: boolean }) {
+/* ───────────── Product cards ───────────── */
+
+function ShopCard({
+  p,
+  priority,
+  onQuickView,
+  onCompare,
+}: {
+  p: StorefrontProduct;
+  priority: boolean;
+  onQuickView: (p: StorefrontProduct) => void;
+  onCompare: (p: StorefrontProduct) => void;
+}) {
+  const { has, toggle } = useWishlist();
+  const { has: hasCompare, isFull: compareFull } = useCompare();
+
+  const isWished = has(p.id);
+  const isCompared = hasCompare(p.id);
+  const compareDisabled = !isCompared && compareFull;
+
   return (
-    <article className="group min-w-0">
-      <div className="relative aspect-[4/5] overflow-hidden bg-[#f1ebe3] md:aspect-square lg:aspect-[4/5]">
-        <Link href={`/product/${p.id}`} className="absolute inset-0 block">
+    <article className="group relative min-w-0">
+      <Link href={`/product/${p.id}`} className="block">
+        <div className="relative aspect-[4/5] overflow-hidden bg-[#f1ebe3] md:aspect-square lg:aspect-[4/5]">
           {p.image && (
             <Image
               src={p.image}
@@ -180,42 +211,119 @@ function ShopCard({ p, priority }: { p: StorefrontProduct; priority: boolean }) 
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
           )}
-        </Link>
-        {p.badge && (
-          <span className="pointer-events-none absolute left-2 top-2 bg-white/90 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#2a231f] sm:left-3 sm:top-3 sm:px-2.5 sm:text-[10px]">
-            {p.badge}
-          </span>
-        )}
-        {/* Hover par Add to cart (apna cart action yahan lagao) */}
+          {p.badge && (
+            <span className="pointer-events-none absolute left-2 top-2 bg-white/90 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#2a231f] sm:left-3 sm:top-3 sm:px-2.5 sm:text-[10px]">
+              {p.badge}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-3 sm:mt-4">
+          {p.categoryLabel && (
+            <p className="mb-1 text-[9px] uppercase tracking-[0.2em] text-[#9a9087] sm:text-[10px]">
+              {p.categoryLabel}
+            </p>
+          )}
+          <h3 className="text-[13px] font-medium text-[#2a231f] transition-colors group-hover:text-[#8b5e3c] sm:text-[15px]">
+            {p.name}
+          </h3>
+          {p.material && (
+            <p className="mt-0.5 text-[11px] text-[#6b625a] sm:text-sm">{p.material}</p>
+          )}
+          <Price p={p} className="mt-1.5 text-[13px] sm:mt-2 sm:text-[15px]" />
+        </div>
+      </Link>
+
+      <div className="absolute right-2 top-2 flex flex-col gap-1.5 transition duration-200 sm:right-3 sm:top-3 sm:gap-2 lg:[@media(hover:hover)]:translate-x-2 lg:[@media(hover:hover)]:opacity-0 lg:[@media(hover:hover)]:group-focus-within:translate-x-0 lg:[@media(hover:hover)]:group-focus-within:opacity-100 lg:[@media(hover:hover)]:group-hover:translate-x-0 lg:[@media(hover:hover)]:group-hover:opacity-100">
+        {/* WISHLIST — active hone par hover color band */}
         <button
           type="button"
-          className="absolute inset-x-3 bottom-3 translate-y-2 cursor-pointer bg-white/95 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-[#2a231f] opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 hover:bg-[#8b5e3c] hover:text-white"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle(p);
+          }}
+          aria-label={isWished ? `Remove ${p.name} from wishlist` : `Add ${p.name} to wishlist`}
+          aria-pressed={isWished}
+          className={`${hoverIconBase} ${
+            isWished ? "!text-[#8b5e3c]" : hoverIconIdle
+          }`}
         >
-          Add to cart
+          <FiHeart
+            className={`h-4 w-4 sm:h-[18px] sm:w-[18px] ${isWished ? "fill-current" : ""}`}
+          />
+        </button>
+
+        {/* QUICK VIEW */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onQuickView(p);
+          }}
+          aria-label={`Quick view ${p.name}`}
+          aria-haspopup="dialog"
+          className={`${hoverIconBase} ${hoverIconIdle}`}
+        >
+          <FiEye className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+        </button>
+
+        {/* COMPARE — active hone par brown fill + hover color band */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onCompare(p);
+          }}
+          aria-label={
+            isCompared
+              ? `Remove ${p.name} from compare`
+              : compareDisabled
+                ? `Compare list full`
+                : `Compare ${p.name}`
+          }
+          aria-pressed={isCompared}
+          disabled={compareDisabled}
+          className={`${hoverIconBase} ${
+            isCompared
+              ? "!bg-[#8b5e3c] !text-white"
+              : compareDisabled
+                ? "cursor-not-allowed opacity-50"
+                : hoverIconIdle
+          }`}
+        >
+          <FiShuffle className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
         </button>
       </div>
-      <Link href={`/product/${p.id}`} className="mt-3 block sm:mt-4">
-        {p.categoryLabel && (
-          <p className="mb-1 text-[9px] uppercase tracking-[0.2em] text-[#9a9087] sm:text-[10px]">
-            {p.categoryLabel}
-          </p>
-        )}
-        <h3 className="text-[13px] font-medium text-[#2a231f] transition-colors group-hover:text-[#8b5e3c] sm:text-[15px]">
-          {p.name}
-        </h3>
-        {p.material && (
-          <p className="mt-0.5 text-[11px] text-[#6b625a] sm:text-sm">{p.material}</p>
-        )}
-        <Price p={p} className="mt-1.5 text-[13px] sm:mt-2 sm:text-[15px]" />
-      </Link>
     </article>
   );
 }
 
-// LIST card (mobile par image upar, tablet/laptop par image left, details right)
-function ShopRow({ p, priority }: { p: StorefrontProduct; priority: boolean }) {
+function ShopRow({
+  p,
+  priority,
+  onQuickView,
+  onCompare,
+}: {
+  p: StorefrontProduct;
+  priority: boolean;
+  onQuickView: (p: StorefrontProduct) => void;
+  onCompare: (p: StorefrontProduct) => void;
+}) {
+  const { has, toggle } = useWishlist();
+  const { has: hasCompare, isFull: compareFull } = useCompare();
+  const { addItem } = useCart();
+
+  const isWished = has(p.id);
+  const isCompared = hasCompare(p.id);
+  const compareDisabled = !isCompared && compareFull;
+  // Variable product mein pehle option chunna zaroori hai, isliye quick view khulta hai
+  const isVariable = (p.variationGroups?.length ?? 0) > 0;
+
   return (
-    <article className="group grid overflow-hidden rounded-2xl border border-[#e6e0d8] bg-white sm:grid-cols-[160px_1fr] lg:grid-cols-[200px_1fr]">
+    <article className="group relative grid overflow-hidden rounded-2xl border border-[#e6e0d8] bg-white sm:grid-cols-[160px_1fr] lg:grid-cols-[200px_1fr]">
       <Link
         href={`/product/${p.id}`}
         className="relative block aspect-[4/3] bg-[#f1ebe3] sm:aspect-auto sm:min-h-[180px] lg:min-h-[230px]"
@@ -236,6 +344,68 @@ function ShopRow({ p, priority }: { p: StorefrontProduct; priority: boolean }) {
             {p.badge}
           </span>
         )}
+
+        <div className="absolute right-3 top-3 flex flex-col gap-2">
+          {/* WISHLIST */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggle(p);
+            }}
+            aria-label={isWished ? `Remove ${p.name} from wishlist` : `Add ${p.name} to wishlist`}
+            aria-pressed={isWished}
+            className={`${hoverIconBase} ${isWished ? "!text-[#8b5e3c]" : hoverIconIdle}`}
+          >
+            <FiHeart
+              className={`h-4 w-4 sm:h-[18px] sm:w-[18px] ${isWished ? "fill-current" : ""}`}
+            />
+          </button>
+
+          {/* QUICK VIEW */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onQuickView(p);
+            }}
+            aria-label={`Quick view ${p.name}`}
+            aria-haspopup="dialog"
+            className={`${hoverIconBase} ${hoverIconIdle}`}
+          >
+            <FiEye className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+          </button>
+
+          {/* COMPARE */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCompare(p);
+            }}
+            aria-label={
+              isCompared
+                ? `Remove ${p.name} from compare`
+                : compareDisabled
+                  ? `Compare list full`
+                  : `Compare ${p.name}`
+            }
+            aria-pressed={isCompared}
+            disabled={compareDisabled}
+            className={`${hoverIconBase} ${
+              isCompared
+                ? "!bg-[#8b5e3c] !text-white"
+                : compareDisabled
+                  ? "cursor-not-allowed opacity-50"
+                  : hoverIconIdle
+            }`}
+          >
+            <FiShuffle className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+          </button>
+        </div>
       </Link>
 
       <div className="flex min-w-0 flex-col justify-between gap-4 p-4 sm:gap-5 sm:p-6">
@@ -256,14 +426,14 @@ function ShopRow({ p, priority }: { p: StorefrontProduct; priority: boolean }) {
           <Price p={p} className="shrink-0 text-base sm:text-lg" />
         </div>
 
-        {/* Mobile par dono ek hi row mein, tablet/laptop par stack */}
         <div className="flex flex-1 flex-row items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-between sm:gap-6">
-          {/* apna cart action yahan lagao */}
           <button
             type="button"
+            onClick={() => (isVariable ? onQuickView(p) : addItem(p, 1))}
             className="flex cursor-pointer items-center gap-2 rounded-full bg-[#8b5e3c] px-4 py-2.5 text-xs font-medium text-white transition hover:bg-[#6f4a2e] sm:px-6 sm:py-3 sm:text-sm"
           >
-            <FiShoppingBag className="h-4 w-4" /> Add to cart
+            <FiShoppingBag className="h-4 w-4" />
+            {isVariable ? "Select options" : "Add to cart"}
           </button>
           <Link
             href={`/product/${p.id}`}
@@ -277,7 +447,6 @@ function ShopRow({ p, priority }: { p: StorefrontProduct; priority: boolean }) {
   );
 }
 
-// Grid / List toggle
 function ViewToggle({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode) => void }) {
   const base =
     "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition sm:h-8 sm:w-8";
@@ -311,7 +480,6 @@ function ViewToggle({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode
   );
 }
 
-// 1 2 3 … 9 10 jaisi list
 function pageList(page: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const nums = [...new Set([1, total, page - 1, page, page + 1])]
@@ -334,51 +502,70 @@ function Pagination({
   totalPages: number;
   onPage: (n: number) => void;
 }) {
-  if (totalPages <= 1) return null;
-  const btn =
-    "flex h-8 min-w-8 cursor-pointer items-center justify-center border border-[#d9d0c6] px-2 text-xs text-[#2a231f] transition hover:bg-[#2a231f] hover:text-white disabled:cursor-not-allowed disabled:border-[#ece6de] disabled:text-[#c9c0b6] disabled:hover:bg-transparent disabled:hover:text-[#c9c0b6] sm:h-10 sm:min-w-10 sm:px-3 sm:text-sm";
+  // Previous / Next: white rounded box, disabled par faded
+  const navBtn =
+    "flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-white px-3 text-xs font-medium text-[#2a231f] shadow-sm transition " +
+    "hover:bg-[#8b5e3c] hover:text-white " +
+    "disabled:cursor-not-allowed disabled:bg-white/40 disabled:text-[#b8afa6] disabled:shadow-none " +
+    "disabled:hover:bg-white/40 disabled:hover:text-[#b8afa6] " +
+    "sm:h-10 sm:px-4 sm:text-sm";
+
+  // Page numbers: rounded square, white; active brown
+  const numBtn =
+    "flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-xs font-medium shadow-sm transition sm:h-10 sm:w-10 sm:text-sm";
 
   return (
     <nav
       aria-label="Pagination"
-      className="mt-8 flex flex-wrap items-center justify-center gap-1 sm:mt-10 sm:gap-2"
+      className="mt-8 grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:mt-10 sm:gap-4"
     >
+      {/* LEFT: Previous */}
       <button
         type="button"
-        className={btn}
+        className={navBtn}
         disabled={page <= 1}
         onClick={() => onPage(page - 1)}
         aria-label="Previous page"
       >
-        <FiChevronLeft className="h-4 w-4 sm:mr-1" />
+        <FiChevronLeft className="h-4 w-4" />
         <span className="hidden sm:inline">Previous</span>
       </button>
-      {pageList(page, totalPages).map((n, i) =>
-        n === "…" ? (
-          <span key={`gap-${i}`} className="px-0.5 text-[#9a9087] sm:px-1">
-            …
-          </span>
-        ) : (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onPage(n)}
-            aria-current={n === page ? "page" : undefined}
-            className={`${btn} ${n === page ? "!border-[#2a231f] !bg-[#2a231f] !text-white" : ""}`}
-          >
-            {n}
-          </button>
-        )
-      )}
+
+      {/* CENTER: page numbers */}
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+        {pageList(page, totalPages).map((n, i) =>
+          n === "…" ? (
+            <span key={`gap-${i}`} className="px-0.5 text-[#9a9087] sm:px-1">
+              …
+            </span>
+          ) : (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onPage(n)}
+              aria-current={n === page ? "page" : undefined}
+              className={`${numBtn} ${
+                n === page
+                  ? "bg-[#8b5e3c] text-white"
+                  : "bg-white text-[#2a231f] hover:bg-[#efe9e1]"
+              }`}
+            >
+              {n}
+            </button>
+          )
+        )}
+      </div>
+
+      {/* RIGHT: Next */}
       <button
         type="button"
-        className={btn}
+        className={navBtn}
         disabled={page >= totalPages}
         onClick={() => onPage(page + 1)}
         aria-label="Next page"
       >
         <span className="hidden sm:inline">Next</span>
-        <FiChevronRight className="h-4 w-4 sm:ml-1" />
+        <FiChevronRight className="h-4 w-4" />
       </button>
     </nav>
   );
@@ -393,7 +580,13 @@ export default function ShopPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState<ViewMode>("grid");
 
-  // Saari filters URL me rehti hain (back button aur link share dono kaam karte hain)
+  const [quickView, setQuickView] = useState<StorefrontProduct | null>(null);
+  const closeQuickView = () => setQuickView(null);
+  const { has, toggle } = useWishlist();
+  const { addItem } = useCart();
+
+  const { toggle: toggleCompare, has: hasCompare, isFull: compareFull } = useCompare();
+
   const get = (k: string) => sp.get(k) ?? "";
   const csv = (k: string) => get(k).split(",").filter(Boolean);
 
@@ -426,7 +619,6 @@ export default function ShopPage() {
   const limit = LIMITS.includes(Number(get("limit"))) ? Number(get("limit")) : 12;
   const pageParam = Math.max(1, Number(get("page")) || 1);
 
-  // ---- Real data (API) ----
   const { data: tree = [], isLoading: treeLoading } = useGetStoreCategoryTreeQuery();
   const { data: brands = [] } = useGetStoreBrandsQuery();
 
@@ -444,10 +636,10 @@ export default function ShopPage() {
 
   const items = currentData?.items ?? [];
   const total = currentData?.total ?? 0;
-  const totalPages = currentData?.totalPages ?? 1;
+  // API 0 bheje to total/limit se calculate hoga; kam az kam 1 page hamesha
+  const totalPages = Math.max(1, currentData?.totalPages || Math.ceil(total / limit) || 1);
   const page = currentData?.page ?? pageParam;
 
-  // Heading: ek hi category chuni ho to uska naam
   const flat = tree.flatMap((n) => [n, ...n.children]);
   const heading =
     selectedCats.length === 1
@@ -459,7 +651,26 @@ export default function ShopPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Mobile 2 | tablet 3 | laptop (sidebar ke saath) 3 | xl 4 | 2xl 5
+  const handleCompare = (p: StorefrontProduct) => {
+    if (!hasCompare(p.id) && compareFull) return;
+    toggleCompare(p);
+  };
+
+  // Cart mein daalta hai aur drawer khud khol deta hai.
+  // Variable product ki selected variation (ids + label) bhi cart ko di jati hai,
+  // warna order API "Invalid variation selection" deti hai.
+  // Quick view popup khula rehta hai, drawer band karne par wapas active ho jata hai.
+  const handleAddToCart = (
+    p: StorefrontProduct,
+    qty: number,
+    variation?: SelectedVariation
+  ) => {
+    addItem(p, qty, {
+      variations: variation?.ids ?? [],
+      variantLabel: variation?.label,
+    });
+  };
+
   const gridCls =
     view === "grid"
       ? "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-6 xl:grid-cols-4 2xl:grid-cols-5"
@@ -484,7 +695,7 @@ export default function ShopPage() {
           <span className="text-[#2a231f]">{heading}</span>
         </nav>
 
-        {/* HEADING + DESCRIPTION (below heading) */}
+        {/* HEADING */}
         <div className="flex flex-col gap-2 sm:gap-3">
           <h1 className="text-2xl font-semibold leading-tight text-[#2a231f] sm:text-4xl lg:text-5xl 2xl:text-6xl">
             {heading}
@@ -495,7 +706,7 @@ export default function ShopPage() {
           </p>
         </div>
 
-        {/* CATEGORY CIRCLES (border-top added) */}
+        {/* CATEGORY CIRCLES */}
         <div className="mt-6 border-t border-[#e6e0d8] pb-5 pt-5 sm:mt-8 sm:pb-6 sm:pt-6">
           <div className="flex gap-3 overflow-x-auto sm:gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
@@ -567,7 +778,7 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* TOOLBAR: mobile par bhi sab ek hi row mein */}
+        {/* TOOLBAR */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-t border-[#e6e0d8] py-3 sm:gap-4 sm:py-5">
           <p className="text-xs text-[#6b625a] sm:text-sm" aria-live="polite">
             {isFetching ? (
@@ -747,9 +958,21 @@ export default function ShopPage() {
               <div className={gridCls}>
                 {items.map((p, i) =>
                   view === "grid" ? (
-                    <ShopCard key={p._id} p={p} priority={i < 4} />
+                    <ShopCard
+                      key={p._id}
+                      p={p}
+                      priority={i < 4}
+                      onQuickView={setQuickView}
+                      onCompare={handleCompare}
+                    />
                   ) : (
-                    <ShopRow key={p._id} p={p} priority={i < 2} />
+                    <ShopRow
+                      key={p._id}
+                      p={p}
+                      priority={i < 2}
+                      onQuickView={setQuickView}
+                      onCompare={handleCompare}
+                    />
                   )
                 )}
               </div>
@@ -773,12 +996,25 @@ export default function ShopPage() {
               </div>
             )}
 
-            {!isFetching && !isError && (
+            {!isFetching && !isError && items.length > 0 && (
               <Pagination page={page} totalPages={totalPages} onPage={goPage} />
             )}
           </div>
         </div>
       </div>
+
+      {/* Quick view modal */}
+      {quickView && (
+        <QuickViewModal
+          key={quickView.id}
+          product={quickView}
+          onClose={closeQuickView}
+          wished={has(quickView.id)}
+          onToggleWish={() => toggle(quickView)}
+          onCompare={() => handleCompare(quickView)}
+          onAddToCart={(qty, variation) => handleAddToCart(quickView, qty, variation)}
+        />
+      )}
     </section>
   );
 }

@@ -1,15 +1,15 @@
 "use client";
 
-// Is file ko yahan rakho: components/storefront/QuickViewModal.tsx
-// (path alag ho to CuratedCollection ka import badal lena)
-
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FiHeart, FiMinus, FiPlus, FiShoppingBag, FiShuffle, FiX } from "react-icons/fi";
 import type { StorefrontProduct } from "@/store/storefrontTypes";
+import { useAvailability } from "@/app/components/storefront/useAvailability";
 
 const formatPrice = (n: number) => `Rs. ${n.toLocaleString("en-US")}`;
+
+export type SelectedVariation = { ids: string[]; label: string };
 
 type Props = {
   product: StorefrontProduct;
@@ -17,7 +17,7 @@ type Props = {
   wished: boolean;
   onToggleWish: () => void;
   onCompare: () => void;
-  onAddToCart: (qty: number) => void;
+  onAddToCart: (qty: number, variation?: SelectedVariation) => void;
 };
 
 export default function QuickViewModal({
@@ -29,19 +29,43 @@ export default function QuickViewModal({
   onAddToCart,
 }: Props) {
   const [qty, setQty] = useState(1);
+  const [picked, setPicked] = useState<Record<string, string>>({}); // groupId -> optionId
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  // Modal khula ho to: page scroll band, Escape se close, close button par focus
+  const groups = p.variationGroups ?? [];
+  const isVariable = groups.length > 0;
+  const allPicked = !isVariable || groups.every((g) => picked[g.id]);
+
+  const selectedIds = useMemo(
+    () => (isVariable ? groups.map((g) => picked[g.id]).filter(Boolean) : []),
+    [groups, picked, isVariable]
+  );
+  const variantLabel = useMemo(
+    () =>
+      groups
+        .map((g) => g.options.find((o) => o.id === picked[g.id])?.name)
+        .filter(Boolean)
+        .join(" / "),
+    [groups, picked]
+  );
+
+  // Variable product mein jab tak saari variations na chuni jayen, check nahi hota
+  const { availability, loading } = useAvailability(
+    allPicked ? p._id : undefined,
+    selectedIds
+  );
+  const soldOut = availability?.status === "out";
+  const low = availability?.status === "low";
+  const canAdd = allPicked && !soldOut;
+
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
     closeRef.current?.focus();
-
     return () => {
       document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKey);
@@ -51,6 +75,20 @@ export default function QuickViewModal({
   const outlineBtn =
     "inline-flex items-center justify-center gap-2 rounded-md border border-[#e6e0d8] bg-white px-4 py-3 text-[13px] font-medium text-[#2a231f] transition hover:border-[#8b5e3c] hover:text-[#8b5e3c]";
 
+  const handleAdd = () => {
+    if (!canAdd) return;
+    onAddToCart(qty, isVariable ? { ids: selectedIds, label: variantLabel } : undefined);
+  };
+
+  const addLabel = !allPicked
+    ? "Select options"
+    : soldOut
+      ? "Out of stock"
+      : "Add to cart";
+
+  const pill =
+    "absolute left-4 top-4 rounded-full border bg-white/95 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]";
+
   return (
     <div
       role="dialog"
@@ -58,7 +96,6 @@ export default function QuickViewModal({
       aria-label={`Quick view: ${p.name}`}
       className="fixed inset-0 z-[70] flex items-center justify-center p-4"
     >
-      {/* Overlay: click par band */}
       <button
         type="button"
         tabIndex={-1}
@@ -80,20 +117,24 @@ export default function QuickViewModal({
               className="object-cover"
             />
           )}
-          {p.badge && (
+          {soldOut ? (
+            <span className={`${pill} border-red-200 text-red-600`}>Out of stock</span>
+          ) : low ? (
+            <span className={`${pill} border-[#e6d3c0] text-[#2a231f]`}>
+              Only {availability?.available} left
+            </span>
+          ) : p.badge ? (
             <span className="absolute left-4 top-4 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2a231f]">
               {p.badge}
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Details */}
         <div className="flex flex-col p-6 sm:p-7">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-medium leading-tight text-[#2a231f]">
-                {p.name}
-              </h2>
+              <h2 className="text-2xl font-medium leading-tight text-[#2a231f]">{p.name}</h2>
               {p.categoryLabel && (
                 <p className="mt-2 text-[11px] uppercase tracking-[0.2em] text-[#6b625a]">
                   {p.categoryLabel}
@@ -122,6 +163,35 @@ export default function QuickViewModal({
 
           {p.material && <p className="mt-4 text-[13px] text-[#6b625a]">{p.material}</p>}
 
+          {/* Variations (sirf variable products mein) */}
+          {groups.map((g) => (
+            <div key={g.id} className="mt-5">
+              <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-[#6b625a]">
+                {g.name}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {g.options.map((o) => {
+                  const active = picked[g.id] === o.id;
+                  return (
+                    <button
+                      key={o.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setPicked((s) => ({ ...s, [g.id]: o.id }))}
+                      className={`cursor-pointer rounded-md border px-3.5 py-2 text-[13px] transition ${
+                        active
+                          ? "border-[#8b5e3c] bg-[#8b5e3c] text-white"
+                          : "border-[#e6e0d8] bg-white text-[#2a231f] hover:border-[#8b5e3c]"
+                      }`}
+                    >
+                      {o.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
           {/* Quantity */}
           <div className="mt-5 flex items-center gap-4">
             <span className="text-[11px] uppercase tracking-[0.2em] text-[#6b625a]">Qty</span>
@@ -140,7 +210,11 @@ export default function QuickViewModal({
               </span>
               <button
                 type="button"
-                onClick={() => setQty((q) => Math.min(99, q + 1))}
+                onClick={() =>
+                  setQty((q) =>
+                    Math.min(low && availability?.available ? availability.available : 99, q + 1)
+                  )
+                }
                 aria-label="Increase quantity"
                 className="flex h-9 w-9 cursor-pointer items-center justify-center text-[#2a231f]"
               >
@@ -149,16 +223,15 @@ export default function QuickViewModal({
             </div>
           </div>
 
-          {/* Actions: 3 columns grid
-              Row 1: Add to cart (2 cols) + Wishlist (1 col)
-              Row 2: Compare (1 col, normal width) */}
+          {/* Actions */}
           <div className="mt-5 grid grid-cols-3 gap-2.5">
             <button
               type="button"
-              onClick={() => onAddToCart(qty)}
-              className="col-span-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-[#8b5e3c] px-5 py-3 text-center text-[13px] font-medium text-white transition hover:bg-[#6f4a2e]"
+              onClick={handleAdd}
+              disabled={!canAdd || loading}
+              className="col-span-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-[#8b5e3c] px-5 py-3 text-center text-[13px] font-medium text-white transition hover:bg-[#6f4a2e] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#8b5e3c]"
             >
-              <FiShoppingBag className="h-4 w-4" /> Add to cart
+              <FiShoppingBag className="h-4 w-4" /> {addLabel}
             </button>
             <button
               type="button"
@@ -178,7 +251,6 @@ export default function QuickViewModal({
             </button>
           </div>
 
-          {/* Full details page par redirect: /product/<id> */}
           <Link
             href={`/product/${p.id}`}
             onClick={onClose}

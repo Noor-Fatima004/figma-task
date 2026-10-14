@@ -55,6 +55,8 @@ const ProductSchema = new Schema(
     },
     isActive: { type: Boolean, default: true, index: true },
     isPoint: { type: Boolean, default: true },
+    soldCount: { type: Number, default: 0, min: 0, index: true },
+    isBestSeller: { type: Boolean, default: false, index: true },
     isFeature: { type: Boolean, default: true },
     unit: { type: Schema.Types.ObjectId, ref: "ProductUnit", required: true },
     brand: { type: Schema.Types.ObjectId, ref: "ProductBrand", default: null },

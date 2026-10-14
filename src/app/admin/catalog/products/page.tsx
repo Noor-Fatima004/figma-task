@@ -28,6 +28,7 @@ type ApiProduct = {
   _id: string;
   media: string[];
   category: string;
+  categoryName?: string;
   name: string;
   productType: string;
   price: number;
@@ -63,29 +64,55 @@ function readApiProduct(value: unknown): ApiProduct {
   const translations = value.translations;
   const english = isRecord(translations) ? translations.en : undefined;
 
+  // category: plain string id ya populated object, dono chalega
+  const category = value.category;
+  const categoryId =
+    typeof category === "string"
+      ? category
+      : isRecord(category) && typeof category._id === "string"
+        ? category._id
+        : null;
+  const categoryName =
+    isRecord(category) && typeof category.name === "string"
+      ? category.name
+      : typeof value.categoryName === "string"
+        ? value.categoryName
+        : undefined;
+
+  const name =
+    isRecord(english) && typeof english.name === "string"
+      ? english.name
+      : typeof value.name === "string"
+        ? value.name
+        : null;
+
+  // missing discountPrice ko null maano
+  const discountPrice = value.discountPrice ?? null;
+
   if (
     typeof value._id !== "string" ||
     !Array.isArray(value.media) ||
     !value.media.every((media) => typeof media === "string") ||
-    typeof value.category !== "string" ||
-    !isRecord(english) ||
-    typeof english.name !== "string" ||
+    categoryId === null ||
+    name === null ||
     typeof value.productType !== "string" ||
     typeof value.price !== "number" ||
-    (value.discountPrice !== null && typeof value.discountPrice !== "number") ||
+    (discountPrice !== null && typeof discountPrice !== "number") ||
     typeof value.isActive !== "boolean"
   ) {
+    console.error("Bad product from API:", value); // kaunsa field fail hua, yahan dikhega
     throw new Error("Invalid product data returned by the API.");
   }
 
   return {
     _id: value._id,
     media: value.media,
-    category: value.category,
-    name: english.name,
+    category: categoryId,
+    categoryName,
+    name,
     productType: value.productType,
     price: value.price,
-    discountPrice: value.discountPrice,
+    discountPrice,
     isActive: value.isActive,
   };
 }
@@ -239,7 +266,10 @@ export default function ProductListPage() {
             image: product.media[0]
               ? productImageSrc(product.media[0])
               : undefined,
-            category: categoryNames.get(product.category) ?? product.category,
+            category:
+              product.categoryName ??
+              categoryNames.get(product.category) ??
+              product.category,
             type: product.productType,
             price: product.price,
             discountPrice: product.discountPrice,
