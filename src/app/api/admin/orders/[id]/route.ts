@@ -175,7 +175,6 @@ export async function POST(req: NextRequest) {
     if (orderedVariations.length > 0) {
       const varDocs = await ProductVariation.find({
         _id: { $in: orderedVariations },
-        product: p._id,
       })
         .select("_id name price")
         .lean();

@@ -43,20 +43,24 @@ const NAV: NavItem[] = [
   {
     label: "Collections",
     href: "/collections",
-    children: [
-      { label: "Spring edit", href: "/collections/spring" },
-      { label: "Essentials", href: "/collections/essentials" },
-      { label: "Limited edition", href: "/collections/limited" },
-    ],
+   children: [
+  { label: "New Collection", href: "/collections/new" },
+  { label: "Signature Collections", href: "/collections/signature" },
+  { label: "Contemporary", href: "/collections/contemporary" },
+  { label: "Minimal", href: "/collections/minimal" },
+  { label: "Natural Materials", href: "/collections/natural-materials" },
+  { label: "Designer Picker", href: "/collections/designer-picker" },
+],
   },
   {
     label: "Rooms",
     href: "/rooms",
     children: [
       { label: "Living room", href: "/rooms/living" },
+      { label: "Dining room", href: "/rooms/dining" },
       { label: "Bedroom", href: "/rooms/bedroom" },
-      { label: "Dining", href: "/rooms/dining" },
-      { label: "Office", href: "/rooms/office" },
+      { label: " Home Office", href: "/rooms/office" },
+      { label: "Outdoor", href: "/rooms/outdoor" },
     ],
   },
   { label: "Journal", href: "/journal" },
@@ -65,7 +69,7 @@ const NAV: NavItem[] = [
 
 const TOP_LINKS = [
   { label: "My Account", href: "/account" },
-  { label: "Track Order", href: "/track-order" },
+  { label: "Track Order", href: "/orders" },
   { label: "Help", href: "/help" },
 ];
 

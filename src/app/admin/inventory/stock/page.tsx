@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FaEye, FaHistory, FaPlus, FaRegEdit, FaTrash } from "react-icons/fa";
 import FormSelect from "@/app/components/FormSelect";
@@ -63,6 +64,13 @@ function SummaryCard({
 }
 
 export default function StockListPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const urlStatus = searchParams.get("status"); // "low" | "in" | "out" | null
+  const highlight = searchParams.get("highlight"); // productId | null
+
   const [items, setItems] = useState<StockRow[]>([]);
   const [activeRow, setActiveRow] = useState<StockRow | null>(null);
   const [action, setAction] = useState<"view" | "edit" | null>(null);
@@ -81,9 +89,15 @@ export default function StockListPage() {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [warehouse, setWarehouse] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(urlStatus ?? "");
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // URL ka status state me sync karo (jab bahar se navigate ho)
+  useEffect(() => {
+    setStatus(urlStatus ?? "");
+    setPage(1);
+  }, [urlStatus]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -146,6 +160,28 @@ export default function StockListPage() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  // Highlight wali row pe scroll + URL se highlight hatao
+  useEffect(() => {
+    if (!highlight || loading || items.length === 0) return;
+
+    const el =
+      document.getElementById(`stock-${highlight}`) ??
+      document.getElementById(`stock-product-${highlight}`);
+
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    const t = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("highlight");
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }, 2000);
+
+    return () => clearTimeout(t);
+  }, [highlight, loading, items, router, pathname, searchParams]);
+
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   const hasFilters = Boolean(debounced || warehouse || status);
@@ -199,7 +235,6 @@ export default function StockListPage() {
     }
   };
 
-  // Delete: sirf wahi row jiska on hand aur reserved dono 0 ho (server bhi check karta hai)
   const deleteRow = async (row: StockRow) => {
     const label = row.variantLabel
       ? `${row.productName} (${row.variantLabel})`
@@ -230,6 +265,23 @@ export default function StockListPage() {
     }
   };
 
+  // Status filter change → URL update
+  const handleStatusChange = (value: string) => {
+    setStatus(value);
+    setPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("status", value);
+    else params.delete("status");
+    params.delete("highlight");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
+  // "Low stock only" badge clear karo
+  const clearStatusFilter = () => {
+    handleStatusChange("");
+  };
+
   const th =
     "px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted sm:px-4";
 
@@ -238,9 +290,24 @@ export default function StockListPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border pb-3 sm:items-center sm:pb-4">
         <div>
-          <h1 className="text-lg font-semibold text-text sm:text-xl lg:text-2xl">
-            Stock
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold text-text sm:text-xl lg:text-2xl">
+              Stock
+            </h1>
+            {status === "low" && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-600">
+                Low stock only
+                <button
+                  type="button"
+                  onClick={clearStatusFilter}
+                  aria-label="Clear filter"
+                  className="text-amber-600 hover:text-amber-800"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+          </div>
           <p className="mt-0.5 text-xs text-muted sm:text-sm">
             See how much of each item is in every warehouse.
           </p>
@@ -263,7 +330,7 @@ export default function StockListPage() {
         </div>
       </div>
 
-      {/* Summary (respects the current filters) */}
+      {/* Summary */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <SummaryCard label="Items tracked" value={formatQty(summary.lines)} />
         <SummaryCard label="Total on hand" value={formatQty(summary.totalOnHand)} />
@@ -327,15 +394,13 @@ export default function StockListPage() {
             <div className="sm:w-44">
               <FormSelect
                 value={status}
-                onChange={(value) => {
-                  setStatus(value);
-                  setPage(1);
-                }}
+                onChange={handleStatusChange}
                 placeholder="All stock levels"
                 options={[
                   { value: "", label: "All stock levels" },
                   { value: "in", label: "In stock" },
                   { value: "out", label: "Out of stock" },
+                  { value: "low", label: "Low stock" },
                 ]}
               />
             </div>
@@ -400,10 +465,16 @@ export default function StockListPage() {
                 items.map((row) => {
                   const style = statusStyles[row.status];
                   const canDelete = row.onHand === 0 && row.reserved === 0;
+                  const isHighlighted = highlight === row._id;
                   return (
                     <tr
                       key={row._id}
-                      className="border-b border-border transition-colors hover:bg-surface-hover"
+                      id={`stock-${row._id}`}
+                      className={`border-b border-border transition-colors hover:bg-surface-hover ${
+                        isHighlighted
+                          ? "bg-primary/10 ring-2 ring-primary ring-inset"
+                          : ""
+                      }`}
                     >
                       <td className="px-3 py-3 sm:px-4">
                         <span className="block font-medium text-text">
@@ -515,6 +586,7 @@ export default function StockListPage() {
           </div>
         </div>
       </div>
+
       {action && activeRow && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"

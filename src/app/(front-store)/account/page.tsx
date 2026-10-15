@@ -186,7 +186,7 @@ export default function AccountPage() {
 
             {/* QUICK LINKS */}
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <Link href="/track-order" className={linkTile}>
+              <Link href="/orders" className={linkTile}>
                 <FiPackage className="h-5 w-5" /> Track order
               </Link>
               <Link href="/wishlist" className={linkTile}>

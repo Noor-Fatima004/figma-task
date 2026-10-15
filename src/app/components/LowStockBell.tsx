@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FaBell } from "react-icons/fa";
 
 type Low = {
@@ -16,6 +17,7 @@ export default function LowStockBell() {
   const [items, setItems] = useState<Low[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Har 60 sec baad refresh, aur tab wapas focus hone par bhi
   useEffect(() => {
@@ -56,6 +58,14 @@ export default function LowStockBell() {
 
   const outCount = items.filter((i) => i.out).length;
 
+  // Product click → stock page pe highlight ke saath
+  const handleProductClick = (productId: string) => {
+    setOpen(false);
+    router.push(
+      `/admin/inventory/stock?status=low&highlight=${productId}`
+    );
+  };
+
   return (
     <div className="relative shrink-0" ref={ref}>
       <button
@@ -81,7 +91,7 @@ export default function LowStockBell() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-surface rounded-theme border border-border shadow-xl z-50 overflow-hidden"
+          className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-surface rounded-theme border border-border shadow-xl z-[60] overflow-hidden"
         >
           <div className="px-4 py-3 border-b border-border">
             <p className="text-sm font-semibold text-text">Low stock alerts</p>
@@ -94,9 +104,11 @@ export default function LowStockBell() {
               </p>
             ) : (
               items.map((i) => (
-                <div
+                <button
                   key={`${i.productId}-${i.variant}`}
-                  className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm border-b border-border last:border-b-0"
+                  type="button"
+                  onClick={() => handleProductClick(i.productId)}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm border-b border-border last:border-b-0 hover:bg-surface-hover transition-colors text-left"
                 >
                   <span className="min-w-0 truncate text-text">
                     {i.name}
@@ -109,17 +121,17 @@ export default function LowStockBell() {
                   >
                     {i.out ? "Out of stock" : `${i.available} left`}
                   </span>
-                </div>
+                </button>
               ))
             )}
           </div>
 
           <Link
-            href="/admin/inventory/stock"
+            href="/admin/inventory/stock?status=low"
             onClick={() => setOpen(false)}
             className="block px-4 py-3 text-center text-sm font-medium text-text border-t border-border hover:bg-surface-hover hover:text-text-hover transition-colors"
           >
-            View stock list
+            View all low stock products
           </Link>
         </div>
       )}

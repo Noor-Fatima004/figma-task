@@ -78,7 +78,7 @@ export default function AdminTopbar({ name, email, onMenuClick }: AdminTopbarPro
   };
 
   return (
-    <header className="h-16 bg-surface border-b border-border flex items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-10">
+    <header className="h-16 bg-surface border-b border-border flex items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-10 relative z-50">
       {/* Left: hamburger + title */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
          <LowStockBell />

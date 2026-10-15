@@ -1,34 +1,56 @@
-// src/app/api/brands/route.ts  (PUBLIC, naya)
-// GET /api/brands -> sirf wo brands jinke active products hain: [{ _id, name, count }]
+// src/app/api/brands/route.ts  (PUBLIC)
+// GET /api/brands -> sirf active brands jinke active products hain:
+// [{ _id, name, slug, count, image }]
+// image = brand ki apni image (admin mein upload ki hui). Na ho to us brand ke
+// sabse naye product ki pehli photo.
 
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import Product from "@/app/models/Product";
-import "@/app/models/ProductBrand"; // model register karne ke liye
+import ProductBrand from "@/app/models/ProductBrand";
+import "@/app/models/GalleryImage"; // populate ke liye model register
+
+type PopulatedGalleryImage = { _id: mongoose.Types.ObjectId; url: string };
 
 export async function GET() {
   try {
     await connectDB();
 
-    const groups = await Product.aggregate<{ _id: unknown; count: number }>([
+    const groups = await Product.aggregate<{ _id: unknown; count: number; image?: string }>([
       { $match: { isActive: true, brand: { $ne: null } } },
-      { $group: { _id: "$brand", count: { $sum: 1 } } },
+      { $sort: { createdAt: -1 } }, // $first = sabse naya product
+      {
+        $group: {
+          _id: "$brand",
+          count: { $sum: 1 },
+          image: { $first: { $arrayElemAt: ["$media", 0] } },
+        },
+      },
     ]);
     if (!groups.length) return NextResponse.json([]);
 
-    const Brand = mongoose.model("ProductBrand");
-    const brands = (await Brand.find({ _id: { $in: groups.map((g) => g._id) } })
-      .select("name")
-      .lean()) as unknown as { _id: unknown; name?: string }[];
+    const brands = await ProductBrand.find({
+      _id: { $in: groups.map((g) => g._id) },
+      status: "active",
+    })
+      .populate<{ image: PopulatedGalleryImage | null }>("image", "url")
+      .select("name slug image")
+      .lean();
 
-    const counts = new Map(groups.map((g) => [String(g._id), g.count]));
+    const info = new Map(groups.map((g) => [String(g._id), g]));
     const result = brands
-      .map((b) => ({
-        _id: String(b._id),
-        name: b.name ?? "",
-        count: counts.get(String(b._id)) ?? 0,
-      }))
+      .map((b) => {
+        const g = info.get(String(b._id));
+        const productImage = typeof g?.image === "string" ? g.image : "";
+        return {
+          _id: String(b._id),
+          name: b.name ?? "",
+          slug: b.slug ?? "",
+          count: g?.count ?? 0,
+          image: b.image?.url || productImage,
+        };
+      })
       .filter((b) => b.name)
       .sort((a, b) => a.name.localeCompare(b.name));
 

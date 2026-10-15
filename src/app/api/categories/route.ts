@@ -20,6 +20,37 @@ export async function GET(req: NextRequest) {
   try {
     await connectDB();
     const tree = req.nextUrl.searchParams.get("tree") === "1";
+    type RecentRow = Row & { createdAt: Date; parent?: { name?: string } | null };
+
+const recent = req.nextUrl.searchParams.get("recent");
+if (recent) {
+  const days = Math.min(90, Math.max(1, parseInt(recent, 10) || 15));
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const docs = (await ProductCategory.find({ createdAt: { $gte: since } })
+    .populate("image", "url")
+    .populate("parent", "name")
+    .sort({ createdAt: -1 })
+    .lean()) as unknown as RecentRow[];
+
+  const groups = await Product.aggregate<{ _id: unknown; count: number }>([
+    { $match: { isActive: true } },
+    { $group: { _id: "$category", count: { $sum: 1 } } },
+  ]);
+  const own = new Map(groups.map((g) => [String(g._id), g.count]));
+
+  return NextResponse.json(
+    docs.map((c) => ({
+      _id: String(c._id),
+      key: c.slug,
+      label: c.name,
+      parentName: c.parent?.name ?? "",
+      imageUrl: c.image?.url ?? "",
+      count: own.get(String(c._id)) ?? 0,
+      createdAt: c.createdAt,
+    }))
+  );
+}
 
     /* ───── Shop page: tree + counts ───── */
     if (tree) {

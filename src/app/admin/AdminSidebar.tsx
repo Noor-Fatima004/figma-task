@@ -27,11 +27,12 @@ import {
   FaShoppingCart,
   FaFileAlt,
   FaTruck,
+  FaObjectGroup,
 } from "react-icons/fa";
 import LogoutButton from "@/app/components/LogoutButton";
 
 type NavLink = { label: string; href: string; icon: IconType };
-type FlyKey = "catalog" | "warehouse" | "inventory" | "vendors";
+type FlyKey = "catalog" | "warehouse" | "inventory" | "vendors" | "collections";
 
 // Simple top-level links
 const menuItems: NavLink[] = [
@@ -78,6 +79,10 @@ const inventoryLinks: NavLink[] = [
 const vendorsLinks: NavLink[] = [
   { label: "List Vendors", href: "/admin/vendors", icon: FaListUl },
   { label: "Add Vendor", href: "/admin/vendors/add", icon: FaPlusSquare },
+];
+const collectionsLinks: NavLink[] = [
+  { label: "List Collections", href: "/admin/collections", icon: FaListUl },
+  { label: "Add Collection", href: "/admin/collections/add", icon: FaPlusSquare },
 ];
 
 function SubLink({
@@ -141,6 +146,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   const inWarehouse = pathname.startsWith("/admin/warehouse");
   const inInventory = pathname.startsWith("/admin/inventory");
   const inVendors = pathname.startsWith("/admin/vendors");
+  const inCollections = pathname.startsWith("/admin/collections");
 
   // md+ : sidebar ke andar khulne wala menu
   const [catalogOpen, setCatalogOpen] = useState(inCatalog);
@@ -148,6 +154,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   const [warehouseOpen, setWarehouseOpen] = useState(inWarehouse);
   const [inventoryOpen, setInventoryOpen] = useState(inInventory);
   const [vendorsOpen, setVendorsOpen] = useState(inVendors);
+  const [collectionsOpen, setCollectionsOpen] = useState(inCollections);
 
   // mobile : sidebar ke right side me khulne wala icon panel
   const [flyOpen, setFlyOpen] = useState<{
@@ -160,6 +167,7 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
   const warehouseBtnRef = useRef<HTMLButtonElement>(null);
   const inventoryBtnRef = useRef<HTMLButtonElement>(null);
   const vendorsBtnRef = useRef<HTMLButtonElement>(null);
+  const collectionsBtnRef = useRef<HTMLButtonElement>(null);
   const asideRef = useRef<HTMLElement>(null);
   const [flyLeft, setFlyLeft] = useState(64);
   const flyRef = useRef<HTMLDivElement>(null);
@@ -173,7 +181,9 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
           ? inventoryBtnRef.current
           : activeFlyout === "vendors"
             ? vendorsBtnRef.current
-            : catalogBtnRef.current;
+            : activeFlyout === "collections"
+              ? collectionsBtnRef.current
+              : catalogBtnRef.current;
     const r = trigger?.getBoundingClientRect();
     if (r) setFlyTop(r.top);
     const a = asideRef.current?.getBoundingClientRect();
@@ -205,6 +215,11 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
     toggleFly("vendors");
   };
 
+  const toggleCollections = () => {
+    setCollectionsOpen((v) => !v);
+    toggleFly("collections");
+  };
+
   // panel ke bahar click/tap karne par band
   useEffect(() => {
     if (!activeFlyout) return;
@@ -215,7 +230,8 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
         catalogBtnRef.current?.contains(t) ||
         warehouseBtnRef.current?.contains(t) ||
         inventoryBtnRef.current?.contains(t) ||
-        vendorsBtnRef.current?.contains(t)
+        vendorsBtnRef.current?.contains(t) ||
+        collectionsBtnRef.current?.contains(t)
       ) {
         return;
       }
@@ -534,6 +550,51 @@ export default function AdminSidebar({ open }: AdminSidebarProps) {
           {activeFlyout === "vendors" && (
             <div ref={flyRef} style={flyStyle} className={flyClass}>
               {vendorsLinks.map((link) => (
+                <FlyIcon
+                  key={link.href}
+                  {...link}
+                  pathname={pathname}
+                  onNavigate={() => setFlyOpen(null)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ───────── Collections dropdown ───────── */}
+        <div>
+          <button
+            ref={collectionsBtnRef}
+            type="button"
+            title="Collections"
+            onClick={toggleCollections}
+            aria-expanded={collectionsOpen}
+            className={`w-full flex items-center justify-center md:justify-start gap-3 px-0 md:px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              collectionsOpen || inCollections
+                ? "bg-white/10 text-white"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <FaObjectGroup className="w-4 h-4 shrink-0" />
+            <span className="hidden md:inline flex-1 text-left">Collections</span>
+            <FaChevronDown
+              className={`hidden md:inline w-3 h-3 transition-transform duration-200 ${
+                collectionsOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {collectionsOpen && (
+            <div className="hidden md:block mt-1 space-y-0.5">
+              {collectionsLinks.map((link) => (
+                <SubLink key={link.href} {...link} pathname={pathname} />
+              ))}
+            </div>
+          )}
+
+          {activeFlyout === "collections" && (
+            <div ref={flyRef} style={flyStyle} className={flyClass}>
+              {collectionsLinks.map((link) => (
                 <FlyIcon
                   key={link.href}
                   {...link}

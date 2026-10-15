@@ -6,6 +6,9 @@ import ShopByCategory from "./ShopByCategory";
 import NewArrivals from "./NewArrivals";
 import CraftsmanshipBanner from "./CraftsmanshipBanner";
 import SignatureEdit from "./SignatureEdit";
+import Journal from "./Journal";
+import Difference from "./Difference";
+import LovedAtHome from "./LovedAtHome";
 
 
 
@@ -19,6 +22,9 @@ export default function HomePage() {
       <NewArrivals/>
       <CraftsmanshipBanner/>
       <SignatureEdit/>
+      <Journal/>
+      <Difference/>
+      <LovedAtHome/>
     </ReduxProvider>
     
   );
