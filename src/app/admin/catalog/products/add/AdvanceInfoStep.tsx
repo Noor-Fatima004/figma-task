@@ -128,32 +128,40 @@ async function fetchOptionsPage(url: string, page: number) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   ✅ SKU AUTO-GENERATION
-   Product name + brand se ek professional SKU banata hai.
+   SKU AUTO-GENERATION
+   Product name + brand se SKU banata hai.
    Format: BRAND-NAME-WORD1-WORD2-RANDOM4
    Example: NAL-OAK-DINING-CHAIR-4821
+   `suffix` pass karo to random number nahi badlega
+   (brands load hone par SKU "jump" nahi karega).
    ───────────────────────────────────────────────────────────── */
-function generateSKU(productName: string, brandName?: string): string {
-  // 1. Name ko clean karo
+function randomSuffix(): string {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function generateSKU(
+  productName: string,
+  brandName?: string,
+  suffix?: string
+): string {
+  // 1. Name clean karo
   const cleanName = productName
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9\s]/g, "")
     .replace(/\s+/g, "-");
 
-  // 2. Pehle 3 words lo
-  const words = cleanName.split("-").filter(Boolean);
-  const namePart = words.slice(0, 3).join("-");
+  // 2. Pehle 3 words
+  const namePart = cleanName.split("-").filter(Boolean).slice(0, 3).join("-");
 
-  // 3. Brand ka pehla word (3 letters)
+  // 3. Brand ke pehle word ke 3 letters
   const brandPart = brandName
     ? brandName.trim().toUpperCase().split(/\s+/)[0].slice(0, 3)
     : "";
 
-  // 4. Random 4-digit number (duplicate avoid karne ke liye)
-  const randomNum = Math.floor(1000 + Math.random() * 9000);
+  // 4. Random 4-digit number (ya diya hua suffix)
+  const randomNum = suffix ?? randomSuffix();
 
-  // 5. Combine karo
   return [brandPart, namePart, randomNum].filter(Boolean).join("-");
 }
 
@@ -199,7 +207,7 @@ interface Props {
   onBack: () => void;
   onContinue: () => void;
   errors?: Record<string, string>;
-  /** ✅ Product name (Basic Info se aata hai) — SKU auto-generate ke liye */
+  /** Product name (Basic Info se aata hai), SKU auto-generate ke liye */
   productName?: string;
 }
 
@@ -225,8 +233,11 @@ export default function AdvanceInfoStep({
   const [pickedAttr, setPickedAttr] = useState("");
   const [pickedVar, setPickedVar] = useState("");
 
-  // ✅ Flag: user ne manually SKU edit kiya to auto-generate band
+  // User ne manually SKU edit kiya to auto-generate band
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
+
+  // Random suffix ek baar bante hi fix; sirf Regenerate par badalta hai
+  const skuSuffix = useRef(randomSuffix());
 
   const set = <K extends keyof AdvanceInfoData>(
     key: K,
@@ -235,23 +246,35 @@ export default function AdvanceInfoStep({
 
   const isVariable = data.productType === "variable";
 
-  // ✅ AUTO SKU: product name ya brand change hone par SKU generate karo
+  const brandName = data.brand
+    ? brands.find((b) => b._id === data.brand)?.name
+    : undefined;
+
+  // AUTO SKU: product name ya brand change hone par SKU generate karo
   useEffect(() => {
-    // User ne manually edit kiya hai to override mat karo
     if (skuManuallyEdited) return;
-    // Product name nahi hai to kuch nahi kar sakte
     if (!productName.trim()) return;
 
-    const brandName = data.brand
-      ? brands.find((b) => b._id === data.brand)?.name
-      : undefined;
-
-    const newSKU = generateSKU(productName, brandName);
+    const newSKU = generateSKU(productName, brandName, skuSuffix.current);
     if (newSKU !== data.sku) {
-      set("sku", newSKU);
+      onChange({ ...data, sku: newSKU });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productName, data.brand, skuManuallyEdited, brands]);
+  }, [productName, brandName, skuManuallyEdited]);
+
+  const regenerateSku = () => {
+    if (!productName.trim()) {
+      toast.error("Product name is required first");
+      return;
+    }
+    skuSuffix.current = randomSuffix();
+    setSkuManuallyEdited(false);
+    onChange({
+      ...data,
+      sku: generateSKU(productName, brandName, skuSuffix.current),
+    });
+    toast.success("SKU regenerated");
+  };
 
   const attrName = (id: string) =>
     attributes.find((a) => a._id === id)?.name ?? id;
@@ -465,7 +488,7 @@ export default function AdvanceInfoStep({
             {err("minOrder")}
           </div>
 
-          {/* Max order + SKU (✅ UPDATED) */}
+          {/* Max order + SKU */}
           <div>
             <label className={labelCls}>Maximum Order</label>
             <input
@@ -478,7 +501,7 @@ export default function AdvanceInfoStep({
             {err("maxOrder")}
           </div>
 
-          {/* ✅ SKU — Auto-generated with Regenerate button */}
+          {/* SKU: auto-generated with Regenerate button */}
           <div>
             <label className={labelCls}>SKU</label>
             <div className="relative mt-1">
@@ -490,22 +513,11 @@ export default function AdvanceInfoStep({
                   set("sku", e.target.value);
                 }}
                 placeholder="Auto-generated from product name"
-                className={`${inputCls} pr-24`}
+                className={`${inputCls} mt-0 pr-24`}
               />
               <button
                 type="button"
-                onClick={() => {
-                  setSkuManuallyEdited(false);
-                  const brandName = data.brand
-                    ? brands.find((b) => b._id === data.brand)?.name
-                    : undefined;
-                  if (productName.trim()) {
-                    set("sku", generateSKU(productName, brandName));
-                    toast.success("SKU regenerated");
-                  } else {
-                    toast.error("Product name is required first");
-                  }
-                }}
+                onClick={regenerateSku}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-primary underline hover:text-primary-hover sm:text-xs"
               >
                 Regenerate
