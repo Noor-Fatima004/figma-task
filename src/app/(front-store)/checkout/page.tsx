@@ -134,33 +134,56 @@ function validate(f: FormState): Errors {
   return e;
 }
 
+// Card ka brand sirf number ke shuru ke digits se pehchana jata hai
+function detectCardBrand(digits: string) {
+  if (/^4/.test(digits)) return "Visa";
+  if (/^(5[1-5]|2[2-7])/.test(digits)) return "Mastercard";
+  if (/^3[47]/.test(digits)) return "Amex";
+  return "Card";
+}
+
 /**
  * ORDER SUBMIT: /api/orders ko call karta hai.
- * Server har item ke `variations` (ProductVariation _id's) se variable products validate karta hai,
- * is liye cart item ki variations yahan bhejna zaroori hai.
- * Card ka data payload mein NAHI jata. Card payment ke liye payment gateway
- * (Stripe, etc.) ka hosted field / redirect use karo; card number apne server par mat bhejo.
+ * Payload backend ke zod schema se match karta hai:
+ *   customer: { name, email, phone }
+ *   address:  { name, phone, line1, line2, city, state, postalCode, country }
+ *   payment:  { method, cardHolder?, cardBrand?, cardLast4? }
+ *   items:    [{ productId, variationIds, quantity }]
+ * Card ka poora number / CVC kabhi server par nahi jata, sirf aakhri 4 digits.
+ * Real card payment ke liye payment gateway (Stripe, etc.) ka hosted field / redirect use karo.
  * Total/tax/shipping server par dobara calculate hote hain.
  */
 async function submitOrder(payload: {
-  contact: { email: string; phone: string };
-  shipping: Record<string, string>;
-  notes: string;
-  payment: PaymentMethod;
+  customer: { name: string; email: string; phone: string };
+  address: {
+    name: string;
+    phone: string;
+    line1: string;
+    line2: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  payment: {
+    method: PaymentMethod;
+    cardHolder?: string;
+    cardBrand?: string;
+    cardLast4?: string;
+  };
   items: { id: unknown; qty: number; variations: string[] }[];
 }): Promise<{ orderNumber: string }> {
   const res = await fetch("/api/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contact: payload.contact,
-      shipping: payload.shipping,
-      notes: payload.notes,
+      customer: payload.customer,
+      address: payload.address,
       payment: payload.payment,
       items: payload.items.map((i) => ({
-        id: String(i.id),
-        qty: i.qty,
-        variations: i.variations,
+        productId: String(i.id),
+        variationIds: i.variations,
+        quantity: i.qty,
       })),
     }),
   });
@@ -310,20 +333,31 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setSubmitError("");
     try {
+      const fullName = `${form.firstName.trim()} ${form.lastName.trim()}`.trim();
+      const phone = form.phone.trim();
+      const cardDigits = form.cardNumber.replace(/\D/g, "");
+
       const res = await submitOrder({
-        contact: { email: form.email.trim(), phone: form.phone.trim() },
-        shipping: {
-          firstName: form.firstName.trim(),
-          lastName: form.lastName.trim(),
-          address: form.address.trim(),
-          apartment: form.apartment.trim(),
+        customer: { name: fullName, email: form.email.trim(), phone },
+        address: {
+          name: fullName,
+          phone,
+          line1: form.address.trim(),
+          line2: form.apartment.trim(),
           city: form.city.trim(),
           state: form.state.trim(),
           postalCode: form.postalCode.trim(),
           country: form.country,
         },
-        notes: form.notes.trim(),
-        payment: form.payment, // card details yahan shamil nahi
+        payment:
+          form.payment === "card"
+            ? {
+                method: "card",
+                cardHolder: form.cardName.trim(),
+                cardBrand: detectCardBrand(cardDigits),
+                cardLast4: cardDigits.slice(-4), // sirf aakhri 4 digits, poora number kabhi nahi
+              }
+            : { method: "cod" },
         items: items.map((i) => ({
           id: i.id,
           qty: i.qty,

@@ -50,7 +50,7 @@ export default function HeroSlider() {
     // Mobile + tablet: ek column (image upar, text neeche). Side-by-side 2 columns sirf laptop (lg, 1024px+) par.
     <section className="grid w-full grid-cols-1 bg-[#f7f3ee] lg:min-h-[calc(100vh-80px)] lg:grid-cols-2">
       {/* CONTENT: mobile/tablet par image ke neeche, laptop par left side */}
-      <div className="order-2 flex flex-col px-5 pb-8 pt-4 sm:px-8 sm:py-10 lg:order-1 lg:px-12 lg:py-8 xl:px-20 2xl:px-28">
+      <div className="order-2 flex flex-col px-5 pb-8 pt-4 sm:px-8 sm:py-10 lg:order-1 lg:px-10 lg:py-8 xl:px-16 2xl:px-24">
         {/*
           Saari slides ek hi grid cell mein stack hoti hain, is liye height
           sabse lambi slide ke hisab se fix rehti hai aur controls
@@ -69,11 +69,11 @@ export default function HeroSlider() {
                     : "invisible translate-y-3 opacity-0"
                 }`}
               >
-                <p className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-[#6b625a] sm:text-sm">
+                <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.22em] text-[#6b625a] sm:text-xs">
                   {s.eyebrow}
                 </p>
 
-                <h1 className="text-[clamp(1.875rem,7.5vw,3rem)] font-medium leading-[1.1] text-[#2a231f] lg:text-[clamp(1.75rem,min(4.2vw,7.5vh),4.5rem)]">
+                <h1 className="text-[clamp(1.625rem,6.5vw,2.5rem)] font-medium leading-[1.1] text-[#2a231f] lg:text-[clamp(1.5rem,min(3.4vw,6vh),3.5rem)]">
                   {s.title.map((line, n) => (
                     <span key={n} className="block">
                       {line}
@@ -81,27 +81,28 @@ export default function HeroSlider() {
                   ))}
                 </h1>
 
-                <p className="mt-4 max-w-lg text-base leading-relaxed text-[#4d453f] sm:text-lg lg:text-xl">
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-[#4d453f] sm:text-base lg:text-[17px]">
                   {s.text}
                 </p>
 
-                <p className="mt-4 text-xs font-medium uppercase tracking-[0.25em] text-[#6b625a] sm:text-sm">
+                <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.22em] text-[#6b625a] sm:text-xs">
                   {s.product}
                 </p>
 
-                <div className="mt-5 flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
+                {/* Dono buttons hamesha ek hi row mein */}
+                <div className="mt-5 flex flex-row flex-nowrap items-center gap-3 sm:gap-5 lg:gap-4 xl:gap-6">
                   <Link
                     href={s.primary.href}
-                    className="bg-[#8b5e3c] px-8 py-3.5 text-center text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[#744c2e] sm:text-sm lg:px-6 xl:px-8"
+                    className="whitespace-nowrap bg-[#8b5e3c] px-4 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-[#744c2e] sm:px-6 sm:text-xs sm:tracking-[0.18em] lg:px-5 xl:px-7"
                   >
                     {s.primary.label}
                   </Link>
                   <Link
                     href={s.secondary.href}
-                    className="flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-[#2a231f] transition hover:text-[#8b5e3c] sm:justify-start sm:text-sm"
+                    className="flex items-center gap-1.5 whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.14em] text-[#2a231f] transition hover:text-[#8b5e3c] sm:gap-2 sm:text-xs sm:tracking-[0.18em]"
                   >
                     {s.secondary.label}
-                    <FiArrowRight />
+                    <FiArrowRight className="shrink-0" />
                   </Link>
                 </div>
               </div>
