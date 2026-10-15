@@ -42,6 +42,9 @@ export default function AddProductPage() {
   const [advance, setAdvance] = useState<AdvanceInfoData>(emptyAdvanceInfo);
   const [seo, setSeo] = useState<SeoData>(emptySeo);
 
+  // ✅ Product name nikalo (SKU auto-generate ke liye)
+  const productName = basic.translations.en?.name?.trim() ?? "";
+
   const check = (key: StepKey) => {
     if (key === "basic") return validate(basicSchema, basic);
     if (key === "advance") return validate(advanceSchema, advance);
@@ -176,6 +179,7 @@ export default function AddProductPage() {
           errors={errors}
           onBack={() => goTo("basic")}
           onContinue={() => goTo("seo")}
+          productName={productName}
         />
       )}
 

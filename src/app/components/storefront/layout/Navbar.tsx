@@ -43,14 +43,14 @@ const NAV: NavItem[] = [
   {
     label: "Collections",
     href: "/collections",
-   children: [
-  { label: "New Collection", href: "/collections/new" },
-  { label: "Signature Collections", href: "/collections/signature" },
-  { label: "Contemporary", href: "/collections/contemporary" },
-  { label: "Minimal", href: "/collections/minimal" },
-  { label: "Natural Materials", href: "/collections/natural-materials" },
-  { label: "Designer Picker", href: "/collections/designer-picker" },
-],
+    children: [
+      { label: "New Collection", href: "/collections/new" },
+      { label: "Signature Collections", href: "/collections/signature" },
+      { label: "Contemporary", href: "/collections/contemporary" },
+      { label: "Minimal", href: "/collections/minimal" },
+      { label: "Natural Materials", href: "/collections/natural-materials" },
+      { label: "Designer Picker", href: "/collections/designer-picker" },
+    ],
   },
   {
     label: "Rooms",
@@ -89,6 +89,9 @@ function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  // ✅ Naya State: Announcement Bar ko band karne ke liye
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
 
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -184,6 +187,30 @@ function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
+      {/* ✅ ANNOUNCEMENT BAR (ON SALE) */}
+      {showAnnouncement && (
+        <div className="relative w-full bg-[#8B5E3C] text-white">
+          <div className="mx-auto flex max-w-[1400px] items-center justify-center px-10 py-2.5 text-center">
+            <Link 
+              href="/shop/sale" 
+              className="text-xs font-medium tracking-wide hover:underline sm:text-sm"
+            >
+              Season sale — up to 40% off selected collections.
+            </Link>
+            
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowAnnouncement(false)}
+              aria-label="Close announcement"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-white/80 transition-colors hover:text-white sm:right-4"
+            >
+              <FiX className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* TOP BAR */}
       <div className="border-b border-[#e9e4dd] bg-[#faf9f7]">
         <div className="mx-auto flex max-w-[1400px] items-center justify-end gap-4 px-4 py-2 text-[11px] text-[#6b5d52] sm:gap-5 sm:px-6 sm:text-xs lg:px-8">

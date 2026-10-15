@@ -89,7 +89,7 @@ export default function AddImageModal({ categories, onClose, onDone }: Props) {
           <label className="text-sm font-medium">Image</label>
           <input
             type="file"
-            accept=".jpg,.jpeg,.png,.webp,.gif"
+            accept="jpg,.jpeg,.png,.webp,.gif,.avif"
             multiple
             onChange={(e) => pickFiles(Array.from(e.target.files ?? []))}
             className="block w-full text-sm mt-1"

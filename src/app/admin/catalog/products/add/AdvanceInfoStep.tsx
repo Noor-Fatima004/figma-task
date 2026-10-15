@@ -11,16 +11,16 @@ export type AdvanceInfoData = {
   isActive: boolean;
   isPoint: boolean;
   isFeature: boolean;
-  unit: string; // Unit _id
-  brand: string; // Brand _id
+  unit: string;
+  brand: string;
   weight: string;
   price: string;
   discountPrice: string;
   minOrder: string;
   maxOrder: string;
   sku: string;
-  attributes: string[]; // Attribute _id list (sirf variable product me)
-  variations: Record<string, string[]>; // attributeId -> selected variation _id list
+  attributes: string[];
+  variations: Record<string, string[]>;
 };
 
 export const emptyAdvanceInfo: AdvanceInfoData = {
@@ -46,18 +46,12 @@ type OptionsResponse = {
   totalPages: number;
 };
 
-/** Variation ke saath uska attribute reference bhi aata hai */
 type VariationOption = Option & {
   attribute?: unknown;
   attributeId?: unknown;
   attribute_id?: unknown;
 };
 
-/**
- * Variation kis attribute ki hai, ye nikalta hai.
- * Agar tumhare Variation model me field ka naam alag ho to yahan badlo.
- * String id aur populated object ({ _id, name }) dono chalte hain.
- */
 function variationAttributeId(v: VariationOption): string {
   const raw = v.attribute ?? v.attributeId ?? v.attribute_id;
   if (typeof raw === "string") return raw;
@@ -72,7 +66,6 @@ function variationAttributeId(v: VariationOption): string {
   return "";
 }
 
-/** Existing catalog APIs se dropdown options laata hai */
 function useOptions<T extends Option = Option>(url: string, label = "options") {
   const [options, setOptions] = useState<T[]>([]);
   useEffect(() => {
@@ -134,6 +127,36 @@ async function fetchOptionsPage(url: string, page: number) {
   return result as OptionsResponse;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   ✅ SKU AUTO-GENERATION
+   Product name + brand se ek professional SKU banata hai.
+   Format: BRAND-NAME-WORD1-WORD2-RANDOM4
+   Example: NAL-OAK-DINING-CHAIR-4821
+   ───────────────────────────────────────────────────────────── */
+function generateSKU(productName: string, brandName?: string): string {
+  // 1. Name ko clean karo
+  const cleanName = productName
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, "")
+    .replace(/\s+/g, "-");
+
+  // 2. Pehle 3 words lo
+  const words = cleanName.split("-").filter(Boolean);
+  const namePart = words.slice(0, 3).join("-");
+
+  // 3. Brand ka pehla word (3 letters)
+  const brandPart = brandName
+    ? brandName.trim().toUpperCase().split(/\s+/)[0].slice(0, 3)
+    : "";
+
+  // 4. Random 4-digit number (duplicate avoid karne ke liye)
+  const randomNum = Math.floor(1000 + Math.random() * 9000);
+
+  // 5. Combine karo
+  return [brandPart, namePart, randomNum].filter(Boolean).join("-");
+}
+
 const inputCls =
   "mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-text outline-none focus:ring-2 focus:ring-primary/30";
 const labelCls = "block text-xs sm:text-sm font-medium text-text";
@@ -175,8 +198,9 @@ interface Props {
   onChange: (data: AdvanceInfoData) => void;
   onBack: () => void;
   onContinue: () => void;
-  /** Zod validation ke errors, key jaise "unit", "price" */
   errors?: Record<string, string>;
+  /** ✅ Product name (Basic Info se aata hai) — SKU auto-generate ke liye */
+  productName?: string;
 }
 
 export default function AdvanceInfoStep({
@@ -185,6 +209,7 @@ export default function AdvanceInfoStep({
   onBack,
   onContinue,
   errors = {},
+  productName = "",
 }: Props) {
   const err = (k: string) =>
     errors[k] ? <p className="mt-1 text-xs text-red-500">{errors[k]}</p> : null;
@@ -200,12 +225,33 @@ export default function AdvanceInfoStep({
   const [pickedAttr, setPickedAttr] = useState("");
   const [pickedVar, setPickedVar] = useState("");
 
+  // ✅ Flag: user ne manually SKU edit kiya to auto-generate band
+  const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
+
   const set = <K extends keyof AdvanceInfoData>(
     key: K,
     value: AdvanceInfoData[K]
   ) => onChange({ ...data, [key]: value });
 
   const isVariable = data.productType === "variable";
+
+  // ✅ AUTO SKU: product name ya brand change hone par SKU generate karo
+  useEffect(() => {
+    // User ne manually edit kiya hai to override mat karo
+    if (skuManuallyEdited) return;
+    // Product name nahi hai to kuch nahi kar sakte
+    if (!productName.trim()) return;
+
+    const brandName = data.brand
+      ? brands.find((b) => b._id === data.brand)?.name
+      : undefined;
+
+    const newSKU = generateSKU(productName, brandName);
+    if (newSKU !== data.sku) {
+      set("sku", newSKU);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productName, data.brand, skuManuallyEdited, brands]);
 
   const attrName = (id: string) =>
     attributes.find((a) => a._id === id)?.name ?? id;
@@ -214,13 +260,11 @@ export default function AdvanceInfoStep({
   const variationsOf = (attrId: string) =>
     allVariations.filter((v) => variationAttributeId(v) === attrId);
 
-  // Attribute badalne par pehle chuni hui variation reset
   const handleAttrPick = (id: string) => {
     setPickedAttr(id);
     setPickedVar("");
   };
 
-  // ADD: attribute (agar naya ho) + variation dono add
   const addVariation = () => {
     if (!pickedAttr || !pickedVar) {
       toast.error("Select an attribute and a variation first");
@@ -242,7 +286,6 @@ export default function AdvanceInfoStep({
     setPickedVar("");
   };
 
-  // Attribute hatane par uski selected variations bhi hat jati hain
   const removeAttribute = (id: string, silent = false) => {
     const rest = { ...data.variations };
     delete rest[id];
@@ -254,7 +297,6 @@ export default function AdvanceInfoStep({
     if (!silent) toast.success(`${attrName(id)} removed`);
   };
 
-  // Chip ka x: variation hatao; attribute ki koi variation na bache to attribute bhi hat jaye
   const removeVariation = (attrId: string, variationId: string) => {
     const next = (data.variations[attrId] ?? []).filter(
       (v) => v !== variationId
@@ -269,7 +311,6 @@ export default function AdvanceInfoStep({
   };
 
   const handleTypeChange = (value: ProductType) => {
-    // Simple par switch karne par attributes aur variations clear
     if (value !== "variable") {
       if (data.attributes.length > 0) {
         toast.info("Attributes and variations cleared");
@@ -284,22 +325,23 @@ export default function AdvanceInfoStep({
       variations: value === "variable" ? data.variations : {},
     });
   };
+
   const handleContinue = () => {
-  const missing: string[] = [];
-  if (!data.productType) missing.push("Product type");
-  if (!data.unit) missing.push("Unit");
-  if (!data.price) missing.push("Price");
-  if (isVariable && data.attributes.length === 0) {
-    missing.push("At least one attribute with variation");
-  }
+    const missing: string[] = [];
+    if (!data.productType) missing.push("Product type");
+    if (!data.unit) missing.push("Unit");
+    if (!data.price) missing.push("Price");
+    if (isVariable && data.attributes.length === 0) {
+      missing.push("At least one attribute with variation");
+    }
 
-  if (missing.length > 0) {
-    toast.error(`Please fill required fields: ${missing.join(", ")}`);
-  }
+    if (missing.length > 0) {
+      toast.error(`Please fill required fields: ${missing.join(", ")}`);
+    }
 
-  // Parent ka Zod validation hamesha chalne do, taaki inline errors bhi dikhein
-  onContinue();
-};
+    onContinue();
+  };
+
   return (
     <>
       <div className="rounded-md bg-surface p-4 shadow sm:p-5">
@@ -423,7 +465,7 @@ export default function AdvanceInfoStep({
             {err("minOrder")}
           </div>
 
-          {/* Max order + SKU */}
+          {/* Max order + SKU (✅ UPDATED) */}
           <div>
             <label className={labelCls}>Maximum Order</label>
             <input
@@ -435,21 +477,49 @@ export default function AdvanceInfoStep({
             />
             {err("maxOrder")}
           </div>
+
+          {/* ✅ SKU — Auto-generated with Regenerate button */}
           <div>
             <label className={labelCls}>SKU</label>
-            <input
-              type="text"
-              value={data.sku}
-              onChange={(e) => set("sku", e.target.value)}
-              placeholder="Enter Sku"
-              className={inputCls}
-            />
+            <div className="relative mt-1">
+              <input
+                type="text"
+                value={data.sku}
+                onChange={(e) => {
+                  setSkuManuallyEdited(true);
+                  set("sku", e.target.value);
+                }}
+                placeholder="Auto-generated from product name"
+                className={`${inputCls} pr-24`}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setSkuManuallyEdited(false);
+                  const brandName = data.brand
+                    ? brands.find((b) => b._id === data.brand)?.name
+                    : undefined;
+                  if (productName.trim()) {
+                    set("sku", generateSKU(productName, brandName));
+                    toast.success("SKU regenerated");
+                  } else {
+                    toast.error("Product name is required first");
+                  }
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-primary underline hover:text-primary-hover sm:text-xs"
+              >
+                Regenerate
+              </button>
+            </div>
+            <p className="mt-1 text-[10px] text-muted">
+              Auto-generated from product name. Edit to override.
+            </p>
+            {err("sku")}
           </div>
 
           {/* Attributes + Variations: sirf Variable product par */}
           {isVariable && (
             <div className="md:col-span-2">
-              {/* Attribute dropdown -> Variation dropdown -> ADD */}
               <div className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
                 <div>
                   <label className={labelCls}>Attributes</label>
@@ -499,7 +569,6 @@ export default function AdvanceInfoStep({
               {err("attributes")}
               {err("variations")}
 
-              {/* Option rows: attribute name | variation chips | delete */}
               <div className="mt-5 space-y-3">
                 {data.attributes.map((id) => {
                   const selected = data.variations[id] ?? [];
@@ -577,7 +646,7 @@ function FormSelect({
   options,
   placeholder = "Select",
   disabled = false,
-  inline = false, // true: list hamesha neeche content ko dhakel kar khulti hai
+  inline = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -589,7 +658,6 @@ function FormSelect({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // bahar click ya Escape par band
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -606,7 +674,6 @@ function FormSelect({
     };
   }, [open]);
 
-  // value "" ka matlab "kuch select nahi": placeholder dikhao
   const selected = value ? options.find((o) => o.value === value) : undefined;
 
   return (

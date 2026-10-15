@@ -7,6 +7,7 @@ const MIME_FORMATS: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
+  "image/avif": "avif",
 };
 
 export type CloudinaryImage = {
@@ -18,11 +19,13 @@ export type CloudinaryImage = {
   bytes: number;
 };
 
-type ImageInput = File | {
-  buffer: Buffer;
-  fileName: string;
-  mimeType: string;
-};
+type ImageInput =
+  | File
+  | {
+      buffer: Buffer;
+      fileName: string;
+      mimeType: string;
+    };
 
 type ImageOptions = {
   publicId?: string;
@@ -41,11 +44,17 @@ export function requireCloudinaryConfig() {
     .map(([key]) => key);
 
   if (missing.length > 0) {
-    throw new Error(`Missing required Cloudinary environment variables: ${missing.join(", ")}`);
+    throw new Error(
+      `Missing required Cloudinary environment variables: ${missing.join(", ")}`
+    );
   }
 
   cloudinary.config({ cloud_name, api_key, api_secret, secure: true });
-  return { cloud_name: cloud_name!, api_key: api_key!, api_secret: api_secret! };
+  return {
+    cloud_name: cloud_name!,
+    api_key: api_key!,
+    api_secret: api_secret!,
+  };
 }
 
 function getImageBytes(input: ImageInput) {
@@ -73,32 +82,66 @@ export function validateImageBuffer(
   mimeType: string,
   fileName = "upload"
 ): string {
-  const format = MIME_FORMATS[mimeType.toLowerCase()];
+  // Browser kabhi kabhi file.type empty de deta hai — extension se fallback
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  const fallbackMime =
+    ext === "jpg" || ext === "jpeg" || ext === "jfif"
+      ? "image/jpeg"
+      : ext === "png"
+        ? "image/png"
+        : ext === "webp"
+          ? "image/webp"
+          : ext === "gif"
+            ? "image/gif"
+            : ext === "avif"
+              ? "image/avif"
+              : "";
+
+  const format =
+    MIME_FORMATS[mimeType.toLowerCase()] ??
+    (fallbackMime ? MIME_FORMATS[fallbackMime] : undefined);
+
   if (!format) {
-    throw new Error("Only JPG, PNG, WEBP, and GIF images are allowed");
+    throw new Error(
+      "Only JPG, PNG, WEBP, GIF, and AVIF images are allowed"
+    );
   }
   if (buffer.length === 0 || buffer.length > MAX_IMAGE_BYTES) {
     throw new Error("Image must be larger than 0 bytes and no larger than 5MB");
   }
 
   const signatures: Record<string, boolean> = {
-    jpg: buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff,
-    png: buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
+    jpg:
+      buffer.length >= 3 &&
+      buffer[0] === 0xff &&
+      buffer[1] === 0xd8 &&
+      buffer[2] === 0xff,
+    png: buffer
+      .subarray(0, 8)
+      .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
     webp:
       buffer.length >= 12 &&
       buffer.toString("ascii", 0, 4) === "RIFF" &&
       buffer.toString("ascii", 8, 12) === "WEBP",
     gif: /^GIF8[79]a$/.test(buffer.toString("ascii", 0, 6)),
+    // AVIF: ISO Base Media File Format — "ftypavif" offset 4 se
+    avif:
+      buffer.length >= 12 &&
+      buffer.toString("ascii", 4, 12) === "ftypavif",
   };
+
   const extension = fileName.split(".").pop()?.toLowerCase();
   const compatibleExtension =
     !extension || extension === fileName.toLowerCase()
       ? true
       : extension === format ||
-        (format === "jpg" && ["jpeg", "jfif"].includes(extension));
+        (format === "jpg" && ["jpeg", "jfif"].includes(extension)) ||
+        (format === "avif" && extension === "avifs");
 
   if (!signatures[format] || !compatibleExtension) {
-    throw new Error("Image contents do not match the selected file type");
+    throw new Error(
+      "Image contents do not match the selected file type"
+    );
   }
   return format;
 }
@@ -122,10 +165,11 @@ export async function uploadImage(
     .map((part) => part.trim())
     .filter(Boolean)
     .join("/");
-  const fullFolder = normalizedFolder.startsWith(`${rootFolder}/`) ||
+  const fullFolder =
+    normalizedFolder.startsWith(`${rootFolder}/`) ||
     normalizedFolder === rootFolder
-    ? normalizedFolder
-    : `${rootFolder}/${normalizedFolder}`;
+      ? normalizedFolder
+      : `${rootFolder}/${normalizedFolder}`;
   const requestedPublicId = options.publicId?.replace(/^\/+|\/+$/g, "");
   const publicId = requestedPublicId?.startsWith(`${fullFolder}/`)
     ? requestedPublicId.slice(fullFolder.length + 1)
@@ -145,7 +189,11 @@ export async function uploadImage(
           return;
         }
         if (!result?.secure_url || !result.public_id) {
-          reject(new Error("Cloudinary upload returned incomplete image metadata"));
+          reject(
+            new Error(
+              "Cloudinary upload returned incomplete image metadata"
+            )
+          );
           return;
         }
         resolve({
@@ -170,7 +218,9 @@ export async function deleteImage(publicId: string): Promise<void> {
     invalidate: true,
   });
   if (result.result !== "ok" && result.result !== "not found") {
-    throw new Error(`Cloudinary deletion failed for ${publicId}: ${result.result}`);
+    throw new Error(
+      `Cloudinary deletion failed for ${publicId}: ${result.result}`
+    );
   }
 }
 
