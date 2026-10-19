@@ -152,8 +152,9 @@ export default function HeroSlider() {
         </div>
       </div>
 
-      {/* IMAGE: mobile/tablet par sab se upar (tablet par height kam), laptop par right side */}
-      <div className="order-1 flex flex-col pt-4 lg:order-2 lg:py-6">
+      {/* IMAGE: koi top/bottom padding nahi, image seedha topbar se lagti hai.
+          overflow-hidden + scale-110 = thodi zoom hui image, edges container se crop. */}
+      <div className="order-1 flex flex-col lg:order-2">
         <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/9] md:aspect-[2/1] lg:aspect-auto lg:min-h-0 lg:flex-1">
           {slides.map((s, i) => (
             <Image
@@ -163,7 +164,7 @@ export default function HeroSlider() {
               fill
               priority={i === 0}
               sizes="(min-width: 1024px) 50vw, 100vw"
-              className={`object-cover transition-opacity duration-700 ${
+              className={`scale-110 object-cover transition-opacity duration-700 ${
                 i === index ? "opacity-100" : "opacity-0"
               }`}
             />

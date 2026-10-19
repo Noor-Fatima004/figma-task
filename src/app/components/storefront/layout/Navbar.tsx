@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useWishlist } from "@/app/components/storefront/wishlistStore";
 import { useCompare } from "@/app/components/storefront/compareStore";
 import { useCart } from "@/app/components/storefront/cartStore";
+import StorefrontSearch from "@/app/components/storefront/StorefrontSearch";
 
 // Brand ka naam yahan badlo
 const BRAND = "Naltar";
@@ -90,6 +91,9 @@ function Navbar() {
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
+  // Search panel khula hai ya nahi
+  const [searchOpen, setSearchOpen] = useState(false);
+
   // ✅ Naya State: Announcement Bar ko band karne ke liye
   const [showAnnouncement, setShowAnnouncement] = useState(true);
 
@@ -112,6 +116,8 @@ function Navbar() {
     setMobileOpen(false);
     setOpenAccordion(null);
   }, []);
+
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
 
   const closeMenus = (e: React.MouseEvent<HTMLElement>) => {
     setOpenMenu(null);
@@ -191,13 +197,13 @@ function Navbar() {
       {showAnnouncement && (
         <div className="relative w-full bg-[#8B5E3C] text-white">
           <div className="mx-auto flex max-w-[1400px] items-center justify-center px-10 py-2.5 text-center">
-            <Link 
-              href="/shop/sale" 
+            <Link
+              href="/shop/sale"
               className="text-xs font-medium tracking-wide hover:underline sm:text-sm"
             >
               Season sale — up to 40% off selected collections.
             </Link>
-            
+
             {/* Close Button */}
             <button
               type="button"
@@ -321,7 +327,14 @@ function Navbar() {
           </Link>
 
           <div className="flex items-center justify-end gap-3 sm:gap-4 lg:gap-5">
-            <button type="button" aria-label="Search" className={iconBtn}>
+            {/* SEARCH: click par suggestions wala panel khulta hai */}
+            <button
+              type="button"
+              aria-label="Search"
+              aria-haspopup="dialog"
+              onClick={() => setSearchOpen(true)}
+              className={`${iconBtn} cursor-pointer`}
+            >
               <FiSearch className="h-[18px] w-[18px]" />
             </button>
             <Link href="/account" aria-label="My account" className={`${iconBtn} hidden sm:inline-flex`}>
@@ -487,6 +500,9 @@ function Navbar() {
           </div>
         </aside>
       </div>
+
+      {/* SEARCH PANEL */}
+      <StorefrontSearch open={searchOpen} onClose={closeSearch} />
     </header>
   );
 }
