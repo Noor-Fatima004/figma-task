@@ -190,7 +190,11 @@ async function submitOrder(payload: {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || "Order could not be placed.");
+    const errorObj = new Error(err.error || "Order could not be placed.") as Error & {
+      productId?: string;
+    };
+    if (err.productId) errorObj.productId = String(err.productId);
+    throw errorObj;
   }
   const data = await res.json();
   return { orderNumber: data.orderNumber };
@@ -252,7 +256,7 @@ function Section({ step, title, children }: { step: number; title: string; child
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, count, subtotal, clearCart } = useCart();
+  const { items, count, subtotal, clearCart, removeItem } = useCart();
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -281,6 +285,7 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [failingProductId, setFailingProductId] = useState<string | null>(null);
   const [done, setDone] = useState<{
     orderNumber: string;
     email: string;
@@ -332,6 +337,7 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     setSubmitError("");
+    setFailingProductId(null);
     try {
       const fullName = `${form.firstName.trim()} ${form.lastName.trim()}`.trim();
       const phone = form.phone.trim();
@@ -369,7 +375,21 @@ export default function CheckoutPage() {
       setForm(INITIAL);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "We could not place your order. Please try again.");
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "We could not place your order. Please try again.";
+      setSubmitError(msg);
+      if (
+        err &&
+        typeof err === "object" &&
+        "productId" in err &&
+        typeof (err as { productId?: unknown }).productId === "string"
+      ) {
+        setFailingProductId((err as { productId: string }).productId);
+      } else {
+        setFailingProductId(null);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -879,9 +899,41 @@ export default function CheckoutPage() {
               </div>
 
               {submitError && (
-                <p className="mt-4 rounded-lg border border-[#e8c9c2] bg-[#fbf0ee] px-3 py-2 text-xs text-[#b3402f]" role="alert">
-                  {submitError}
-                </p>
+                <div
+                  className="mt-4 rounded-lg border border-[#e8c9c2] bg-[#fbf0ee] px-3.5 py-3 text-xs text-[#b3402f]"
+                  role="alert"
+                >
+                  <p className="font-medium">{submitError}</p>
+                  {failingProductId && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-3 border-t border-[#e8c9c2]/60 pt-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const bad = items.find(
+                            (i) =>
+                              String(i.id).toLowerCase() ===
+                              failingProductId.toLowerCase()
+                          );
+                          if (bad) {
+                            removeItem(bad.key);
+                            setSubmitError("");
+                            setFailingProductId(null);
+                            toast.info(`Removed "${bad.name}" from your bag.`);
+                          }
+                        }}
+                        className="cursor-pointer font-semibold underline underline-offset-2 hover:text-[#8b5e3c]"
+                      >
+                        Remove item from bag
+                      </button>
+                      <Link
+                        href={`/product/${failingProductId}`}
+                        className="font-semibold underline underline-offset-2 hover:text-[#8b5e3c]"
+                      >
+                        Choose variations
+                      </Link>
+                    </div>
+                  )}
+                </div>
               )}
 
               <button

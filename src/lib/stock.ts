@@ -66,6 +66,91 @@ export function productDisplayName(product: {
   return translations?.en?.name || product.slug || "Product";
 }
 
+export type VariantValidationResult =
+  | { valid: true; variations: string[] }
+  | { valid: false; error: string; missingAttributeName?: string };
+
+/**
+ * Checks that `selected` has exactly one variation from every attribute that
+ * the product uses. Returns detailed error with specific missing attribute name
+ * when invalid.
+ *
+ * Simple products have no variations: whatever ids the client sent are
+ * ignored and [] is returned (so the stock key stays "" for them).
+ * A variable product that has no variation groups behaves the same way.
+ */
+export function validateVariantSelectionDetailed(
+  product: {
+    productType: string;
+    attributes?: {
+      attribute?: unknown;
+      variations?: unknown[];
+    }[];
+  },
+  selected: string[],
+  attributeNames?: Map<string, string>,
+  productLabel?: string
+): VariantValidationResult {
+  const pName = productLabel || "Product";
+  const unique = [...new Set(selected.map(String))];
+  const groups = (product.attributes ?? [])
+    .map((attribute) => ({
+      attribute: attribute.attribute,
+      variations: (attribute.variations ?? []).map(String),
+    }))
+    .filter((group) => group.variations.length > 0);
+
+  // Simple product or variable product without variation groups: variation not required, ignore client ids
+  if (product.productType !== "variable" || groups.length === 0) {
+    return { valid: true, variations: [] };
+  }
+
+  const remaining = [...unique];
+  const ordered: string[] = [];
+
+  for (const group of groups) {
+    const rawName =
+      (typeof group.attribute === "object" &&
+      group.attribute !== null &&
+      "name" in group.attribute
+        ? String((group.attribute as { name?: string }).name)
+        : undefined) ??
+      (attributeNames ? attributeNames.get(String(group.attribute)) : undefined) ??
+      "variation";
+    const attrName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+
+    const matches = remaining.filter((id) => group.variations.includes(id));
+    if (matches.length === 0) {
+      return {
+        valid: false,
+        error: `Please select ${attrName} for "${pName}".`,
+        missingAttributeName: attrName,
+      };
+    }
+    if (matches.length > 1) {
+      return {
+        valid: false,
+        error: `Please select only one option for ${attrName} on "${pName}".`,
+        missingAttributeName: attrName,
+      };
+    }
+    ordered.push(matches[0]);
+    const index = remaining.indexOf(matches[0]);
+    if (index !== -1) {
+      remaining.splice(index, 1);
+    }
+  }
+
+  if (remaining.length > 0) {
+    return {
+      valid: false,
+      error: `Invalid variation selected for "${pName}".`,
+    };
+  }
+
+  return { valid: true, variations: ordered };
+}
+
 /**
  * Checks that `selected` is exactly one variation from every attribute that
  * the product uses. Returns the ids ordered by attribute, or null if invalid.
@@ -77,29 +162,12 @@ export function productDisplayName(product: {
 export function validateVariantSelection(
   product: {
     productType: string;
-    attributes?: { variations?: unknown[] }[];
+    attributes?: { attribute?: unknown; variations?: unknown[] }[];
   },
   selected: string[]
 ): string[] | null {
-  const unique = [...new Set(selected)];
-  const groups = (product.attributes ?? [])
-    .map((attribute) => (attribute.variations ?? []).map(String))
-    .filter((group) => group.length > 0);
-
-  // Simple product (ya variable jis ke koi variation groups nahi): variation ki zaroorat nahi
-  if (product.productType !== "variable" || groups.length === 0) return [];
-
-  if (unique.length !== groups.length) return null;
-
-  const remaining = [...unique];
-  const ordered: string[] = [];
-  for (const group of groups) {
-    const index = remaining.findIndex((id) => group.includes(id));
-    if (index === -1) return null;
-    ordered.push(remaining[index]);
-    remaining.splice(index, 1);
-  }
-  return ordered;
+  const result = validateVariantSelectionDetailed(product, selected);
+  return result.valid ? result.variations : null;
 }
 
 /** "Red / M" from variation ids + the looked-up variation docs. */

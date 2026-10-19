@@ -4,19 +4,24 @@
 // Use: <LovedAtHome /> (home page par Difference ke neeche)
 // Data: GET /api/reviews (sirf approved reviews). Har 30 second baad aur tab wapas
 // kholne par khud refresh hota hai, to naya approved review bina reload ke aa jata hai.
+// Featured review ki image = us review ke product ki image (productId se).
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { FiStar } from "react-icons/fi";
 
-// ⚠️ Left side ki image: apni image public/images/home/ mein rakho ya path badlo
+// Fallback image: jab product ki image na mile (ya sample reviews hon)
 const FEATURE_IMAGE = "/images/home/loved-at-home.jpg";
 const REFRESH_MS = 30_000;
 
 type PublicReview = {
   _id: string;
   name: string;
+  productId?: string;
   productName: string;
+  productImage?: string;
+  productSlug?: string;
   rating: number;
   review: string;
   createdAt: string;
@@ -138,9 +143,15 @@ export default function LovedAtHome() {
     };
   }, [load]);
 
-  // Featured: sabse naya 5-star (na ho to sabse naya), baaki neeche grid mein (max 3)
-  const featured = reviews.find((r) => r.rating === 5) ?? reviews[0];
+  // Featured: sabse naya review (list pehle se newest-first aati hai).
+  // Product ki image wale review ko pehle chuno, na ho to sabse naya 5-star, phir sabse naya.
+  const featured =
+    reviews.find((r) => r.productImage) ?? reviews.find((r) => r.rating === 5) ?? reviews[0];
   const others = reviews.filter((r) => r._id !== featured?._id).slice(0, 3);
+
+  // Featured image: us review ke product ki image, warna fallback
+  const featuredImage = featured?.productImage || FEATURE_IMAGE;
+  const featuredHref = featured?.productSlug ? `/product/${featured.productSlug}` : null;
 
   // Samples band hon aur koi asli review na ho to section chhupa do
   if (!loading && reviews.length === 0) return null;
@@ -203,13 +214,21 @@ export default function LovedAtHome() {
           <div className="mt-8 grid overflow-hidden sm:mt-10 lg:grid-cols-2">
             <div className="relative aspect-[4/3] bg-[#e4ddd2] sm:aspect-[16/10] lg:aspect-auto lg:min-h-[420px]">
               <Image
-                src={FEATURE_IMAGE}
-                alt="A living room styled with our furniture"
+                key={featuredImage}
+                src={featuredImage}
+                alt={featured.productName || "A living room styled with our furniture"}
                 fill
                 unoptimized
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover"
               />
+              {featuredHref && (
+                <Link
+                  href={featuredHref}
+                  aria-label={`View ${featured.productName}`}
+                  className="absolute inset-0"
+                />
+              )}
             </div>
 
             <figure className="flex flex-col justify-center bg-[#2d221c] p-6 sm:p-10 lg:p-12 2xl:p-16">
@@ -233,9 +252,18 @@ export default function LovedAtHome() {
                     </p>
                   </div>
                 </figcaption>
-                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/90 sm:text-[11px]">
-                  {featured.productName}
-                </p>
+                {featuredHref ? (
+                  <Link
+                    href={featuredHref}
+                    className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/90 underline-offset-4 hover:underline sm:text-[11px]"
+                  >
+                    {featured.productName}
+                  </Link>
+                ) : (
+                  <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/90 sm:text-[11px]">
+                    {featured.productName}
+                  </p>
+                )}
               </div>
             </figure>
           </div>

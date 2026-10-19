@@ -9,6 +9,7 @@ import "@/app/models/GalleryImage";
 import "@/app/models/ProductBrand"; // path apne project ke hisaab se
 import {
   buildMediaUrlMap,
+  buildVariationNameMap,
   toStorefrontProduct,
   type ProductLean,
 } from "@/lib/storefrontProduct";
@@ -67,10 +68,11 @@ export async function GET(
     }
 
     const map = await buildMediaUrlMap([doc, ...related].flatMap((d) => d.media ?? []));
+    const names = await buildVariationNameMap([doc, ...related]);
 
     return NextResponse.json({
-      product: toStorefrontProduct(doc, map),
-      related: related.map((r) => toStorefrontProduct(r, map)),
+      product: toStorefrontProduct(doc, map, names),
+      related: related.map((r) => toStorefrontProduct(r, map, names)),
     });
   } catch (e) {
     console.error("Public product detail failed:", e);

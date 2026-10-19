@@ -6,6 +6,8 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import Review from "@/app/models/Review";
 import Order from "@/app/models/Order";
+import Product from "@/app/models/Product";
+import { resolveMediaUrlLists } from "@/lib/storefront";
 
 // true karne par sirf wo user review de sakta hai jisne ye product kharida ho
 // aur uska order REVIEW_ORDER_STATUS mein ho. Abhi band hai (false).
@@ -44,7 +46,7 @@ export async function GET(req: NextRequest) {
       Review.find(filter)
         .sort({ createdAt: -1 })
         .limit(productId ? 20 : 6)
-        .select("name productName rating review createdAt")
+        .select("name productId productName rating review createdAt")
         .lean(),
       Review.aggregate([
         { $match: filter },
@@ -59,15 +61,44 @@ export async function GET(req: NextRequest) {
       ]),
     ]);
 
+    // Har review ke product ki pehli image + slug (productId se)
+    const ids = [
+      ...new Set(
+        items
+          .map((r) => String(r.productId ?? ""))
+          .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      ),
+    ];
+    const imageById = new Map<string, string>();
+    const slugById = new Map<string, string>();
+    if (ids.length) {
+      const prods = (await Product.find({ _id: { $in: ids } })
+        .select("slug media")
+        .lean()) as unknown as { _id: unknown; slug?: string; media?: unknown[] }[];
+      const urls = await resolveMediaUrlLists(
+        prods.map((p) => (p.media ?? []) as Parameters<typeof resolveMediaUrlLists>[0][number])
+      );
+      prods.forEach((p, i) => {
+        imageById.set(String(p._id), urls[i]?.[0] ?? "");
+        if (p.slug) slugById.set(String(p._id), String(p.slug));
+      });
+    }
+
     return NextResponse.json({
-      items: items.map((r) => ({
-        _id: String(r._id),
-        name: r.name,
-        productName: r.productName,
-        rating: r.rating,
-        review: r.review,
-        createdAt: r.createdAt,
-      })),
+      items: items.map((r) => {
+        const pid = String(r.productId ?? "");
+        return {
+          _id: String(r._id),
+          name: r.name,
+          productId: pid,
+          productName: r.productName,
+          productImage: imageById.get(pid) ?? "",
+          productSlug: slugById.get(pid) ?? pid,
+          rating: r.rating,
+          review: r.review,
+          createdAt: r.createdAt,
+        };
+      }),
       average: stats[0] ? Math.round(stats[0].avg * 10) / 10 : 0,
       count: stats[0]?.count ?? 0,
       // 4 ya 5 star dene walon ka percent

@@ -179,7 +179,7 @@ export default function CartPage() {
               {/* Items */}
               <ul className="divide-y divide-[#e6e0d8] rounded-2xl border border-[#e6e0d8] bg-white/60 px-4 sm:px-6">
                 {items.map((i) => (
-                  <li key={i.id} className="flex gap-4 py-5 sm:gap-6 sm:py-6">
+                  <li key={i.key} className="flex gap-4 py-5 sm:gap-6 sm:py-6">
                     <Link
                       href={`/product/${i.id}`}
                       className="relative block h-28 w-24 shrink-0 overflow-hidden bg-[#f1ebe3] sm:h-36 sm:w-32"
@@ -223,7 +223,7 @@ export default function CartPage() {
                         <div className="flex items-center rounded-md border border-[#e6e0d8] bg-white">
                           <button
                             type="button"
-                            onClick={() => setQty(i.id, i.qty - 1)}
+                            onClick={() => setQty(i.key, i.qty - 1)}
                             disabled={i.qty <= 1}
                             aria-label={`Decrease quantity of ${i.name}`}
                             className="flex h-9 w-9 cursor-pointer items-center justify-center text-[#2a231f] disabled:cursor-not-allowed disabled:text-[#c9c0b6]"
@@ -238,7 +238,7 @@ export default function CartPage() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => setQty(i.id, i.qty + 1)}
+                            onClick={() => setQty(i.key, i.qty + 1)}
                             aria-label={`Increase quantity of ${i.name}`}
                             className="flex h-9 w-9 cursor-pointer items-center justify-center text-[#2a231f]"
                           >
@@ -248,7 +248,7 @@ export default function CartPage() {
 
                         <button
                           type="button"
-                          onClick={() => removeItem(i.id)}
+                          onClick={() => removeItem(i.key)}
                           className="cursor-pointer text-[11px] uppercase tracking-[0.18em] text-[#6b625a] underline-offset-4 transition hover:text-[#8b5e3c] hover:underline"
                         >
                           Remove

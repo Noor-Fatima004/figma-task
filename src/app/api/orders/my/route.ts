@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import Order from "@/app/models/Order";
 import { requireUser } from "@/lib/requireUser";
+import Product from "@/app/models/Product";
 
 const PAGE_SIZE = 10;
 
@@ -65,6 +66,21 @@ export async function GET(req: NextRequest) {
       .lean()) as unknown as LeanOrder[];
 
     const hasMore = rows.length > PAGE_SIZE;
+        // Product slugs: review link slug se chalta hai, _id se nahi
+    const productIds = [
+      ...new Set(
+        rows
+          .slice(0, PAGE_SIZE)
+          .flatMap((o) => (o.items ?? []).map((i) => (i.product ? String(i.product) : "")))
+          .filter(Boolean)
+      ),
+    ];
+    const prods = productIds.length
+      ? ((await Product.find({ _id: { $in: productIds } })
+          .select("slug")
+          .lean()) as unknown as { _id: unknown; slug?: string }[])
+      : [];
+    const slugById = new Map(prods.map((p) => [String(p._id), p.slug ? String(p.slug) : ""]));
 
     const orders = rows.slice(0, PAGE_SIZE).map((o) => {
       const a = o.shippingAddress ?? {};
@@ -85,14 +101,17 @@ export async function GET(req: NextRequest) {
           city: [a.city, a.state, a.postalCode].filter(Boolean).join(", "),
           country: a.country ?? "",
         },
-        items: (o.items ?? []).map((i) => ({
-          id: i.product ? String(i.product) : "",
-          name: i.nameSnapshot ?? "",
-          image: i.imageSnapshot ?? "",
-          note: i.variantLabel ?? "",
-          price: i.unitPrice ?? 0,
-          qty: i.quantity ?? 1,
-        })),
+                items: (o.items ?? []).map((i) => {
+          const pid = i.product ? String(i.product) : "";
+          return {
+            id: slugById.get(pid) || pid,
+            name: i.nameSnapshot ?? "",
+            image: i.imageSnapshot ?? "",
+            note: i.variantLabel ?? "",
+            price: i.unitPrice ?? 0,
+            qty: i.quantity ?? 1,
+          };
+        }),
       };
     });
 

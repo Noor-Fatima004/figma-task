@@ -1,8 +1,4 @@
 "use client";
-
-// Rakho: src/app/components/storefront/CraftsmanshipBanner.tsx
-// Use: <CraftsmanshipBanner /> (NewArrivals ke neeche, ya jahan dark banner chahiye)
-
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,7 +14,6 @@ export default function CraftsmanshipBanner() {
   return (
     <section className="bg-[#1a1613] py-6 sm:py-10 lg:py-12 2xl:py-16">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 2xl:max-w-[1680px] 2xl:px-12">
-        {/* Mobile: image upar, text neeche. Large screen: text left (~30%), image right (~70%) */}
         <div className="grid items-stretch lg:grid-cols-[minmax(0,1fr)_minmax(0,2.2fr)] lg:gap-10 2xl:gap-16">
           {/* IMAGE */}
           <div className="relative order-1 aspect-[4/5] overflow-hidden bg-[#241e1a] sm:aspect-[4/3] lg:order-2 lg:aspect-auto lg:min-h-[620px] xl:min-h-[680px] 2xl:min-h-[780px]">

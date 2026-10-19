@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -24,6 +24,7 @@ import {
 import { useGetStoreProductQuery } from "@/store/storefrontApi";
 import type { StorefrontProduct } from "@/store/storefrontTypes";
 import { useCart } from "@/app/components/storefront/cartStore";
+import { useAvailability } from "@/app/components/storefront/useAvailability";
 
 // Price format: server aur browser dono par same rahe
 const formatPrice = (n: number) => `Rs. ${n.toLocaleString("en-US")}`;
@@ -106,6 +107,15 @@ type ProductExtras = {
   rating?: number;
   reviewCount?: number;
   stock?: number;
+};
+
+// /api/reviews?productId= se aane wala review
+type PublicReview = {
+  _id: string;
+  name: string;
+  rating: number;
+  review: string;
+  createdAt?: string;
 };
 
 function Stars({ value }: { value: number }) {
@@ -221,7 +231,35 @@ export default function ProductDetail() {
   const qty = qtyState.slug === slug ? qtyState.n : 1;
   const setQty = (n: number) => setQtyState({ slug, n: Math.max(1, Math.min(99, n)) });
 
+  // Variations (product badalne par reset)
+  const [picked, setPicked] = useState<{ slug: string; options: Record<string, string> }>({
+    slug: "",
+    options: {},
+  });
+  const pickedOptions = picked.slug === slug ? picked.options : {};
+  const setOption = (groupId: string, optionId: string) =>
+    setPicked((prev) => ({
+      slug,
+      options: { ...(prev.slug === slug ? prev.options : {}), [groupId]: optionId },
+    }));
+
   const [tab, setTab] = useState<TabKey>("description");
+
+  // Review form
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewMsg, setReviewMsg] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  // Is product ke sab customers ke approved reviews
+  const [reviewsData, setReviewsData] = useState<{
+    items: PublicReview[];
+    average: number;
+    count: number;
+  }>({ items: [], average: 0, count: 0 });
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsTick, setReviewsTick] = useState(0); // badalne par reviews dobara load hote hain
 
   // Delivery check (abhi sirf UI, API se connect karna ho to handleCheckDelivery me)
   const [zip, setZip] = useState("");
@@ -234,6 +272,61 @@ export default function ProductDetail() {
   const product = currentData?.product;
   const related = currentData?.related ?? [];
   const notFound = (error as { status?: number } | undefined)?.status === 404;
+
+  // Variation state: hook se pehle chahiye, isliye early returns se UPAR (product undefined ho sakta hai)
+  const groups = (product?.productType === "variable" ? (product.variationGroups ?? []) : []).filter(
+    (g) => g.options && g.options.length > 0
+  );
+  const isVariable = groups.length > 0;
+  const allPicked = !isVariable || groups.every((g) => Boolean(pickedOptions[g.id]));
+  const selectedIds: string[] = isVariable
+    ? groups.map((g) => pickedOptions[g.id]).filter(Boolean)
+    : [];
+
+  // IMPORTANT: har hook early returns se PEHLE call hona chahiye
+  const { availability } = useAvailability(
+    product && allPicked ? product._id : undefined,
+    selectedIds
+  );
+
+  // /product/<slug>#reviews se aane par Reviews tab kholo aur form dikhao
+  const productKey = product?._id;
+  useEffect(() => {
+    if (!productKey || typeof window === "undefined") return;
+    if (window.location.hash === "#reviews") {
+      setTab("reviews");
+      setReviewOpen(true);
+      setTimeout(() => {
+        document.getElementById("pdp-information")?.scrollIntoView({ behavior: "smooth" });
+      }, 150);
+    }
+  }, [productKey, slug]);
+
+  // Product khulte hi uske sab approved reviews load karo (naya customer bhi purane dekhe)
+  useEffect(() => {
+    if (!productKey) return;
+    let cancelled = false;
+    setReviewsLoading(true);
+    fetch(`/api/reviews?productId=${encodeURIComponent(String(productKey))}`, {
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return;
+        setReviewsData({
+          items: Array.isArray(d.items) ? d.items : [],
+          average: Number(d.average) || 0,
+          count: Number(d.count) || 0,
+        });
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setReviewsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [productKey, reviewsTick]);
 
   /* ───── Loading ───── */
   if (isFetching || !slug) {
@@ -287,6 +380,7 @@ export default function ProductDetail() {
     );
   }
 
+  /* ───── Yahan se neeche koi hook nahi, sirf plain values ───── */
   const images = product.images.length ? product.images : product.image ? [product.image] : [];
   const mainImage = images[activeIdx] ?? images[0];
   const description = product.description ? htmlToText(product.description) : "";
@@ -294,18 +388,80 @@ export default function ProductDetail() {
   const { sku, brand, rating, reviewCount, stock } = product as StorefrontProduct & ProductExtras;
   const inStock = stock === undefined ? true : stock > 0;
 
+  // Reviews API ka data pehle, na ho to product ki apni rating
+  const avgRating = reviewsData.count > 0 ? reviewsData.average : rating;
+  const totalReviews = reviewsData.count > 0 ? reviewsData.count : reviewCount;
+
+  const variantLabel = isVariable
+    ? groups
+        .map((g) => g.options.find((o) => o.id === pickedOptions[g.id])?.name)
+        .filter(Boolean)
+        .join(" / ")
+    : undefined;
+
+  const soldOut = isVariable ? allPicked && availability?.status === "out" : !inStock;
+  const canOrder = inStock && (!isVariable || allPicked) && !soldOut;
+
   const showImage = (i: number) => setSel({ slug, idx: (i + images.length) % images.length });
 
   // Cart mein product add karo (CartDrawer apne aap khul jata hai)
   const handleAddToCart = () => {
-    if (!inStock) return;
-    addItem(product, qty, { image: product.image || images[0] });
+    if (!canOrder) return;
+    addItem(product, qty, {
+      variations: selectedIds,
+      variantLabel,
+      image: product.image || images[0],
+    });
   };
   const handleBuyNow = () => {
-    if (!inStock) return;
-    addItem(product, qty, { image: product.image || images[0] });
+    if (!canOrder) return;
+    addItem(product, qty, {
+      variations: selectedIds,
+      variantLabel,
+      image: product.image || images[0],
+    });
     closeCart(); // addItem drawer kholta hai, checkout par jaate waqt band kar do
     router.push("/checkout");
+  };
+
+  const submitReview = async () => {
+    if (!reviewRating) {
+      setReviewMsg({ type: "error", text: "Please select a star rating." });
+      return;
+    }
+    setReviewSubmitting(true);
+    setReviewMsg(null);
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: String(product._id),
+          productName: product.name,
+          rating: reviewRating,
+          review: reviewComment.trim(),
+        }),
+      });
+      if (res.status === 401) {
+        router.push(`/login?redirect=${encodeURIComponent(`/product/${slug}#reviews`)}`);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Could not submit your review.");
+      setReviewMsg({ type: "ok", text: "Thank you! Your review has been submitted." });
+      setReviewRating(0);
+      setReviewComment("");
+      setReviewOpen(false);
+      setReviewsTick((t) => t + 1);
+      refetch();
+    } catch (e) {
+      setReviewMsg({
+        type: "error",
+        text: e instanceof Error ? e.message : "Could not submit your review.",
+      });
+    } finally {
+      setReviewSubmitting(false);
+    }
   };
 
   return (
@@ -449,11 +605,21 @@ export default function ProductDetail() {
             {/* Stock line */}
             <p
               className={`mt-3 flex items-center gap-2 text-sm ${
-                inStock ? "text-[#4d6b4a]" : "text-[#a14b3b]"
+                canOrder || (!allPicked && isVariable)
+                  ? "text-[#4d6b4a]"
+                  : "text-[#a14b3b]"
               }`}
             >
               <FiCheckCircle className="h-4 w-4" />
-              {inStock ? "In stock. White-glove delivery available" : "Currently out of stock"}
+              {soldOut
+                ? "Currently out of stock"
+                : isVariable && !allPicked
+                  ? "Please select options to check availability"
+                  : availability?.status === "low"
+                    ? `Only ${availability.available} left in stock`
+                    : inStock
+                      ? "In stock. White-glove delivery available"
+                      : "Currently out of stock"}
             </p>
 
             {/* Quick spec rows */}
@@ -463,6 +629,44 @@ export default function ProductDetail() {
               <SpecRow label="Category" value={product.categoryLabel} />
               <SpecRow label="Material" value={product.material} />
             </dl>
+
+            {/* Variation Selectors (for variable products) */}
+            {groups.map((g) => {
+              const selectedOptionId = pickedOptions[g.id];
+              const selectedOption = g.options.find((o) => o.id === selectedOptionId);
+              return (
+                <div key={g.id} className="mt-6 border-t border-[#e6e0d8] pt-5">
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#2a231f]">
+                      {g.name}:{" "}
+                      <span className="font-normal text-[#6b625a]">
+                        {selectedOption?.name ?? "Choose an option"}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {g.options.map((o) => {
+                      const active = selectedOptionId === o.id;
+                      return (
+                        <button
+                          key={o.id}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setOption(g.id, o.id)}
+                          className={`cursor-pointer rounded border px-4 py-2.5 text-xs font-medium uppercase tracking-wider transition ${
+                            active
+                              ? "border-[#2a231f] bg-[#2a231f] text-white"
+                              : "border-[#d9d1c7] bg-white text-[#2a231f] hover:border-[#2a231f]"
+                          }`}
+                        >
+                          {o.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
 
             {/* Quantity + actions */}
             <div className="mt-6">
@@ -496,15 +700,19 @@ export default function ProductDetail() {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={!inStock}
+                  disabled={!canOrder}
                   className="h-12 min-w-[10rem] flex-1 bg-[#2a231f] px-6 text-sm font-medium uppercase tracking-[0.15em] text-white transition hover:bg-[#8b5e3c] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Add to cart
+                  {isVariable && !allPicked
+                    ? "Select options"
+                    : soldOut
+                      ? "Out of stock"
+                      : "Add to cart"}
                 </button>
                 <button
                   type="button"
                   onClick={handleBuyNow}
-                  disabled={!inStock}
+                  disabled={!canOrder}
                   className="h-12 min-w-[10rem] flex-1 border border-[#2a231f] bg-transparent px-6 text-sm font-medium uppercase tracking-[0.15em] text-[#2a231f] transition hover:bg-[#2a231f] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Buy now
@@ -674,15 +882,129 @@ export default function ProductDetail() {
 
             {tab === "reviews" && (
               <div className="text-[#6b625a]">
-                {typeof rating === "number" && rating > 0 ? (
-                  <div className="flex items-center gap-3">
-                    <Stars value={rating} />
-                    <span className="text-sm">
-                      {rating.toFixed(1)} out of 5{reviewCount ? ` (${reviewCount} reviews)` : ""}
-                    </span>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  {typeof avgRating === "number" && avgRating > 0 ? (
+                    <div className="flex items-center gap-3">
+                      <Stars value={avgRating} />
+                      <span className="text-sm">
+                        {avgRating.toFixed(1)} out of 5
+                        {totalReviews
+                          ? ` (${totalReviews} ${totalReviews === 1 ? "review" : "reviews"})`
+                          : ""}
+                      </span>
+                    </div>
+                  ) : reviewsLoading ? (
+                    <p>Loading reviews...</p>
+                  ) : (
+                    <p>No reviews yet. Be the first to review this product.</p>
+                  )}
+                  {!reviewOpen && (
+                    <button
+                      type="button"
+                      onClick={() => setReviewOpen(true)}
+                      className="h-11 border border-[#2a231f] px-5 text-xs font-medium uppercase tracking-[0.15em] text-[#2a231f] transition hover:bg-[#2a231f] hover:text-white"
+                    >
+                      Write a review
+                    </button>
+                  )}
+                </div>
+
+                {reviewMsg && (
+                  <p
+                    className={`mt-4 text-sm ${
+                      reviewMsg.type === "ok" ? "text-[#4d6b4a]" : "text-[#a14b3b]"
+                    }`}
+                  >
+                    {reviewMsg.text}
+                  </p>
+                )}
+
+                {reviewOpen && (
+                  <div className="mt-6 border border-[#e6e0d8] bg-white p-4 sm:p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#2a231f]">
+                      Your rating
+                    </p>
+                    <div className="mt-2 flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setReviewRating(n)}
+                          aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                          aria-pressed={reviewRating === n}
+                          className="p-0.5"
+                        >
+                          <FiStar
+                            className={`h-7 w-7 transition ${
+                              n <= reviewRating
+                                ? "fill-[#c8a46b] text-[#c8a46b]"
+                                : "text-[#d9d1c7] hover:text-[#c8a46b]"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+
+                    <label
+                      htmlFor="pdp-review"
+                      className="mt-5 block text-xs font-medium uppercase tracking-[0.2em] text-[#2a231f]"
+                    >
+                      Your review
+                    </label>
+                    <textarea
+                      id="pdp-review"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      rows={4}
+                      maxLength={1000}
+                      placeholder="Share what you liked or disliked about this product"
+                      className="mt-2 w-full resize-y border border-[#d9d1c7] bg-white p-3 text-sm text-[#2a231f] outline-none focus:border-[#2a231f]"
+                    />
+
+                    <div className="mt-4 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={submitReview}
+                        disabled={reviewSubmitting}
+                        className="h-11 bg-[#2a231f] px-6 text-xs font-medium uppercase tracking-[0.15em] text-white transition hover:bg-[#8b5e3c] disabled:opacity-50"
+                      >
+                        {reviewSubmitting ? "Submitting..." : "Submit review"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReviewOpen(false)}
+                        className="text-xs font-medium uppercase tracking-[0.15em] text-[#6b625a] hover:text-[#2a231f]"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                ) : (
-                  <p>No reviews yet.</p>
+                )}
+
+                {/* Sab customers ke approved reviews (purane bhi) */}
+                {reviewsData.items.length > 0 && (
+                  <ul className="mt-8 border-t border-[#e6e0d8]">
+                    {reviewsData.items.map((r) => (
+                      <li key={r._id} className="border-b border-[#e6e0d8] py-5">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <Stars value={r.rating} />
+                          <span className="text-sm font-medium text-[#2a231f]">{r.name}</span>
+                          {r.createdAt && (
+                            <span className="text-xs text-[#9a9087]">
+                              {new Date(r.createdAt).toLocaleDateString("en-GB", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[#4d453f] sm:text-base">
+                          {r.review}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             )}

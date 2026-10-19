@@ -80,11 +80,13 @@ function normalize(raw: unknown): CartItem[] {
     const r = entry as Record<string, unknown>;
     if (r.id === undefined || typeof r.qty !== "number") continue;
     const variations = Array.isArray(r.variations)
-      ? r.variations.filter((v): v is string => typeof v === "string")
+      ? r.variations
+          .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+          .map((v) => v.trim())
       : [];
     items.push({
       key:
-        typeof r.key === "string" && r.key
+        typeof r.key === "string" && r.key.includes("|")
           ? r.key
           : cartLineKey(r.id as ProductId, variations),
       id: r.id as ProductId,

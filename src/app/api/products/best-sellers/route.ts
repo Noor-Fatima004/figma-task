@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Order from "@/app/models/Order";
 import Product from "@/app/models/Product";
 import connectDB from "@/lib/mongodb";
-import { buildMediaUrlMap, toStorefrontProduct, type ProductLean } from "@/lib/storefrontProduct";
+import { buildMediaUrlMap, buildVariationNameMap, toStorefrontProduct, type ProductLean } from "@/lib/storefrontProduct";
 
 const MIN_SOLD = 3; // is se zyada bikne par best seller
 
@@ -27,5 +27,6 @@ export async function GET() {
   docs.sort((a, b) => (rank.get(String(a._id)) ?? 0) - (rank.get(String(b._id)) ?? 0));
 
   const map = await buildMediaUrlMap(docs.flatMap((d) => d.media ?? []));
-  return NextResponse.json({ items: docs.map((d) => toStorefrontProduct(d, map)) });
+  const names = await buildVariationNameMap(docs);
+  return NextResponse.json({ items: docs.map((d) => toStorefrontProduct(d, map, names)) });
 }

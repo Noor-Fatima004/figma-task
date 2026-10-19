@@ -15,11 +15,14 @@ import {
   productDisplayName,
   reserveStock,
   StockError,
-  validateVariantSelection,
+  validateVariantSelectionDetailed,
 } from "@/lib/stock";
 
-const errorResponse = (error: string, status: number) =>
-  NextResponse.json({ error }, { status });
+const errorResponse = (
+  error: string,
+  status: number,
+  extra: Record<string, unknown> = {}
+) => NextResponse.json({ error, ...extra }, { status });
 
 const OBJECT_ID_RX = /^[a-f\d]{24}$/i;
 const objectId = z.string().regex(OBJECT_ID_RX, "Invalid variation id");
@@ -126,7 +129,9 @@ export async function POST(request: Request) {
     if (idKeys.length) or.push({ _id: { $in: idKeys } });
     if (slugKeys.length) or.push({ slug: { $in: slugKeys } });
 
-    const products = await Product.find({ isActive: true, $or: or }).lean();
+    const products = await Product.find({ isActive: true, $or: or })
+      .populate("attributes.attribute", "name")
+      .lean();
     const productsByKey = new Map<string, (typeof products)[number]>();
     for (const product of products) {
       productsByKey.set(product._id.toString(), product);
@@ -166,13 +171,18 @@ export async function POST(request: Request) {
           400
         );
       }
-      const selected = validateVariantSelection(product, item.variationIds);
-      if (!selected) {
-        return errorResponse(
-          `Select a valid variation for "${productDisplayName(product)}".`,
-          400
-        );
+      const validation = validateVariantSelectionDetailed(
+        product,
+        item.variationIds,
+        undefined,
+        productDisplayName(product)
+      );
+      if (!validation.valid) {
+        return errorResponse(validation.error, 400, {
+          productId: item.productId,
+        });
       }
+      const selected = validation.variations;
       const variantKey = buildVariantKey(selected);
       const duplicateKey = `${productId}:${variantKey}`;
       if (seen.has(duplicateKey)) {
