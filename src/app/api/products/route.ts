@@ -119,7 +119,15 @@ export async function GET(req: NextRequest) {
 
     const map = await buildMediaUrlMap(docs.flatMap((d) => d.media ?? []));
     const names = await buildVariationNameMap(docs);
-    const items = docs.map((d) => toStorefrontProduct(d, map, names));
+
+    // ✅ createdAt bhi include karo taaki frontend "new arrivals" filter kar sake
+    const items = docs.map((d) => ({
+      ...toStorefrontProduct(d, map, names),
+      createdAt:
+        (d as any).createdAt instanceof Date
+          ? (d as any).createdAt.toISOString()
+          : (d as any).createdAt ?? null,
+    }));
 
     return NextResponse.json({ items, total, page, totalPages });
   } catch (e) {
