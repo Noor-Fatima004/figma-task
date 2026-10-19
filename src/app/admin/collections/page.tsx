@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import CollectionRowActions from "@/app/components/admin/CollectionRowActions";
 
 type Row = { _id: string; name: string; slug: string; productCount: number; isActive: boolean };
 
@@ -14,6 +15,8 @@ export default function CollectionsListPage() {
       .then(setRows)
       .catch(() => setRows([]));
   }, []);
+
+  const handleDeleted = (id: string) => setRows((rs) => rs.filter((r) => r._id !== id));
 
   return (
     <div className="p-4 sm:p-6">
@@ -31,6 +34,7 @@ export default function CollectionsListPage() {
               <th className="px-4 py-2">Slug</th>
               <th className="px-4 py-2">Products</th>
               <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -40,10 +44,13 @@ export default function CollectionsListPage() {
                 <td className="px-4 py-2">{r.slug}</td>
                 <td className="px-4 py-2">{r.productCount}</td>
                 <td className="px-4 py-2">{r.isActive ? "Active" : "Hidden"}</td>
+                <td className="px-4 py-2">
+                  <CollectionRowActions id={r._id} name={r.name} onDeleted={handleDeleted} />
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-500">No collections yet.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-500">No collections yet.</td></tr>
             )}
           </tbody>
         </table>

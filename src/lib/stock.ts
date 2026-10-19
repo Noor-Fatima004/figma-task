@@ -69,7 +69,10 @@ export function productDisplayName(product: {
 /**
  * Checks that `selected` is exactly one variation from every attribute that
  * the product uses. Returns the ids ordered by attribute, or null if invalid.
- * Simple products must have no variations.
+ *
+ * Simple products have no variations: whatever ids the client sent are
+ * ignored and [] is returned (so the stock key stays "" for them).
+ * A variable product that has no variation groups behaves the same way.
  */
 export function validateVariantSelection(
   product: {
@@ -79,12 +82,13 @@ export function validateVariantSelection(
   selected: string[]
 ): string[] | null {
   const unique = [...new Set(selected)];
-  if (product.productType !== "variable") {
-    return unique.length === 0 ? [] : null;
-  }
   const groups = (product.attributes ?? [])
     .map((attribute) => (attribute.variations ?? []).map(String))
     .filter((group) => group.length > 0);
+
+  // Simple product (ya variable jis ke koi variation groups nahi): variation ki zaroorat nahi
+  if (product.productType !== "variable" || groups.length === 0) return [];
+
   if (unique.length !== groups.length) return null;
 
   const remaining = [...unique];

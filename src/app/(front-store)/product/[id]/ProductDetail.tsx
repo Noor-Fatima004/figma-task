@@ -23,6 +23,7 @@ import {
 } from "react-icons/fi";
 import { useGetStoreProductQuery } from "@/store/storefrontApi";
 import type { StorefrontProduct } from "@/store/storefrontTypes";
+import { useCart } from "@/app/components/storefront/cartStore";
 
 // Price format: server aur browser dono par same rahe
 const formatPrice = (n: number) => `Rs. ${n.toLocaleString("en-US")}`;
@@ -198,6 +199,9 @@ export default function ProductDetail() {
   const raw = params?.id ?? params?.slug ?? "";
   const slug = Array.isArray(raw) ? raw[0] : String(raw);
 
+  // Cart: addItem se product cartStore mein jata hai aur CartDrawer khul jata hai
+  const { addItem, closeCart } = useCart();
+
   // Breadcrumb me category par click: pichle page par wapas.
   const goBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) router.back();
@@ -292,12 +296,16 @@ export default function ProductDetail() {
 
   const showImage = (i: number) => setSel({ slug, idx: (i + images.length) % images.length });
 
-  // TODO: apne cart store/API se connect karo
+  // Cart mein product add karo (CartDrawer apne aap khul jata hai)
   const handleAddToCart = () => {
-    // addToCart({ id: product.id, quantity: qty })
+    if (!inStock) return;
+    addItem(product, qty, { image: product.image || images[0] });
   };
   const handleBuyNow = () => {
-    // addToCart({ id: product.id, quantity: qty }); router.push("/checkout");
+    if (!inStock) return;
+    addItem(product, qty, { image: product.image || images[0] });
+    closeCart(); // addItem drawer kholta hai, checkout par jaate waqt band kar do
+    router.push("/checkout");
   };
 
   return (
