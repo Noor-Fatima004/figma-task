@@ -19,6 +19,8 @@ import { useWishlist } from "@/app/components/storefront/wishlistStore";
 import { useCompare } from "@/app/components/storefront/compareStore";
 import { useCart } from "@/app/components/storefront/cartStore";
 import StorefrontSearch from "@/app/components/storefront/StorefrontSearch";
+import { useVisibleCategories } from "@/app/components/storefront/useVisibleCategories";
+import { ROOM_KEYS, ROOM_LIST } from "@/lib/roomKeys";
 
 // Brand ka naam yahan badlo
 const BRAND = "Naltar";
@@ -29,7 +31,7 @@ type NavItem = {
   children?: { label: string; href: string }[];
 };
 
-const NAV: NavItem[] = [
+const BASE_NAV: NavItem[] = [
   { label: "Home", href: "/home" },
   {
     label: "Shop",
@@ -53,17 +55,7 @@ const NAV: NavItem[] = [
       { label: "Designer Picker", href: "/collections/designer-picker" },
     ],
   },
-  {
-    label: "Rooms",
-    href: "/rooms",
-    children: [
-      { label: "Living room", href: "/rooms/living" },
-      { label: "Dining room", href: "/rooms/dining" },
-      { label: "Bedroom", href: "/rooms/bedroom" },
-      { label: " Home Office", href: "/rooms/office" },
-      { label: "Outdoor", href: "/rooms/outdoor" },
-    ],
-  },
+  { label: "Rooms", href: "/rooms" },
   { label: "Journal", href: "/journal" },
   { label: "About", href: "/about" },
 ];
@@ -77,6 +69,22 @@ const TOP_LINKS = [
 function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+
+  // Rooms dropdown: sirf 5 rooms, aur unmein bhi wohi jin mein product ho
+  const { categories: roomCats, loading: roomsLoading } = useVisibleCategories(ROOM_KEYS);
+  const shownRooms = roomsLoading
+    ? ROOM_LIST
+    : ROOM_LIST.filter((r) => roomCats.some((c) => c.key === r.key));
+  const NAV: NavItem[] = BASE_NAV.map((item) =>
+    item.label === "Rooms"
+      ? {
+          ...item,
+          children: shownRooms.length
+            ? shownRooms.map((r) => ({ label: r.label, href: `/rooms/${r.key}` }))
+            : undefined,
+        }
+      : item
+  );
   const { count: wishlistCount } = useWishlist();
   const { count: compareCount } = useCompare();
   // Cart: count store se aata hai, click par drawer khulta hai
